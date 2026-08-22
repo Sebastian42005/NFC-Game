@@ -49,6 +49,10 @@ data class DeviceClaimRequest(
     val deviceKey: String? = null,
 )
 
+data class DeviceActiveRequest(
+    val active: Boolean,
+)
+
 data class PlayerRequest(
     @field:NotBlank val name: String,
     val description: String? = null,

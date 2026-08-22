@@ -2,6 +2,7 @@ package com.example.nfcgamebackend.nfcgame.application.admin
 
 import com.example.nfcgamebackend.nfcgame.api.dto.CardAssignRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.CardResponse
+import com.example.nfcgamebackend.nfcgame.api.dto.DeviceClaimRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.FlowDefinitionRequest
@@ -184,9 +185,33 @@ class NfcAdminService(
         return mapper.toDeviceResponse(deviceRepository.save(device))
     }
 
+    fun claimDevice(request: DeviceClaimRequest): DeviceResponse {
+        val accountId = currentAccountId()
+        val pairingCode = request.pairingCode?.trim()?.takeIf { it.isNotBlank() }
+            ?: request.deviceKey?.trim()?.takeIf { it.isNotBlank() }
+            ?: throw badRequest("Pairing code is required")
+        val device = deviceRepository.findByPairingCode(pairingCode)
+            ?: request.deviceKey?.trim()?.takeIf { it.isNotBlank() }?.let(deviceRepository::findByDeviceKey)
+            ?: throw notFound("Pairing code not found")
+
+        if (device.accountId != null && device.accountId != accountId) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Device is already linked to another account")
+        }
+
+        device.accountId = accountId
+        device.active = true
+        return mapper.toDeviceResponse(deviceRepository.save(device))
+    }
+
     fun updateDevice(id: UUID, request: DeviceRequest): DeviceResponse {
         val device = ownedDevice(id)
         return mapper.toDeviceResponse(deviceRepository.save(device.applyDeviceRequest(request)))
+    }
+
+    fun updateDeviceActive(id: UUID, active: Boolean): DeviceResponse {
+        val device = ownedDevice(id)
+        device.active = active
+        return mapper.toDeviceResponse(deviceRepository.save(device))
     }
 
     fun listGameTemplates(): List<GameTemplateResponse> =

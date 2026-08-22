@@ -42,7 +42,7 @@ struct MenuLayout {
 // =====================================================
 // Network / Backend
 // =====================================================
-static const char *BACKEND_BASE_URL = "https://sebis-projects.at";
+static const char *BACKEND_BASE_URL = "https://projects.sebi4.com";
 static const bool DISPLAY_INVERT_COLORS = true;
 static const char *FIRMWARE_VERSION = "1.0.1";
 static const unsigned long OTA_CHECK_INTERVAL_MS = 24UL * 60UL * 60UL * 1000UL;
@@ -218,6 +218,9 @@ bool wifiScanDone = false;
 bool deviceRegistered = false;
 bool deviceLinked = false;
 bool deviceCreatedInBackend = false;
+bool pairingCodeScreenVisible = false;
+String lastDrawnPairingCode = "";
+String lastDrawnPairingFooterText = "";
 unsigned long lastDeviceLinkCheckAt = 0;
 unsigned long lastOtaCheckAt = 0;
 int lastOtaProgressPercent = -1;
@@ -961,7 +964,15 @@ void drawFooter() {
   drawRightTextLine(fittedAccountText, SCREEN_W - 6, footerY + 5, 22, COLOR_ACCENT, 1);
 }
 
+void invalidatePairingCodeScreen() {
+  pairingCodeScreenVisible = false;
+  lastDrawnPairingCode = "";
+  lastDrawnPairingFooterText = "";
+}
+
 void setStartScreen(const String &status = "Bereit fuer neuen Scan") {
+  invalidatePairingCodeScreen();
+
   sessionId = "";
   currentStateKey = "";
   localTeamSizeActive = false;
@@ -994,6 +1005,13 @@ void setStartScreen(const String &status = "Bereit fuer neuen Scan") {
 }
 
 void drawPairingCodeScreen() {
+  char footerBuffer[96];
+  buildFooterText(footerBuffer, sizeof(footerBuffer));
+  String footerText = String(footerBuffer) + "|" + linkedAccountFooterText();
+  if (pairingCodeScreenVisible && lastDrawnPairingCode == pairingCode && lastDrawnPairingFooterText == footerText) {
+    return;
+  }
+
   tft.fillScreen(COLOR_BG);
   tft.fillRect(0, 0, SCREEN_W, 58, COLOR_PANEL);
   drawTextLine("Reader verbinden", 28, 22, 24, COLOR_ACCENT, 2, COLOR_PANEL);
@@ -1014,6 +1032,10 @@ void drawPairingCodeScreen() {
   drawTextLine("nfc-game/account", 92, 184, 30, COLOR_MUTED, 1);
   drawTextLine("Verbindung wird automatisch erkannt", 42, 204, 40, COLOR_MUTED, 1);
   drawFooter();
+
+  pairingCodeScreenVisible = true;
+  lastDrawnPairingCode = pairingCode;
+  lastDrawnPairingFooterText = footerText;
 }
 
 void drawWifiRecoveryScreen() {
@@ -1336,6 +1358,7 @@ void drawNumberStepperScreen() {
 }
 
 void drawScreen() {
+  invalidatePairingCodeScreen();
   tft.fillScreen(COLOR_BG);
 
   if (screen.screenType == "WAITING_FOR_SCAN" && screen.menuCount <= 0) {

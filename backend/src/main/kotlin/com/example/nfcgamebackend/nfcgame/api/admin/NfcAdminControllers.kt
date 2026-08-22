@@ -6,6 +6,8 @@ import com.example.nfcgamebackend.nfcgame.api.dto.AdminAccountSummaryResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.BlockGameRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.CardAssignRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.CardResponse
+import com.example.nfcgamebackend.nfcgame.api.dto.DeviceActiveRequest
+import com.example.nfcgamebackend.nfcgame.api.dto.DeviceClaimRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.FlowDefinitionRequest
@@ -145,9 +147,16 @@ class NfcAdminController(
     @PostMapping("/devices")
     fun createDevice(@Valid @RequestBody request: DeviceRequest): DeviceResponse = adminService.createDevice(request)
 
+    @PostMapping("/devices/claim")
+    fun claimDevice(@Valid @RequestBody request: DeviceClaimRequest): DeviceResponse = adminService.claimDevice(request)
+
     @PutMapping("/devices/{id}")
     fun updateDevice(@PathVariable id: UUID, @Valid @RequestBody request: DeviceRequest): DeviceResponse =
         adminService.updateDevice(id, request)
+
+    @PatchMapping("/devices/{id}/active")
+    fun updateDeviceActive(@PathVariable id: UUID, @RequestBody request: DeviceActiveRequest): DeviceResponse =
+        adminService.updateDeviceActive(id, request.active)
 
     @GetMapping("/game-templates")
     fun listGameTemplates(): List<GameTemplateResponse> = adminService.listGameTemplates()

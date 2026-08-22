@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { NfcAdminApiService } from '../../../core/api/nfc-admin-api.service';
-import { DeviceDto, DeviceRequest } from '../../../shared/models/nfc-game.models';
+import { DeviceDto } from '../../../shared/models/nfc-game.models';
 import { NfcAdminShellComponent } from '../../../shared/ui/admin-shell.component';
 
 @Component({
@@ -14,36 +14,45 @@ import { NfcAdminShellComponent } from '../../../shared/ui/admin-shell.component
 export class NfcAdminDevicesComponent {
   private readonly api = inject(NfcAdminApiService);
   protected readonly devices = signal<DeviceDto[]>([]);
-  protected readonly editingId = signal<string | null>(null);
-  protected readonly form = signal<DeviceRequest>({ name: '', deviceKey: '', active: true });
+  protected readonly pairingCode = signal('');
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly message = signal<string | null>(null);
 
   constructor() {
     void this.load();
   }
 
-  protected patch(value: Partial<DeviceRequest>) {
-    this.form.set({ ...this.form(), ...value });
-  }
+  protected async claimDevice() {
+    this.loading.set(true);
+    this.error.set(null);
+    this.message.set(null);
 
-  protected edit(device: DeviceDto) {
-    this.editingId.set(device.id);
-    this.form.set({ name: device.name, deviceKey: '', active: device.active });
-  }
-
-  protected rotateKey() {
-    this.patch({ deviceKey: crypto.randomUUID() });
-  }
-
-  protected async save() {
-    const id = this.editingId();
-    if (id) {
-      await firstValueFrom(this.api.updateDevice(id, this.form()));
-    } else {
-      await firstValueFrom(this.api.createDevice(this.form()));
+    try {
+      await firstValueFrom(this.api.claimDevice({ pairingCode: this.pairingCode().trim() }));
+      this.pairingCode.set('');
+      this.message.set('Reader verbunden.');
+      await this.load();
+    } catch {
+      this.error.set('Code konnte nicht verbunden werden. Pruefe, ob der Reader eingeschaltet ist und genau diesen Code anzeigt.');
+    } finally {
+      this.loading.set(false);
     }
-    this.editingId.set(null);
-    this.form.set({ name: '', deviceKey: '', active: true });
-    await this.load();
+  }
+
+  protected async updateActive(device: DeviceDto, active: boolean) {
+    this.loading.set(true);
+    this.error.set(null);
+    this.message.set(null);
+
+    try {
+      await firstValueFrom(this.api.updateDeviceActive(device.id, active));
+      await this.load();
+    } catch {
+      this.error.set('Aktiv-Status konnte nicht gespeichert werden.');
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private async load() {

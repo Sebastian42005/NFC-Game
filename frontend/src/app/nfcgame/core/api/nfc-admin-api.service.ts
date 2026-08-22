@@ -6,6 +6,7 @@ import {
   AdminLoginRequest,
   AdminLoginResponse,
   CardAssignRequest,
+  DeviceClaimRequest,
   DeviceDto,
   DeviceRequest,
   FlowValidationDto,
@@ -92,8 +93,16 @@ export class NfcAdminApiService {
     return this.http.post<DeviceDto>(`${apiBase}/devices`, request);
   }
 
+  claimDevice(request: DeviceClaimRequest) {
+    return this.http.post<DeviceDto>(`${apiBase}/devices/claim`, request);
+  }
+
   updateDevice(id: string, request: DeviceRequest) {
     return this.http.put<DeviceDto>(`${apiBase}/devices/${encodeURIComponent(id)}`, request);
+  }
+
+  updateDeviceActive(id: string, active: boolean) {
+    return this.http.patch<DeviceDto>(`${apiBase}/devices/${encodeURIComponent(id)}/active`, { active });
   }
 
   gameTemplates() {

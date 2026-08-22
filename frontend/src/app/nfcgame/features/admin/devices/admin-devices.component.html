@@ -3,30 +3,63 @@
     <div class="overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted">
       <table class="w-full min-w-[720px] text-left text-sm">
         <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
-          <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Aktiv</th><th class="px-4 py-3">Last Seen</th><th class="px-4 py-3"></th></tr>
+          <tr><th class="px-4 py-3">Reader</th><th class="px-4 py-3">Aktiv</th><th class="px-4 py-3">Last Seen</th></tr>
         </thead>
         <tbody>
           @for (device of devices(); track device.id) {
             <tr class="border-t ui-border-subtle">
               <td class="px-4 py-3">{{ device.name }}</td>
-              <td class="px-4 py-3">{{ device.active ? 'Ja' : 'Nein' }}</td>
+              <td class="px-4 py-3">
+                <label class="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    [ngModel]="device.active"
+                    (ngModelChange)="updateActive(device, $event)"
+                    [disabled]="loading()"
+                  />
+                  <span>{{ device.active ? 'Ja' : 'Nein' }}</span>
+                </label>
+              </td>
               <td class="px-4 py-3">{{ device.lastSeenAt ? (device.lastSeenAt | date:'short') : '-' }}</td>
-              <td class="px-4 py-3"><button class="rounded-md border ui-border-subtle px-3 py-2" type="button" (click)="edit(device)">Bearbeiten</button></td>
             </tr>
           } @empty {
-            <tr><td colspan="4" class="px-4 py-8 text-center ui-text-muted">Keine Devices.</td></tr>
+            <tr><td colspan="3" class="px-4 py-8 text-center ui-text-muted">Keine Devices.</td></tr>
           }
         </tbody>
       </table>
     </div>
 
-    <form class="grid content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="save()">
-      <h2 class="text-xl font-semibold">{{ editingId() ? 'Device bearbeiten' : 'Device anlegen' }}</h2>
-      <label class="grid gap-2 text-sm">Name <input name="name" [ngModel]="form().name" (ngModelChange)="patch({ name: $event })" required /></label>
-      <label class="grid gap-2 text-sm">Device Key <input name="deviceKey" [ngModel]="form().deviceKey" (ngModelChange)="patch({ deviceKey: $event })" required /></label>
-      <button class="rounded-md border ui-border-subtle px-3 py-2 text-sm" type="button" (click)="rotateKey()">Key rotieren</button>
-      <label class="flex items-center gap-3 text-sm"><input type="checkbox" name="active" [ngModel]="form().active" (ngModelChange)="patch({ active: $event })" /> Aktiv</label>
-      <button class="rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent" type="submit">Speichern</button>
+    <form class="grid content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="claimDevice()">
+      <div class="grid gap-1">
+        <h2 class="text-xl font-semibold">Reader verbinden</h2>
+        <p class="text-sm ui-text-muted">
+          Gib den 6-stelligen Code ein, der auf dem Reader-Display steht. Name und technischer Key werden automatisch vom Reader verwaltet.
+        </p>
+      </div>
+
+      <label class="grid gap-2 text-sm">
+        Code
+        <input
+          name="pairingCode"
+          [ngModel]="pairingCode()"
+          (ngModelChange)="pairingCode.set($event)"
+          inputmode="numeric"
+          maxlength="6"
+          placeholder="z. B. 123456"
+          required
+        />
+      </label>
+
+      @if (message()) {
+        <p class="rounded-md border ui-border-accent ui-bg-accent-soft p-3 text-sm ui-text-accent">{{ message() }}</p>
+      }
+      @if (error()) {
+        <p class="rounded-md border ui-border-accent ui-bg-accent-soft p-3 text-sm ui-text-accent">{{ error() }}</p>
+      }
+
+      <button class="rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent" type="submit" [disabled]="loading() || !pairingCode().trim()">
+        Mit Code verbinden
+      </button>
     </form>
   </section>
 </nfc-admin-shell>
