@@ -104,11 +104,12 @@ static const i2s_port_t AUDIO_I2S_PORT = I2S_NUM_1;
 static const int AUDIO_DMA_BUFFER_COUNT = 6;
 static const int AUDIO_DMA_BUFFER_LEN = 256;
 static const int AUDIO_WAV_VOLUME_DIVISOR = 4;
-static const uint32_t AUDIO_PREROLL_SILENCE_MS = 900;
-static const uint32_t AUDIO_SKIP_INITIAL_MS = 80;
+static const uint32_t AUDIO_PREROLL_SILENCE_MS = 120;
+static const uint32_t AUDIO_SKIP_INITIAL_MS = 160;
 static const uint32_t AUDIO_FADE_IN_MS = 500;
 static const uint32_t AUDIO_DC_SETTLE_MS = 80;
-static const bool AUDIO_SWAP_WAV_BYTES = false;
+static const uint32_t AUDIO_SHUTDOWN_SILENCE_MS = 260;
+static const bool AUDIO_SWAP_WAV_BYTES = true;
 
 // =====================================================
 // Objects
@@ -1867,15 +1868,13 @@ bool initAudioOutput(uint32_t sampleRate) {
 }
 
 void deinitAudioOutput() {
-  if (!audioOutputInitialized) {
-    return;
+  if (audioOutputInitialized) {
+    i2s_zero_dma_buffer(AUDIO_I2S_PORT);
+    delay(20);
+    i2s_driver_uninstall(AUDIO_I2S_PORT);
+    audioOutputInitialized = false;
+    audioOutputSampleRate = 0;
   }
-
-  i2s_zero_dma_buffer(AUDIO_I2S_PORT);
-  delay(20);
-  i2s_driver_uninstall(AUDIO_I2S_PORT);
-  audioOutputInitialized = false;
-  audioOutputSampleRate = 0;
 
   pinMode(AUDIO_I2S_BCLK_PIN, INPUT_PULLDOWN);
   pinMode(AUDIO_I2S_LRC_PIN, INPUT_PULLDOWN);
@@ -2986,7 +2985,8 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
   }
 
   i2s_zero_dma_buffer(AUDIO_I2S_PORT);
-  writeAudioSilence(sampleRate, 180);
+  writeAudioSilence(sampleRate, AUDIO_SHUTDOWN_SILENCE_MS);
+  deinitAudioOutput();
   http.end();
   Serial.printf("WAV playback done: read %lu of %lu bytes\n", totalRead, dataSize);
   return totalRead > 0;
@@ -3870,12 +3870,8 @@ void setup() {
   mfrc522.PCD_Init();
   initMifareDefaultKey();
 
-  if (initAudioOutput(16000)) {
-    writeAudioSilence(16000, 500);
-    Serial.println("Audio output primed with silence");
-  } else {
-    Serial.println("Audio output prime failed");
-  }
+  deinitAudioOutput();
+  Serial.println("Audio output muted");
 
   initStringCapacities();
   loadOrCreateDeviceIdentity();
