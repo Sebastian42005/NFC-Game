@@ -104,10 +104,11 @@ static const i2s_port_t AUDIO_I2S_PORT = I2S_NUM_1;
 static const int AUDIO_DMA_BUFFER_COUNT = 6;
 static const int AUDIO_DMA_BUFFER_LEN = 256;
 static const int AUDIO_WAV_VOLUME_DIVISOR = 4;
-static const uint32_t AUDIO_PREROLL_SILENCE_MS = 700;
-static const uint32_t AUDIO_SKIP_INITIAL_MS = 160;
-static const uint32_t AUDIO_FADE_IN_MS = 320;
-static const bool AUDIO_SWAP_WAV_BYTES = true;
+static const uint32_t AUDIO_PREROLL_SILENCE_MS = 900;
+static const uint32_t AUDIO_SKIP_INITIAL_MS = 80;
+static const uint32_t AUDIO_FADE_IN_MS = 500;
+static const uint32_t AUDIO_DC_SETTLE_MS = 80;
+static const bool AUDIO_SWAP_WAV_BYTES = false;
 
 // =====================================================
 // Objects
@@ -1801,6 +1802,8 @@ bool readWavHeader(WiFiClient *stream, uint16_t &channels, uint32_t &sampleRate,
   }
 }
 
+bool writeAudioSilence(uint32_t sampleRate, uint32_t durationMs);
+
 bool initAudioOutput(uint32_t sampleRate) {
   if (audioOutputInitialized) {
     if (audioOutputSampleRate != sampleRate) {
@@ -1811,6 +1814,7 @@ bool initAudioOutput(uint32_t sampleRate) {
         return false;
       }
       audioOutputSampleRate = sampleRate;
+      writeAudioSilence(sampleRate, 120);
     }
     return true;
   }
@@ -2912,6 +2916,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
   int16_t stereoBuffer[512];
   uint32_t totalRead = 0;
   uint32_t fadeInSamples = max(static_cast<uint32_t>(1), (sampleRate * AUDIO_FADE_IN_MS) / 1000);
+  uint32_t dcSettleSamples = max(static_cast<uint32_t>(1), (sampleRate * AUDIO_DC_SETTLE_MS) / 1000);
+  int32_t dcOffset = 0;
+  bool dcOffsetInitialized = false;
   uint8_t emptyReadCount = 0;
 
   while (totalRead < dataSize) {
@@ -2946,6 +2953,19 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
     for (size_t i = 0; i < sampleCount; i++) {
       int16_t sample = readAudioSample16(buffer, i * 2);
       uint32_t absoluteSampleIndex = (totalRead / 2) + i;
+
+      if (!dcOffsetInitialized) {
+        dcOffset = sample;
+        dcOffsetInitialized = true;
+      }
+
+      if (absoluteSampleIndex < dcSettleSamples) {
+        int32_t remainingOffset = (dcOffset * static_cast<int32_t>(dcSettleSamples - absoluteSampleIndex)) / static_cast<int32_t>(dcSettleSamples);
+        int32_t adjustedSample = static_cast<int32_t>(sample) - remainingOffset;
+        adjustedSample = constrain(adjustedSample, -32768, 32767);
+        sample = static_cast<int16_t>(adjustedSample);
+      }
+
       if (absoluteSampleIndex < fadeInSamples) {
         sample = static_cast<int16_t>((static_cast<int32_t>(sample) * static_cast<int32_t>(absoluteSampleIndex)) / static_cast<int32_t>(fadeInSamples));
       }
