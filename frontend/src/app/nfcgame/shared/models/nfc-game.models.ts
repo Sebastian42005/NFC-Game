@@ -199,6 +199,7 @@ export interface DeviceDto {
   name: string;
   active: boolean;
   linked?: boolean;
+  accountUsername?: string | null;
   lastSeenAt?: string | null;
   createdAt: string;
 }
@@ -212,6 +213,8 @@ export interface DeviceRequest {
 export interface DeviceProvisioningDto extends DeviceDto {
   pairingCode: string;
   linked: boolean;
+  accountUsername?: string | null;
+  createdNow?: boolean;
 }
 
 export interface DeviceClaimRequest {

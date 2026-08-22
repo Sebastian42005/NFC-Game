@@ -228,7 +228,7 @@ class NfcDeviceEventService(
             pairingCode = generatePairingCode()
             active = request.active
         }
-        return toProvisioningResponse(deviceRepository.save(device))
+        return toProvisioningResponse(deviceRepository.save(device), createdNow = true)
     }
 
     private fun generatePairingCode(): String {
@@ -241,7 +241,7 @@ class NfcDeviceEventService(
         throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not generate pairing code")
     }
 
-    private fun toProvisioningResponse(device: NfcDevice): DeviceProvisioningResponse {
+    private fun toProvisioningResponse(device: NfcDevice, createdNow: Boolean = false): DeviceProvisioningResponse {
         val account = device.accountId?.let { appUserRepository.findById(it).orElse(null) }
         if (device.accountId != null && account == null) {
             device.accountId = null
@@ -254,6 +254,7 @@ class NfcDeviceEventService(
             active = device.active,
             linked = account != null,
             accountUsername = account?.username,
+            createdNow = createdNow,
             pairingCode = requireNotNull(device.pairingCode),
             lastSeenAt = device.lastSeenAt,
             createdAt = device.createdAt,

@@ -217,6 +217,7 @@ int scannedWifiCount = 0;
 bool wifiScanDone = false;
 bool deviceRegistered = false;
 bool deviceLinked = false;
+bool deviceCreatedInBackend = false;
 unsigned long lastDeviceLinkCheckAt = 0;
 unsigned long lastOtaCheckAt = 0;
 int lastOtaProgressPercent = -1;
@@ -908,11 +909,31 @@ void buildFooterText(char *buffer, size_t bufferSize) {
 }
 
 String linkedAccountFooterText() {
-  if (!deviceRegistered) {
-    return "Backend offline";
-  }
-
   if (!deviceLinked) {
+    if (WiFi.status() != WL_CONNECTED) {
+      return "WLAN offline";
+    }
+
+    if (!deviceRegistered && lastError.startsWith("Register HTTP ")) {
+      int code = lastError.substring(14).toInt();
+
+      if (code == 404) {
+        return "Device API fehlt";
+      }
+
+      if (code == 409) {
+        return "Device Konflikt";
+      }
+
+      if (code > 0) {
+        return "Register Fehler";
+      }
+    }
+
+    if (!deviceRegistered) {
+      return "Backend offline";
+    }
+
     return "Nicht verbunden";
   }
 
@@ -2124,6 +2145,7 @@ bool registerDeviceWithBackend() {
     if (!error) {
       setStringLimited(pairingCode, responseDoc["pairingCode"] | "", CAP_PAIRING_CODE - 1);
       deviceLinked = responseDoc["linked"] | false;
+      deviceCreatedInBackend = responseDoc["createdNow"] | false;
       const char *accountUsername = responseDoc["accountUsername"] | nullptr;
       if (accountUsername == nullptr) accountUsername = responseDoc["username"] | nullptr;
       if (accountUsername == nullptr) accountUsername = responseDoc["accountName"] | nullptr;
@@ -2135,16 +2157,24 @@ bool registerDeviceWithBackend() {
     } else {
       pairingCode = "";
       deviceLinked = false;
+      deviceCreatedInBackend = false;
       linkedAccountUsername = "";
     }
 
     deviceRegistered = true;
-    setStatusTextLimited(deviceLinked ? "Account geprueft" : "Pairing Code bereit");
+    if (deviceLinked) {
+      setStatusTextLimited("Account geprueft");
+    } else if (deviceCreatedInBackend) {
+      setStatusTextLimited("Reader neu registriert");
+    } else {
+      setStatusTextLimited("Pairing Code bereit");
+    }
     return true;
   }
 
   deviceRegistered = false;
   deviceLinked = false;
+  deviceCreatedInBackend = false;
   linkedAccountUsername = "";
   setLastErrorLimited("Register HTTP " + String(code));
   return false;
