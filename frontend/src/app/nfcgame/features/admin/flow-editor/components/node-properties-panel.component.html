@@ -1,0 +1,354 @@
+
+    <aside class="flex h-full min-h-0 flex-col overflow-hidden border-l ui-border-subtle ui-surface-muted p-4">
+      <h3 class="shrink-0 text-sm font-semibold">Eigenschaften</h3>
+      @if (node(); as node) {
+        <div class="mt-4 grid min-h-0 flex-1 gap-4 overflow-y-auto pr-1 pb-6">
+          <section class="rounded-lg border ui-border-subtle ui-surface-muted p-3">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wide ui-text-muted">Basis</p>
+            <div class="grid gap-3">
+              <label class="grid gap-2 text-sm">
+                Name
+                <input [ngModel]="node.title" (ngModelChange)="patchNode.emit({ title: $event })" />
+              </label>
+              <p class="rounded-md ui-surface-muted px-3 py-2 text-xs ui-text-muted">Typ: {{ node.type }}</p>
+            </div>
+          </section>
+
+          <section class="rounded-lg border ui-border-subtle ui-surface-muted p-3">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wide ui-text-muted">{{ configSectionTitle(node.type) }}</p>
+            <div class="grid gap-3">
+              @if (showsText(node.type)) {
+                <nfc-builder-variable-input
+                  label="Text am Gerät"
+                  [rows]="3"
+                  [value]="toDollarSyntax(configString('text'))"
+                  [suggestions]="availableVariableGroups()"
+                  [validationMode]="validationMode('text')"
+                  (valueChange)="patchConfigExpression('text', $event)"
+                />
+              }
+              @if (showsMessageContinueMode(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  Weiter
+                  <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="configString('continueMode') || 'BUTTON'" (ngModelChange)="patchConfig('continueMode', $event)">
+                    <mat-option value="BUTTON">Weiter Button anzeigen</mat-option>
+                    <mat-option value="AUTO">Automatisch weiter</mat-option>
+                  </mat-select>
+                </label>
+              }
+              @if (showsSoundPicker(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  Sound aus Bibliothek
+                  <input
+                    list="nfc-builder-sound-options"
+                    [ngModel]="selectedSoundName()"
+                    (ngModelChange)="patchSoundSelection($event)"
+                    placeholder="Sound suchen..."
+                  />
+                  <datalist id="nfc-builder-sound-options">
+                    @for (sound of soundOptions(); track sound.id) {
+                      <option [value]="sound.name"></option>
+                    }
+                  </datalist>
+                </label>
+                <label class="grid gap-2 text-sm">
+                  Abspielen auf
+                  <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="configString('playTarget') || 'DEVICE'" (ngModelChange)="patchConfig('playTarget', $event)">
+                    <mat-option value="DEVICE">Gerät</mat-option>
+                    <mat-option value="WEBSITE">Website</mat-option>
+                    <mat-option value="BOTH">Gerät und Website</mat-option>
+                  </mat-select>
+                </label>
+                @if (!configString('soundId')) {
+                  <p class="rounded-md ui-surface-muted px-3 py-2 text-xs ui-text-muted">
+                    Wähle einen Sound aus deiner Bibliothek. Neue Sounds legst du im Tab "Sounds" an.
+                  </p>
+                }
+              }
+              @if (showsDashboardPopup(node.type)) {
+                <nfc-builder-variable-input
+                  label="Popup Titel"
+                  [value]="toDollarSyntax(configString('title'))"
+                  placeholder="z.B. Runde gewonnen"
+                  [suggestions]="availableVariableGroups()"
+                  [validationMode]="validationMode('text')"
+                  (valueChange)="patchConfigExpression('title', $event)"
+                />
+                <nfc-builder-variable-input
+                  label="Popup Text"
+                  [rows]="4"
+                  [value]="toDollarSyntax(configString('text'))"
+                  placeholder="z.B. $lastScannedPlayer.name hat gewonnen."
+                  [suggestions]="availableVariableGroups()"
+                  [validationMode]="validationMode('text')"
+                  (valueChange)="patchConfigExpression('text', $event)"
+                />
+              }
+              @if (showsOptions(node.type)) {
+                <nfc-builder-variable-input
+                  label="Optionen"
+                  [value]="optionsText()"
+                  placeholder="Option A, Option B"
+                  [suggestions]="suggestionsForOptions()"
+                  [validationMode]="validationMode('options')"
+                  (valueChange)="patchOptions($event)"
+                />
+                <div class="grid gap-2">
+                  @for (group of menuOptionSuggestionGroups(); track group.title) {
+                    <div class="grid gap-1.5 rounded-md border ui-border-subtle ui-surface-muted p-2">
+                      <p class="text-[11px] font-semibold uppercase tracking-wide ui-text-muted">{{ group.title }}</p>
+                      <div class="flex flex-wrap gap-1.5">
+                        @for (option of group.items; track option.token) {
+                          <code class="rounded border ui-border-subtle ui-surface-muted px-2 py-1 font-mono text-[11px] ui-text-accent">{{ option.token }}</code>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+              @if (showsCardType(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  Erwartete Karte
+                  <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="configString('cardType')" (ngModelChange)="patchConfig('cardType', $event || null)">
+                    <mat-option value="">Beliebige Karte</mat-option>
+                    <mat-option value="PLAYER">Spielerkarte</mat-option>
+                    <mat-option value="GAME">Spielkarte</mat-option>
+                  </mat-select>
+                </label>
+              }
+              @if (showsEventType(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  Event
+                  <input [ngModel]="configString('eventType')" (ngModelChange)="patchConfig('eventType', $event)" />
+                </label>
+              }
+              @if (showsStoreAs(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  {{ storeAsLabel(node.type) }}
+                  <input [ngModel]="configString('storeAs')" (ngModelChange)="patchConfig('storeAs', $event)" [placeholder]="storeAsPlaceholder(node.type)" />
+                </label>
+                <p class="text-xs ui-text-muted">Dieser Name kann spaeter in anderen Nodes verwendet werden.</p>
+              }
+              @if (showsRandomizer(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  Zufallsart
+                  <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="configString('mode') || 'NUMBER'" (ngModelChange)="patchConfig('mode', $event)">
+                    <mat-option value="NUMBER">Zahlengenerator</mat-option>
+                    <mat-option value="TEAM">Team-/Spielergenerator</mat-option>
+                    <mat-option value="TEXT">Textgenerator</mat-option>
+                  </mat-select>
+                </label>
+                <label class="grid gap-2 text-sm">
+                  Resultat als Variable speichern
+                  <input [ngModel]="configString('storeAs')" (ngModelChange)="patchConfig('storeAs', $event)" [placeholder]="randomizerStoreAsPlaceholder()" />
+                </label>
+                @if ((configString('mode') || 'NUMBER') === 'NUMBER') {
+                  <div class="grid grid-cols-2 gap-3">
+                    <label class="grid gap-2 text-sm">
+                      Min
+                      <input type="number" [ngModel]="configNumber('min')" (ngModelChange)="patchConfigNumber('min', $event)" placeholder="1" />
+                    </label>
+                    <label class="grid gap-2 text-sm">
+                      Max
+                      <input type="number" [ngModel]="configNumber('max')" (ngModelChange)="patchConfigNumber('max', $event)" placeholder="10" />
+                    </label>
+                  </div>
+                }
+                @if (configString('mode') === 'TEXT') {
+                  <nfc-builder-variable-input
+                    label="Text-Optionen"
+                    [rows]="5"
+                    [value]="toDollarSyntax(configString('textOptions'))"
+                    placeholder="Super, $lastScannedPlayer.name!, Nice Runde, $amount Punkte!"
+                    [suggestions]="availableVariableGroups()"
+                    [validationMode]="validationMode('text')"
+                    (valueChange)="patchConfigExpression('textOptions', $event)"
+                  />
+                }
+              }
+              @if (showsSessionValueChange(node.type)) {
+                <div class="grid gap-2 text-sm">
+                  Team-Wert
+                  <button type="button" class="nfc-nested-select" [matMenuTriggerFor]="teamValueMenu">
+                    <span>{{ targetValuePathDisplay() }}</span>
+                    <span class="nfc-select-chevron">▾</span>
+                  </button>
+                  <mat-menu #teamValueMenu="matMenu" class="nfc-variable-menu-panel" overlayPanelClass="nfc-variable-menu-panel">
+                    @for (group of targetValueMenuGroups(); track group.label) {
+                      <button
+                        type="button"
+                        mat-menu-item
+                        class="nfc-variable-menu-item"
+                        [matMenuTriggerFor]="targetPropertyMenu"
+                        (mouseenter)="markMenuItemHover($event)"
+                        (mouseleave)="clearMenuItemHover($event)"
+                      >
+                        <span class="nfc-menu-token kind-text-object">{{ group.displayLabel }}</span>
+                      </button>
+                      <mat-menu #targetPropertyMenu="matMenu" class="nfc-variable-menu-panel" overlayPanelClass="nfc-variable-menu-panel">
+                        @for (option of group.options; track option.value) {
+                          <button
+                            type="button"
+                            mat-menu-item
+                            class="nfc-variable-menu-item"
+                            (mouseenter)="markMenuItemHover($event)"
+                            (mouseleave)="clearMenuItemHover($event)"
+                            (click)="patchTargetValuePathSelection(option.value)"
+                          >
+                            <span class="nfc-menu-token kind-text-integer">{{ option.propertyLabel }}</span>
+                          </button>
+                        }
+                      </mat-menu>
+                    }
+                    <button
+                      type="button"
+                      mat-menu-item
+                      class="nfc-variable-menu-item"
+                      (mouseenter)="markMenuItemHover($event)"
+                      (mouseleave)="clearMenuItemHover($event)"
+                      (click)="patchTargetValuePathSelection('custom')"
+                    >
+                      <span class="nfc-menu-token kind-text-string">Neue Wert-Art</span>
+                    </button>
+                  </mat-menu>
+                </div>
+                @if (targetValuePathSelectValue() === 'custom') {
+                  <label class="grid gap-2 text-sm">
+                    Neue Wert-Art
+                    <input [ngModel]="configString('valueKey')" (ngModelChange)="patchConfig('valueKey', $event || normalizedDashboardValueKey())" [placeholder]="customValueKeyPlaceholder()" />
+                  </label>
+                }
+                <nfc-builder-variable-input
+                  label="Berechnung"
+                  [value]="teamValueExpression()"
+                  placeholder="z.B. $current - $amount"
+                  [suggestions]="availableVariableGroups()"
+                  [validationMode]="validationMode('numeric')"
+                  (valueChange)="patchConfigExpression('expression', $event)"
+                />
+              }
+              @if (showsGlobalValueChange(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  Punkte hinzufügen
+                  <input type="number" [ngModel]="configNumber('points')" (ngModelChange)="patchConfigNumber('points', $event)" min="0" placeholder="1" />
+                </label>
+                <label class="grid gap-2 text-sm">
+                  Empfänger
+                  <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="pointsTargetValue()" (ngModelChange)="patchConfig('target', $event)">
+                    @if (hasPlayerReference()) {
+                      <mat-option value="lastScannedPlayer">Zuletzt gescannter Spieler</mat-option>
+                    }
+                    <mat-option value="allTeams">Alle Teams</mat-option>
+                    <mat-option value="variable">Variable</mat-option>
+                  </mat-select>
+                </label>
+                @if (configString('target') === 'variable') {
+                  <label class="grid gap-2 text-sm">
+                    Variable
+                    <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="targetVariableValue()" (ngModelChange)="patchConfig('targetVariable', $event)">
+                      @for (variable of availableTargetVariables(); track variable) {
+                        <mat-option [value]="variable">{{ variable }}</mat-option>
+                      }
+                    </mat-select>
+                  </label>
+                }
+              }
+              @if (showsMinMax(node.type)) {
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="grid gap-2 text-sm">
+                    Min
+                    <input type="number" [ngModel]="configNumber('min')" (ngModelChange)="patchConfigNumber('min', $event)" />
+                  </label>
+                  <label class="grid gap-2 text-sm">
+                    Max
+                    <input type="number" [ngModel]="configNumber('max')" (ngModelChange)="patchConfigNumber('max', $event)" />
+                  </label>
+                </div>
+              }
+              @if (showsExpression(node.type)) {
+                <nfc-builder-variable-input
+                  label="Bedingung"
+                  [value]="toDollarSyntax(configString('expression'))"
+                  placeholder="z.B. $lastScannedPlayer.points >= 10"
+                  [suggestions]="availableVariableGroups()"
+                  [validationMode]="validationMode('condition')"
+                  (valueChange)="patchConfigExpression('expression', $event)"
+                />
+              }
+              @if (showsCalculation(node.type)) {
+                <label class="grid gap-2 text-sm">
+                  Variable
+                  <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="calculationTargetSelectValue()" (ngModelChange)="patchCalculationTargetSelection($event)">
+                    @for (variable of availableCalculationVariables(); track variable) {
+                      <mat-option [value]="variable">{{ variable }}</mat-option>
+                    }
+                    <mat-option value="custom">Neue Variable</mat-option>
+                  </mat-select>
+                </label>
+                @if (calculationTargetSelectValue() === 'custom') {
+                  <label class="grid gap-2 text-sm">
+                    Neue Variable
+                    <input [ngModel]="calculationVariableName()" (ngModelChange)="patchConfig('variableName', $event || 'result')" placeholder="z.B. lives" />
+                  </label>
+                }
+                <nfc-builder-variable-input
+                  label="Berechnung"
+                  [value]="toDollarSyntax(configString('expression'))"
+                  placeholder="z.B. $amount - 4"
+                  [suggestions]="availableVariableGroups()"
+                  [validationMode]="validationMode('numeric')"
+                  (valueChange)="patchConfigExpression('expression', $event)"
+                />
+              }
+              @if (showsLogTemplate(node.type)) {
+                <nfc-builder-variable-input
+                  label="Timeline Text"
+                  [rows]="4"
+                  [value]="toDollarSyntax(configString('template'))"
+                  [suggestions]="availableVariableGroups()"
+                  [validationMode]="validationMode('text')"
+                  (valueChange)="patchConfigExpression('template', $event)"
+                />
+              }
+              @if (showsVariableHelp(node.type) && availableVariableGroups().length) {
+                <div class="grid gap-2">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide ui-text-muted">Verfügbare Variablen</p>
+                    <div class="flex flex-wrap justify-end gap-1.5 text-[10px] ui-text-muted">
+                      <span class="variable-kind-pill kind-object">Objekt</span>
+                      <span class="variable-kind-pill kind-string">Text</span>
+                      <span class="variable-kind-pill kind-integer">Zahl</span>
+                      <span class="variable-kind-pill kind-boolean">Boolean</span>
+                    </div>
+                  </div>
+                  <div class="grid gap-2">
+                    @for (group of availableVariableGroups(); track group.title) {
+                      <div class="grid gap-1.5 rounded-md border ui-border-subtle ui-surface-muted p-2">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide ui-text-muted">{{ group.title }}</p>
+                        <div class="flex flex-wrap gap-1.5">
+                          @for (variable of group.items; track variable.token) {
+                            <code class="variable-code" [class]="'variable-code kind-' + variable.kind">{{ variable.token }}</code>
+                            @for (property of variable.properties ?? []; track property.token) {
+                              <code class="variable-code" [class]="'variable-code kind-' + property.kind">{{ property.token }}</code>
+                            }
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (!hasTypedConfig(node.type)) {
+                <p class="rounded-md ui-surface-muted px-3 py-2 text-xs ui-text-muted">
+                  Dieser Node braucht aktuell keine speziellen Eigenschaften. Details kannst du bei Bedarf unter JSON bearbeiten.
+                </p>
+              }
+            </div>
+          </section>
+
+          <ng-content />
+        </div>
+      } @else {
+        <p class="mt-4 text-sm ui-text-muted">Wähle einen Node auf der Canvas aus.</p>
+      }
+    </aside>

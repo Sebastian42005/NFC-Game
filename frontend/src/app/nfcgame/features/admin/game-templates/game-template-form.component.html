@@ -1,0 +1,404 @@
+<nfc-admin-shell [title]="title()">
+  <form class="grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start" (ngSubmit)="save()">
+    <div class="grid gap-5">
+      <section class="grid gap-5 rounded-lg border ui-border-subtle ui-surface-muted p-5">
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="grid gap-2 text-sm">
+            Name
+            <input name="name" [ngModel]="form().name" (ngModelChange)="patch({ name: $event })" required />
+          </label>
+          <div class="grid gap-2 text-sm">
+            Bild
+            <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md border ui-border-subtle ui-surface-muted px-3 py-2 hover:ui-surface-hover">
+              <span class="truncate ui-text-soft">{{ selectedImage()?.file?.name || 'Bild auswählen' }}</span>
+              <span class="shrink-0 rounded ui-bg-accent px-2 py-1 text-xs font-semibold ui-text-on-accent">Datei</span>
+              <input class="sr-only" type="file" accept="image/*" (change)="onImageSelected($event)" />
+            </label>
+          </div>
+        </div>
+
+        @if (previewImageUrl()) {
+          <div class="overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted">
+            <img class="h-44 w-full object-cover" [src]="previewImageUrl()" alt="Spielbild Vorschau" />
+          </div>
+        }
+
+        <label class="grid gap-2 text-sm">
+          Beschreibung
+          <textarea name="description" rows="4" [ngModel]="form().description" (ngModelChange)="patch({ description: $event })"></textarea>
+        </label>
+      </section>
+
+      @if (!id) {
+        <section class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+          <p class="mb-3 text-sm font-semibold">Editor Template</p>
+          <div class="grid gap-3 md:grid-cols-2">
+            @for (template of templates; track template.id) {
+              <button
+                type="button"
+                class="rounded-lg border p-4 text-left"
+                [class]="selectedTemplateId() === template.id ? 'ui-border-accent ui-bg-accent-soft' : 'ui-border-subtle ui-surface-muted'"
+                (click)="selectTemplate(template.id)"
+              >
+                <strong class="block text-sm">{{ template.title }}</strong>
+                <span class="mt-1 block text-xs ui-text-muted">{{ template.description }}</span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm font-semibold">Globale Punkte</p>
+          <span class="rounded-md border ui-border-warm ui-bg-warm-soft px-2 py-1 text-xs font-semibold ui-text-warm">Leaderboard</span>
+        </div>
+        <div class="grid gap-4 md:grid-cols-3">
+          <label class="grid gap-2 text-sm">
+            Gewinner
+            <input
+              type="number"
+              min="0"
+              name="globalWinnerPoints"
+              [ngModel]="form().globalWinnerPoints"
+              (ngModelChange)="patch({ globalWinnerPoints: $event === '' ? 0 : +$event })"
+            />
+          </label>
+          <label class="grid gap-2 text-sm">
+            Platz 2
+            <input
+              type="number"
+              min="0"
+              name="globalSecondPlacePoints"
+              [ngModel]="form().globalSecondPlacePoints"
+              (ngModelChange)="patch({ globalSecondPlacePoints: $event === '' ? null : +$event })"
+              placeholder="optional"
+            />
+          </label>
+          <label class="grid gap-2 text-sm">
+            Platz 3
+            <input
+              type="number"
+              min="0"
+              name="globalThirdPlacePoints"
+              [ngModel]="form().globalThirdPlacePoints"
+              (ngModelChange)="patch({ globalThirdPlacePoints: $event === '' ? null : +$event })"
+              placeholder="optional"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm font-semibold">Dashboard-Anzeige</p>
+          <span class="rounded-md border ui-border-accent ui-bg-accent-soft px-2 py-1 text-xs font-semibold ui-text-accent">TV-Vorschau</span>
+        </div>
+
+        <div class="grid gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide ui-text-muted">Hauptanzeige</p>
+          <div class="grid gap-4 md:grid-cols-4">
+            <label class="grid gap-2 text-sm">
+              <span class="flex items-center gap-1.5">
+                Wert-Variable
+                <mat-icon class="text-xs ui-text-muted" matTooltip="Technischer Name des Team-Werts, den die Hauptanzeige liest. Muss zu einem Wert passen, den dein Flow setzt, z.B. points, money oder lives.">info</mat-icon>
+              </span>
+              <input
+                name="dashboardMetricSource"
+                [ngModel]="form().dashboardMetricSource"
+                (ngModelChange)="patch({ dashboardMetricSource: $event })"
+                placeholder="z.B. points, money, lives"
+              />
+            </label>
+            <label class="grid gap-2 text-sm">
+              Titel
+              <input
+                name="dashboardMetricLabel"
+                [ngModel]="form().dashboardMetricLabel"
+                (ngModelChange)="patch({ dashboardMetricLabel: $event })"
+                placeholder="z.B. Strafpunkte"
+              />
+            </label>
+            <label class="grid gap-2 text-sm">
+              Einheit
+              <input
+                name="dashboardMetricSuffix"
+                [ngModel]="form().dashboardMetricSuffix"
+                (ngModelChange)="patch({ dashboardMetricSuffix: $event })"
+                placeholder="z.B. €, $, Punkte"
+              />
+            </label>
+            <label class="grid gap-2 text-sm">
+              <span class="flex items-center gap-1.5">
+                Max-Variable
+                <mat-icon class="text-xs ui-text-muted" matTooltip="Optionaler Ziel- oder Maximalwert für Fortschrittsanzeigen. Kann eine Zahl oder der Name einer Flow-Variable sein.">info</mat-icon>
+              </span>
+              <input
+                name="dashboardMetricMaxSource"
+                [ngModel]="form().dashboardMetricMaxSource"
+                (ngModelChange)="patch({ dashboardMetricMaxSource: $event })"
+                placeholder="z.B. pointLimit, roundLimit, 100"
+              />
+            </label>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="grid gap-2 text-sm">
+              Anzeige-Art
+              <mat-select
+                class="nfc-select"
+                panelClass="nfc-select-panel"
+                name="dashboardMetricDisplayType"
+                [ngModel]="form().dashboardMetricDisplayType"
+                (ngModelChange)="patch({ dashboardMetricDisplayType: $event })"
+              >
+                @for (option of metricDisplayOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </label>
+            <label class="grid gap-2 text-sm">
+              Sortierung
+              <mat-select
+                class="nfc-select"
+                panelClass="nfc-select-panel"
+                name="dashboardMetricSortDirection"
+                [ngModel]="form().dashboardMetricSortDirection"
+                (ngModelChange)="patch({ dashboardMetricSortDirection: $event })"
+              >
+                <mat-option value="DESC">Höchster Wert oben</mat-option>
+                <mat-option value="ASC">Niedrigster Wert oben</mat-option>
+              </mat-select>
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide ui-text-muted">Zusatzanzeige</p>
+          <div class="grid gap-4 md:grid-cols-3">
+            <label class="grid gap-2 text-sm">
+              <span class="flex items-center gap-1.5">
+                Status-Variable
+                <mat-icon class="text-xs ui-text-muted" matTooltip="Optionaler Flow-Wert fuer die kleine Statusanzeige, z.B. currentRound, lives oder phase. Leer lassen blendet die Zusatzanzeige aus.">info</mat-icon>
+              </span>
+              <input
+                name="dashboardStatusSource"
+                [ngModel]="form().dashboardStatusSource"
+                (ngModelChange)="patch({ dashboardStatusSource: $event })"
+                placeholder="z.B. currentRound, lives"
+              />
+            </label>
+            <label class="grid gap-2 text-sm">
+              Titel
+              <input
+                name="dashboardStatusLabel"
+                [ngModel]="form().dashboardStatusLabel"
+                (ngModelChange)="patch({ dashboardStatusLabel: $event })"
+                placeholder="z.B. Runde"
+              />
+            </label>
+            <label class="grid gap-2 text-sm">
+              Einheit
+              <input
+                name="dashboardStatusSuffix"
+                [ngModel]="form().dashboardStatusSuffix"
+                (ngModelChange)="patch({ dashboardStatusSuffix: $event })"
+                placeholder="z.B. Leben"
+              />
+            </label>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="grid gap-2 text-sm">
+              <span class="flex items-center gap-1.5">
+                Max-Variable
+                <mat-icon class="text-xs ui-text-muted" matTooltip="Optionaler Maximalwert fuer Ring oder Balken, z.B. roundLimit, maxRounds oder 10. Leer lassen zeigt nur den aktuellen Wert.">info</mat-icon>
+              </span>
+              <input
+                name="dashboardStatusMaxSource"
+                [ngModel]="form().dashboardStatusMaxSource"
+                (ngModelChange)="patch({ dashboardStatusMaxSource: $event })"
+                placeholder="z.B. roundLimit, maxRounds"
+              />
+            </label>
+            <label class="grid gap-2 text-sm">
+              Anzeige-Art
+              <mat-select
+                class="nfc-select"
+                panelClass="nfc-select-panel"
+                name="dashboardStatusDisplayType"
+                [ngModel]="form().dashboardStatusDisplayType"
+                (ngModelChange)="patch({ dashboardStatusDisplayType: $event })"
+              >
+                @for (option of statusDisplayOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5 md:grid-cols-2">
+        <label class="grid gap-2 text-sm">
+          NFC Spielkarte
+          <mat-select class="nfc-select" panelClass="nfc-select-panel" name="cardUidSelect" [ngModel]="form().cardUid" (ngModelChange)="patch({ cardUid: $event })">
+            <mat-option value="">Keine Karte zuweisen</mat-option>
+            @for (card of unassignedCards(); track card.id) {
+              <mat-option [value]="card.cardUid">{{ card.cardUid }} · {{ card.cardType }}</mat-option>
+            }
+          </mat-select>
+        </label>
+        <label class="grid gap-2 text-sm">
+          Oder Card UID direkt
+          <input name="cardUid" [ngModel]="form().cardUid" (ngModelChange)="patch({ cardUid: $event })" />
+        </label>
+      </section>
+
+      <label class="flex items-center gap-3 text-sm">
+        <input type="checkbox" name="active" [ngModel]="form().active" (ngModelChange)="patch({ active: $event })" />
+        Aktiv
+      </label>
+
+      @if (error()) {
+        <p class="rounded-md border ui-border-accent ui-bg-accent-soft p-3 ui-text-accent">{{ error() }}</p>
+      }
+
+      <button class="w-fit rounded-md ui-bg-accent px-5 py-3 font-semibold ui-text-on-accent" type="submit">
+        {{ id ? 'Speichern und Builder öffnen' : 'Builder öffnen' }}
+      </button>
+    </div>
+
+    <aside class="sticky top-4 rounded-lg border ui-border-subtle ui-bg-nfc p-4 shadow-2xl">
+      <div class="mb-4">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] ui-text-accent">TV Preview</p>
+        <h2 class="mt-1 truncate text-2xl font-black ui-text-strong">{{ form().name || 'Live Arena' }}</h2>
+      </div>
+
+      @if (previewHasTopStatus() && statusDisplayType() === 'RING') {
+        <div class="flex items-center justify-between gap-4 py-2">
+          <div>
+            @if (previewStatusLabel()) {
+              <p class="text-sm ui-text-soft">{{ previewStatusLabel() }}</p>
+            }
+            @if (previewHasStatusMax()) {
+              <p class="mt-1 text-xs uppercase tracking-[0.16em] ui-text-muted">Limit aktiv</p>
+            }
+          </div>
+          <div class="grid h-24 w-24 place-items-center rounded-full p-2 ui-shadow-accent" [style.background]="previewRingStyle()">
+            <div class="grid h-full w-full place-items-center rounded-full ui-bg-nfc text-center">
+              <strong class="text-xl font-black ui-text-strong">{{ previewStatusValue() }}</strong>
+            </div>
+          </div>
+        </div>
+      } @else if (previewHasTopStatus() && statusDisplayType() === 'PILL') {
+        <div class="flex items-center justify-between gap-4 py-2">
+          @if (previewStatusLabel()) {
+            <p class="text-sm ui-text-soft">{{ previewStatusLabel() }}</p>
+          }
+          <div class="rounded-full border px-4 py-2 text-sm font-black uppercase tracking-wide"
+            [class.ui-border-accent]="previewHasStatusMax()"
+            [class.ui-bg-accent-soft]="previewHasStatusMax()"
+            [class.ui-text-accent]="previewHasStatusMax()"
+            [class.ui-border-warm]="!previewHasStatusMax()"
+            [class.ui-bg-warm-soft]="!previewHasStatusMax()"
+            [class.ui-text-warm]="!previewHasStatusMax()"
+          >
+            {{ previewStatusValue() }}
+          </div>
+        </div>
+      } @else if (previewHasTopStatus()) {
+        <div class="grid gap-3 rounded-lg border ui-border-subtle ui-surface-muted p-4">
+          <div class="flex items-center justify-between gap-3 text-sm ui-text-soft">
+            @if (previewStatusLabel()) {
+              <span>{{ previewStatusLabel() }}</span>
+            }
+            <strong class="text-2xl ui-text-strong">{{ previewStatusValue() }}</strong>
+          </div>
+          @if (statusDisplayType() === 'PROGRESS_BAR') {
+            <div class="h-3 overflow-hidden rounded-full ui-surface">
+              <div class="h-full rounded-full ui-gradient-accent-warm" [style.width.%]="previewStatusProgress()"></div>
+            </div>
+          }
+          <p class="text-xs uppercase tracking-[0.16em] ui-text-muted">2 Spieler · 2 Teams</p>
+        </div>
+      }
+
+      <section class="mt-4 rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            @if (previewMetricLabel()) {
+              <p class="text-xs font-bold uppercase tracking-[0.18em] ui-text-accent">{{ previewMetricLabel() }}</p>
+            }
+            <h3 class="mt-1 text-xl font-black ui-text-strong">Wer liegt vorne?</h3>
+          </div>
+          <div class="rounded-lg border ui-border-warm ui-bg-warm-soft px-3 py-2 text-right">
+            <p class="text-[10px] font-black uppercase tracking-[0.16em] ui-text-warm">Führung</p>
+            <p class="max-w-24 truncate text-sm font-black ui-text-strong">{{ previewTeams()[0].name }}</p>
+          </div>
+        </div>
+
+        @if (metricDisplayType() === 'RACE_BAR') {
+          <div class="mt-5 grid gap-4">
+            @for (team of previewTeams(); track team.name) {
+              <div class="grid gap-2">
+                <div class="flex items-end justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-black uppercase ui-text-muted">#{{ team.rank }}</p>
+                    <h4 class="text-2xl font-black ui-text-strong">{{ team.name }}</h4>
+                  </div>
+                  <strong class="text-xl font-black ui-text-warm">{{ team.displayValue }}</strong>
+                </div>
+                <div class="h-4 overflow-hidden rounded-full ui-surface">
+                  <div class="h-full rounded-full ui-gradient-accent" [style.width.%]="team.percent"></div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (metricDisplayType() === 'COMPACT_LIST') {
+          <div class="mt-5 grid gap-2">
+            @for (team of previewTeams(); track team.name) {
+              <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border ui-border-subtle ui-surface-muted px-3 py-2">
+                <span class="text-xs font-black ui-text-muted">#{{ team.rank }}</span>
+                <span class="truncate font-black ui-text-strong">{{ team.name }}</span>
+                <strong class="ui-text-warm">{{ team.displayValue }}</strong>
+              </div>
+            }
+          </div>
+        } @else if (metricDisplayType() === 'PODIUM') {
+          <div class="mt-5 grid grid-cols-3 items-end gap-2">
+            @for (team of previewTeams(); track team.name) {
+              <div
+                class="grid justify-items-center rounded-lg border ui-border-subtle ui-surface-muted p-2 text-center"
+                [class.pt-10]="team.rank === 1"
+                [class.pt-6]="team.rank === 2"
+                [class.pt-4]="team.rank === 3"
+              >
+                <span class="text-xs font-black ui-text-muted">#{{ team.rank }}</span>
+                <strong class="mt-1 truncate ui-text-strong">{{ team.name }}</strong>
+                <span class="text-sm font-black ui-text-warm">{{ team.displayValue }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="mt-5 grid grid-cols-2 gap-2">
+            @for (team of previewTeams(); track team.name) {
+              <div
+                class="relative isolate overflow-hidden rounded-lg border p-3"
+                [class.ui-border-rank-first]="team.rank === 1"
+                [class.ui-bg-warm-soft]="team.rank === 1"
+                [class.ui-border-subtle]="team.rank !== 1"
+                [class.ui-surface-muted]="team.rank !== 1"
+              >
+                <span class="absolute -right-2 -top-4 -z-10 text-6xl font-black leading-none ui-text-watermark">{{ team.rank }}</span>
+                <div class="flex items-start justify-between gap-2">
+                  <span class="rounded-full border ui-border-subtle ui-surface-muted px-2 py-1 text-[10px] font-black ui-text-soft">#{{ team.rank }}</span>
+                  <strong class="text-lg font-black leading-none ui-text-warm">{{ team.displayValue }}</strong>
+                </div>
+                <h4 class="mt-4 truncate text-lg font-black ui-text-strong">{{ team.name }}</h4>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    </aside>
+  </form>
+</nfc-admin-shell>

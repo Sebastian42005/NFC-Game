@@ -1,0 +1,34 @@
+<aside class="flex h-full min-h-0 flex-col overflow-hidden border-r ui-border-subtle ui-surface-muted p-4">
+  <h3 class="shrink-0 text-sm font-semibold ui-text-soft">Bausteine</h3>
+  <div class="mt-4 grid min-h-0 flex-1 gap-5 overflow-y-auto pr-1 pb-6">
+    @for (category of categories; track category) {
+      <section>
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide ui-text-muted">{{ labels[category] }}</p>
+        <div class="grid gap-2">
+          @for (node of nodesFor(category); track node.type) {
+            <button
+              type="button"
+              class="group relative cursor-grab rounded-md border px-3 py-2 text-left text-sm transition hover:-translate-y-0.5 hover:ui-surface-hover active:cursor-grabbing"
+              (click)="addNode.emit(node)"
+              draggable="true"
+              (dragstart)="startDrag($event, node)"
+              [style.background]="categoryTint(node.category)"
+              [style.border-color]="categoryBorder(node.category)"
+              [title]="node.description || node.label"
+            >
+              <span
+                class="absolute bottom-2 right-2 h-2 w-2 rounded-full opacity-80"
+                [style.background]="categoryAccent(node.category)"
+                aria-hidden="true"
+              ></span>
+              <span class="block pr-4 font-semibold">{{ node.label }}</span>
+              @if (node.description) {
+                <span class="mt-1 block text-[11px] leading-snug ui-text-muted opacity-80">{{ shortDescription(node.description) }}</span>
+              }
+            </button>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</aside>

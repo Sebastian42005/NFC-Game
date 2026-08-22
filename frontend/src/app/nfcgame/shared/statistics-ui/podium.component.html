@@ -1,0 +1,127 @@
+<section class="relative isolate overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted p-5 shadow-xl">
+  <div class="absolute inset-x-0 top-0 h-1 ui-gradient-accent-warm"></div>
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[0.18em] ui-text-warm">Podium</p>
+      <h2 class="mt-1 text-xl font-black ui-text-strong">{{ headline() }}</h2>
+    </div>
+    <p class="text-sm font-medium ui-text-muted">{{ subline() }}</p>
+  </div>
+
+  <div
+    class="grid gap-4 md:items-end"
+    [ngClass]="ordered().length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'"
+  >
+  @for (entry of ordered(); track entry.playerId) {
+    <a
+      [routerLink]="['/nfc-game/players', entry.playerId]"
+      class="group grid min-w-0 justify-items-center rounded-lg text-center outline-none transition duration-200 hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:ring-2 focus-visible:ui-ring-accent focus-visible:ring-offset-4 focus-visible:ui-ring-offset"
+      [attr.aria-label]="(entry.playerName || entry.playerId) + ' Profil öffnen, ' + rankLabel(entry) + ' mit ' + entry.totalPoints + ' Punkten'"
+    >
+      <div class="grid min-h-44 content-end justify-items-center px-2">
+        <div
+          class="relative grid place-items-center overflow-hidden rounded-full border ui-surface-muted font-black ui-shadow-elevated transition duration-200 group-hover:scale-[1.03] group-focus-visible:scale-[1.03]"
+          [class.h-28]="entry.rank === 1"
+          [class.w-28]="entry.rank === 1"
+          [class.text-4xl]="entry.rank === 1"
+          [class.h-24]="entry.rank !== 1"
+          [class.w-24]="entry.rank !== 1"
+          [class.text-3xl]="entry.rank !== 1"
+          [class.ui-border-rank-first]="entry.rank === 1"
+          [class.ui-border-rank-second]="entry.rank === 2"
+          [class.ui-border-rank-third]="entry.rank === 3"
+        >
+          @if (entry.imageUrl) {
+            <img class="h-full w-full object-cover" [src]="entry.imageUrl" [alt]="entry.playerName || 'Spieler'" />
+          } @else {
+            {{ initials(entry.playerName || entry.playerId) }}
+          }
+        </div>
+        <h2 class="mt-4 w-full truncate text-2xl font-black ui-text-strong">{{ entry.playerName || entry.playerId }}</h2>
+        <dl class="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm">
+          <div
+            class="rounded-full border px-3 py-1"
+            [class.ui-border-warm]="entry.rank === 1"
+            [class.ui-bg-warm-soft]="entry.rank === 1"
+            [class.ui-text-warm]="entry.rank === 1"
+            [class.ui-border-subtle]="entry.rank !== 1"
+            [class.ui-surface-muted]="entry.rank !== 1"
+            [class.ui-text-strong]="entry.rank !== 1"
+          >
+            <dt class="sr-only">Rang</dt>
+            <dd class="font-bold">{{ rankLabel(entry) }}</dd>
+          </div>
+          <div class="rounded-full border ui-border-subtle ui-surface-muted px-3 py-1">
+            <dt class="sr-only">Siege</dt>
+            <dd class="font-bold ui-text-strong">{{ entry.gamesWon }} Siege</dd>
+          </div>
+          <div class="rounded-full border ui-border-subtle ui-surface-muted px-3 py-1">
+            <dt class="sr-only">Siegquote</dt>
+            <dd class="font-bold ui-text-accent">{{ entry.winRate | percent:'1.0-0' }} Siegquote</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div
+        class="relative mt-4 grid w-full content-center justify-items-center gap-3 overflow-hidden rounded-t-lg border border-b-0 px-5 py-5 ui-shadow-inset-soft transition duration-200 group-hover:ui-shadow-stage-hover"
+        [class.h-52]="entry.rank === 1"
+        [class.h-44]="entry.rank === 2"
+        [class.h-36]="entry.rank === 3"
+        [class.ui-border-warm]="entry.rank === 1"
+        [class.ui-border-rank-second]="entry.rank === 2"
+        [class.ui-border-rank-third]="entry.rank === 3"
+        [class.ui-bg-rank-first]="entry.rank === 1"
+        [class.ui-bg-rank-second]="entry.rank === 2"
+        [class.ui-bg-rank-third]="entry.rank === 3"
+      >
+        <span
+          class="absolute left-4 top-4 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em]"
+          [class.ui-border-rank-first]="entry.rank === 1"
+          [class.ui-text-warm]="entry.rank === 1"
+          [class.ui-bg-warm-soft]="entry.rank === 1"
+          [class.ui-border-rank-second]="entry.rank === 2"
+          [class.ui-text-strong]="entry.rank === 2"
+          [class.ui-bg-rank-second]="entry.rank === 2"
+          [class.ui-border-rank-third]="entry.rank === 3"
+          [class.ui-text-rank-third]="entry.rank === 3"
+          [class.ui-bg-rank-third]="entry.rank === 3"
+        >
+          {{ rankLabel(entry) }}
+        </span>
+        @if (entry.isTied) {
+          <span class="absolute right-4 top-4 rounded-full border ui-border-subtle ui-surface-muted px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ui-text-strong">
+            Gleichstand
+          </span>
+        }
+        <span
+          class="pointer-events-none absolute bottom-0 right-3 font-black leading-none ui-text-watermark"
+          [class.text-9xl]="entry.rank === 1"
+          [class.text-8xl]="entry.rank !== 1"
+        >
+          {{ entry.rank }}
+        </span>
+        <strong
+          class="relative z-10 mt-6 rounded-lg border ui-surface-muted px-5 py-3 text-5xl font-black leading-none ui-shadow-elevated"
+          [class.text-6xl]="entry.rank === 1"
+          [class.ui-border-warm]="entry.rank === 1"
+          [class.ui-text-warm]="entry.rank === 1"
+          [class.ui-border-rank-second]="entry.rank === 2"
+          [class.ui-text-strong]="entry.rank === 2"
+          [class.ui-border-rank-third]="entry.rank === 3"
+          [class.ui-text-rank-third]="entry.rank === 3"
+        >
+          {{ entry.totalPoints }}
+        </strong>
+        <span class="relative z-10 text-xs font-black uppercase tracking-[0.16em] ui-text-soft">Punkte</span>
+        @if (entry.tieReason) {
+          <span class="relative z-10 max-w-44 text-xs leading-5 ui-text-soft">{{ entry.tieReason }}</span>
+        }
+      </div>
+    </a>
+  } @empty {
+    <div class="rounded-lg border border-dashed ui-border-subtle p-6 text-center ui-text-muted md:col-span-3">
+      Podium wartet auf die ersten Ergebnisse.
+    </div>
+  }
+  </div>
+</section>

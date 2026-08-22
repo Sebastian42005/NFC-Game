@@ -1,0 +1,910 @@
+// Global app styles
+@use './tokens/colors';
+
+.image-primary-color {
+  filter: invert(38%) sepia(55%) saturate(5972%) hue-rotate(314deg) brightness(103%) contrast(101%);
+}
+
+/* status badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .25rem .5rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-muted);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.status-badge .dot {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: 0 .25rem;
+  color: var(--text);
+}
+
+/* Button variants (reuses .btn base in your global CSS) */
+.btn.primary {
+  border-color: var(--color-primary-border);
+  background: linear-gradient(180deg, var(--color-primary-bright), var(--primary));
+  color: var(--bg);
+  box-shadow: 0 10px 30px var(--color-primary-shadow-sm);
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn.success {
+  background: linear-gradient(180deg, var(--color-success-soft-border), var(--color-success-soft-bg));
+  color: var(--success-contrast);
+  border-color: var(--color-success-soft-border);
+}
+
+.btn.danger {
+  background: linear-gradient(180deg, var(--color-danger-soft-bg), var(--color-danger-alert-bg));
+  color: var(--text);
+  border-color: var(--color-danger-soft-border);
+}
+
+.btn.info {
+  background: linear-gradient(180deg, var(--color-info-soft-border), var(--color-info-soft-bg));
+  color: var(--text);
+  border-color: var(--color-info-soft-border);
+}
+
+/* Input overrides (uses your root tokens) */
+input:not([type='checkbox']):not([type='radio']):not([type='file']) {
+  border: 1px solid var(--border);
+  background: var(--color-white-02);
+  color: var(--text);
+}
+
+input:focus {
+  box-shadow: 0 0 0 6px var(--color-primary-soft-bg);
+  border-color: var(--primary);
+}
+
+.pink-backdrop {
+  background: var(--color-surface-overlay) !important;
+  backdrop-filter: blur(6px);
+}
+
+.ui-dialog-panel,
+.pink-dialog {
+  background: linear-gradient(180deg, var(--panel-strong), var(--panel)) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+:root {
+  /* Radius */
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --radius-sm: 12px;
+
+  /* Shadows */
+  --shadow-lg: 0 18px 60px var(--color-shadow-elevated);
+  --shadow-md: 0 10px 30px var(--color-primary-shadow-md);
+
+  /* Shared semantic colors for components */
+  --danger-alert-border: var(--color-danger-alert-border);
+  --danger-alert-bg: var(--color-danger-alert-bg);
+  --danger-focus-border: var(--color-danger-focus-border);
+  --danger-focus-bg: var(--color-danger-focus);
+  --danger-icon: var(--color-danger-icon);
+  --success-preview: var(--color-success-preview);
+  --danger-preview: var(--color-danger-preview);
+  --success-active-border: var(--color-success-active-border);
+  --success-active-bg: var(--color-success-active-bg);
+  --danger-active-border: var(--color-danger-active-border);
+  --danger-active-bg: var(--color-danger-active-bg);
+  --pill-border: var(--color-white-14);
+  --pill-bg: var(--color-white-06);
+  --skeleton-bg: var(--color-white-10);
+  --skeleton-shimmer: var(--color-white-12);
+  --interactive-hover-bg: var(--color-white-10);
+  --icon-muted: var(--color-icon-muted);
+  --delete-hover-bg: var(--color-white-03);
+
+  /* shape */
+  --snackbar-container-shape: var(--radius-md);
+
+  /* status colors (reuse existing tokens where available) */
+  --snackbar-success: var(--success);
+  --snackbar-success-contrast: var(--success-contrast);
+
+  --snackbar-error: var(--danger);
+  --snackbar-error-contrast: var(--color-danger-contrast);
+  --ui-body-medium: 16px/1.4 "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+}
+
+@font-face {
+  font-family: 'Arial Narrow 7';
+  src:
+    url('/fonts/arial_narrow_7/arial_narrow_7.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.nfc-game-font,
+.nfc-dialog-panel,
+.nfc-variable-menu-panel,
+.nfc-select-panel,
+.nfc-builder-autocomplete-overlay {
+  --color-primary: var(--nfc-brand-primary);
+  --color-primary-soft: var(--nfc-brand-primary-soft);
+  --color-primary-bright: var(--nfc-brand-secondary);
+  --color-primary-glow: var(--nfc-accent-glow);
+  --color-primary-border: var(--nfc-accent-border);
+  --color-primary-soft-bg: var(--nfc-accent-surface-soft);
+  --color-primary-shadow-sm: var(--nfc-light-aura-primary);
+  --color-primary-shadow-md: var(--nfc-accent-glow);
+  --color-primary-shadow-lg: var(--nfc-dark-accent-glow);
+  --color-primary-focus: var(--nfc-light-aura-primary);
+  --color-primary-line: var(--nfc-light-grid-line);
+  --primary: var(--color-primary);
+  --primary-soft: var(--color-primary-soft);
+  --primary-glow: var(--color-primary-glow);
+  font-family: 'Arial Narrow 7', 'Arial Narrow', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-synthesis: none;
+}
+
+.nfc-game-shell {
+  --text: var(--nfc-text);
+  --muted: var(--nfc-muted);
+  --border: var(--nfc-border);
+  --panel: var(--nfc-surface);
+  --panel-strong: var(--nfc-surface-strong);
+  background:
+    radial-gradient(circle at 16% -8%, var(--nfc-aura-primary), transparent 30rem),
+    radial-gradient(circle at 86% 2%, var(--nfc-aura-warm), transparent 28rem),
+    linear-gradient(135deg, var(--nfc-bg), var(--nfc-bg-alt));
+  color: var(--nfc-text);
+  color-scheme: dark;
+}
+
+.nfc-game-shell.nfc-theme-light {
+  color-scheme: light;
+}
+
+.nfc-game-shell :where(table) {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.nfc-game-shell :where(thead) {
+  background: var(--nfc-surface-muted) !important;
+}
+
+.nfc-game-shell :where(tr) {
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.nfc-game-shell :where(tbody tr:hover) {
+  background: var(--nfc-surface-hover) !important;
+}
+
+.nfc-theme-light .nfc-arena-stage {
+  background:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--nfc-accent) 16%, transparent), transparent 28rem),
+    radial-gradient(circle at 76% 16%, color-mix(in srgb, var(--nfc-warm) 14%, transparent), transparent 30rem),
+    linear-gradient(135deg, var(--nfc-light-bg), var(--nfc-light-bg-alt) 52%, var(--nfc-light-panel-alt)) !important;
+}
+
+.nfc-theme-light .nfc-arena-wash {
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--nfc-accent) 16%, transparent), transparent 34%),
+    radial-gradient(circle at 72% 26%, color-mix(in srgb, var(--nfc-warm) 13%, transparent), transparent 32%),
+    linear-gradient(90deg, color-mix(in srgb, var(--nfc-light-bg) 96%, transparent), color-mix(in srgb, var(--nfc-light-panel-alt) 88%, transparent), color-mix(in srgb, var(--nfc-light-bg-alt) 76%, var(--color-canvas-white))) !important;
+}
+
+.nfc-theme-light .victory-stage {
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--nfc-warm) 20%, transparent), transparent 30%),
+    radial-gradient(circle at 16% 72%, color-mix(in srgb, var(--nfc-accent) 14%, transparent), transparent 34%),
+    radial-gradient(circle at 86% 64%, color-mix(in srgb, var(--nfc-accent-2) 12%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--nfc-light-bg) 94%, transparent), color-mix(in srgb, var(--nfc-light-bg-alt) 92%, transparent)) !important;
+}
+
+.nfc-theme-light .victory-stage::before {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--nfc-warm) 44%, transparent), color-mix(in srgb, var(--nfc-accent) 38%, transparent), transparent) !important;
+}
+
+.nfc-theme-light .victory-title {
+  color: var(--nfc-text) !important;
+  text-shadow:
+    0 10px 34px var(--nfc-shadow),
+    0 0 28px color-mix(in srgb, var(--nfc-warm) 20%, transparent) !important;
+}
+
+.nfc-theme-light .nfc-victory-status {
+  border-color: color-mix(in srgb, var(--nfc-warm) 24%, transparent) !important;
+  background: color-mix(in srgb, var(--color-canvas-white) 82%, transparent) !important;
+  color: var(--nfc-warm-soft) !important;
+  box-shadow: 0 16px 42px var(--nfc-shadow) !important;
+}
+
+.nfc-theme-light .nfc-victory-card,
+.nfc-theme-light .nfc-victory-stat {
+  border-color: var(--nfc-border) !important;
+  background: color-mix(in srgb, var(--color-canvas-white) 90%, transparent) !important;
+  box-shadow: 0 20px 54px var(--nfc-shadow) !important;
+}
+
+.nfc-theme-light .nfc-victory-card-main {
+  border-color: color-mix(in srgb, var(--nfc-warm) 28%, transparent) !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--nfc-warm-soft) 24%, var(--color-canvas-white)), color-mix(in srgb, var(--color-canvas-white) 92%, transparent)) !important;
+  box-shadow: 0 22px 62px color-mix(in srgb, var(--nfc-warm) 16%, transparent) !important;
+}
+
+.nfc-theme-light .nfc-victory-avatar-frame {
+  border-color: color-mix(in srgb, var(--nfc-warm) 28%, transparent) !important;
+  background: color-mix(in srgb, var(--nfc-warm-soft) 24%, var(--color-canvas-white)) !important;
+  color: var(--nfc-text) !important;
+  box-shadow: 0 16px 44px color-mix(in srgb, var(--nfc-warm) 16%, transparent) !important;
+}
+
+.nfc-game-shell mat-select.nfc-select {
+  border-color: var(--nfc-border) !important;
+  background: var(--nfc-surface-strong) !important;
+  color: var(--nfc-text) !important;
+}
+
+.nfc-game-shell mat-select.nfc-select .mat-mdc-select-value,
+.nfc-game-shell mat-select.nfc-select .mat-mdc-select-min-line {
+  color: var(--nfc-text) !important;
+}
+
+.nfc-game-font :where(*),
+.nfc-dialog-panel :where(*),
+.nfc-variable-menu-panel :where(*),
+.nfc-select-panel :where(*),
+.nfc-builder-autocomplete-overlay :where(*) {
+  font-family: inherit;
+  font-synthesis: none;
+}
+
+:is(
+  .nfc-game-font,
+  .nfc-dialog-panel,
+  .nfc-variable-menu-panel,
+  .nfc-select-panel,
+  .nfc-builder-autocomplete-overlay
+) {
+  font-size: 17px;
+}
+
+:is(
+  .nfc-game-font,
+  .nfc-dialog-panel,
+  .nfc-variable-menu-panel,
+  .nfc-select-panel,
+  .nfc-builder-autocomplete-overlay
+) :where([class~='text-[10px]']) {
+  font-size: 12px;
+}
+
+:is(
+  .nfc-game-font,
+  .nfc-dialog-panel,
+  .nfc-variable-menu-panel,
+  .nfc-select-panel,
+  .nfc-builder-autocomplete-overlay
+) :where([class~='text-[11px]']) {
+  font-size: 12.5px;
+}
+
+:is(
+  .nfc-game-font,
+  .nfc-dialog-panel,
+  .nfc-variable-menu-panel,
+  .nfc-select-panel,
+  .nfc-builder-autocomplete-overlay
+) :where(.text-xs) {
+  font-size: 13px;
+}
+
+:is(
+  .nfc-game-font,
+  .nfc-dialog-panel,
+  .nfc-variable-menu-panel,
+  .nfc-select-panel,
+  .nfc-builder-autocomplete-overlay
+) :where(.text-sm) {
+  font-size: 15.5px;
+}
+
+:is(
+  .nfc-game-font,
+  .nfc-dialog-panel,
+  .nfc-variable-menu-panel,
+  .nfc-select-panel,
+  .nfc-builder-autocomplete-overlay
+) :where(.text-base) {
+  font-size: 17px;
+}
+
+.primary-text {
+  color: var(--primary);
+}
+
+/* ===============================
+   Semantic color utilities
+   Tailwind bleibt fuer Layout/Spacing; Farben kommen aus Tokens.
+================================ */
+.ui-text-strong { color: var(--nfc-text) !important; }
+.ui-text-soft { color: var(--color-neutral-soft) !important; }
+.ui-text-muted { color: var(--nfc-muted) !important; }
+.ui-text-disabled { color: var(--color-white-45) !important; }
+.ui-text-on-accent { color: var(--nfc-accent-contrast) !important; }
+.ui-text-accent { color: var(--nfc-accent-strong) !important; }
+.ui-text-warm { color: var(--nfc-warm-soft) !important; }
+.ui-text-success { color: var(--color-success-preview) !important; }
+.ui-text-danger { color: var(--color-danger-preview) !important; }
+.ui-text-info { color: var(--color-info) !important; }
+.ui-text-watermark { color: var(--color-white-04) !important; }
+.ui-text-rank-third { color: color-mix(in srgb, var(--nfc-flow-score-accent) 82%, var(--nfc-text)) !important; }
+.ui-fill-soft { fill: var(--color-neutral-soft) !important; }
+
+.ui-border-subtle { border-color: var(--nfc-border) !important; }
+.ui-border-accent { border-color: var(--nfc-accent-border) !important; }
+.ui-border-warm { border-color: color-mix(in srgb, var(--nfc-warm) 36%, transparent) !important; }
+.ui-border-success { border-color: var(--color-success-pill-border) !important; }
+.ui-border-danger { border-color: var(--color-danger-soft-border) !important; }
+.ui-border-info { border-color: color-mix(in srgb, var(--color-info) 48%, transparent) !important; }
+.ui-border-rank-first { border-color: color-mix(in srgb, var(--nfc-warm-soft) 50%, transparent) !important; }
+.ui-border-rank-second { border-color: color-mix(in srgb, var(--color-neutral-soft) 38%, transparent) !important; }
+.ui-border-rank-third { border-color: color-mix(in srgb, var(--nfc-flow-score-accent) 38%, transparent) !important; }
+
+.ui-bg-solid { background: var(--color-canvas-white) !important; }
+.ui-surface { background: var(--nfc-surface) !important; }
+.ui-surface-muted { background: var(--nfc-surface-muted) !important; }
+.ui-bg-accent { background: linear-gradient(135deg, var(--nfc-accent), var(--nfc-accent-2)) !important; }
+.ui-bg-accent-soft { background: color-mix(in srgb, var(--nfc-accent) 13%, transparent) !important; }
+.ui-bg-warm { background: var(--nfc-warm-soft) !important; }
+.ui-bg-warm-soft { background: color-mix(in srgb, var(--nfc-warm) 12%, transparent) !important; }
+.ui-bg-success { background: color-mix(in srgb, var(--color-success) 78%, var(--nfc-bg)) !important; }
+.ui-bg-success-soft { background: var(--color-success-soft-bg) !important; }
+.ui-bg-danger { background: color-mix(in srgb, var(--color-danger) 78%, var(--nfc-bg)) !important; }
+.ui-bg-danger-soft { background: var(--color-danger-alert-bg) !important; }
+.ui-bg-info { background: color-mix(in srgb, var(--color-info) 72%, var(--nfc-bg)) !important; }
+.ui-bg-info-soft { background: var(--color-info-soft-bg) !important; }
+.ui-bg-rating-active { background: var(--nfc-warm) !important; }
+.ui-bg-rank-first { background: color-mix(in srgb, var(--nfc-warm-soft) 15%, transparent) !important; }
+.ui-bg-rank-second { background: color-mix(in srgb, var(--color-neutral-soft) 10%, transparent) !important; }
+.ui-bg-rank-third { background: color-mix(in srgb, var(--nfc-flow-score-accent) 10%, transparent) !important; }
+.ui-bg-nfc { background: var(--nfc-panel-solid) !important; }
+.ui-bg-nfc-muted { background: color-mix(in srgb, var(--nfc-bg) 90%, var(--nfc-accent)) !important; }
+.nfc-arena-wash-bg {
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--nfc-accent) 24%, transparent), transparent 34%),
+    linear-gradient(90deg, color-mix(in srgb, var(--nfc-bg) 95%, transparent), color-mix(in srgb, var(--nfc-bg) 76%, transparent), color-mix(in srgb, var(--nfc-bg) 92%, transparent)) !important;
+}
+.nfc-standby-aura-bg {
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--nfc-accent) 20%, transparent), transparent 38%) !important;
+}
+
+.ui-shadow-elevated { box-shadow: 0 18px 48px var(--color-shadow-elevated) !important; }
+.ui-shadow-inset-soft { box-shadow: inset 0 1px 0 var(--color-white-10) !important; }
+.group:hover .group-hover\:ui-shadow-stage-hover {
+  box-shadow: 0 22px 55px var(--color-shadow-elevated), inset 0 1px 0 var(--color-white-14) !important;
+}
+.ui-shadow-accent { box-shadow: 0 0 34px color-mix(in srgb, var(--nfc-accent) 22%, transparent) !important; }
+.ui-shadow-warm { box-shadow: 0 0 34px color-mix(in srgb, var(--nfc-warm) 22%, transparent) !important; }
+.ui-shadow-burst { box-shadow: 0 28px 90px var(--nfc-shadow), 0 0 70px color-mix(in srgb, var(--nfc-accent) 38%, transparent) !important; }
+
+.nfc-score-burst {
+  border-color: var(--nfc-accent-border) !important;
+  background:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--nfc-accent) 26%, transparent), transparent 38%),
+    linear-gradient(135deg, var(--nfc-surface-strong), var(--nfc-bg-alt)) !important;
+}
+
+.winner-burst {
+  animation: winner-pop 2800ms ease-out both;
+}
+
+.score-burst-panel {
+  background:
+    radial-gradient(circle at 18% 16%, var(--nfc-dashboard-score-aura), transparent 38%),
+    linear-gradient(135deg, var(--nfc-dashboard-score-bg-start), var(--nfc-dashboard-score-bg-end));
+}
+
+@keyframes winner-pop {
+  0% { opacity: 0; transform: translateY(16px) scale(0.94); filter: blur(8px); }
+  12% { opacity: 1; transform: translateY(0) scale(1.02); filter: blur(0); }
+  78% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-12px) scale(0.98); }
+}
+
+.score-glow {
+  box-shadow: 0 0 45px var(--nfc-dashboard-score-glow), inset 0 0 0 1px var(--nfc-dashboard-score-ring);
+}
+
+.team-card-winner {
+  animation: team-pulse 1600ms ease-out both;
+}
+
+@keyframes team-pulse {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-6px); box-shadow: 0 18px 60px var(--nfc-dashboard-team-pulse); }
+}
+
+.victory-stage {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  padding: clamp(1rem, 2vh, 3rem) clamp(1rem, 2.6vw, 3rem) !important;
+  background:
+    radial-gradient(circle at 50% 12%, var(--nfc-dashboard-victory-warm-aura), transparent 32%),
+    radial-gradient(circle at 16% 72%, var(--nfc-dashboard-victory-accent-aura), transparent 34%),
+    radial-gradient(circle at 86% 64%, var(--nfc-dashboard-victory-cyan-aura), transparent 34%),
+    linear-gradient(135deg, var(--nfc-dashboard-victory-bg-start), var(--nfc-dashboard-victory-bg-end));
+}
+
+.victory-stage::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 10% 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--nfc-dashboard-victory-scan-warm), var(--nfc-dashboard-victory-scan-accent), transparent);
+  filter: blur(1px);
+  animation: victory-scan 3600ms ease-in-out infinite;
+}
+
+.victory-content {
+  animation: victory-rise 900ms cubic-bezier(.2,.8,.2,1) both;
+  align-content: center;
+  max-height: 100%;
+}
+
+.victory-title {
+  margin-top: clamp(0.75rem, 1.6vh, 1.5rem) !important;
+  font-size: clamp(3rem, min(8.5vw, 12vh), 7.5rem) !important;
+  line-height: 0.9;
+  text-shadow:
+    0 0 22px var(--nfc-dashboard-title-warm-glow),
+    0 0 54px var(--nfc-dashboard-title-accent-glow);
+}
+
+.ui-gradient-accent { background-image: linear-gradient(90deg, var(--nfc-accent), var(--color-info)) !important; }
+.ui-gradient-accent-warm { background-image: linear-gradient(90deg, var(--nfc-accent), var(--color-info), var(--nfc-warm-soft)) !important; }
+.ui-gradient-warm-accent { background-image: linear-gradient(90deg, var(--nfc-warm-soft), var(--nfc-accent-strong)) !important; }
+.ui-gradient-surface { background-image: linear-gradient(180deg, var(--nfc-surface-strong), var(--nfc-surface-muted)) !important; }
+.ui-gradient-success-soft { background-image: linear-gradient(180deg, var(--color-success-soft-bg), color-mix(in srgb, var(--color-success) 4%, transparent)) !important; }
+.ui-gradient-danger-soft { background-image: linear-gradient(180deg, var(--color-danger-alert-bg), color-mix(in srgb, var(--color-danger) 2%, transparent)) !important; }
+
+.hover\:ui-bg-accent-soft:hover { background: color-mix(in srgb, var(--nfc-accent) 13%, transparent) !important; }
+.hover\:ui-bg-success:hover { background: color-mix(in srgb, var(--color-success) 88%, var(--nfc-bg)) !important; }
+.hover\:ui-bg-danger:hover { background: color-mix(in srgb, var(--color-danger) 88%, var(--nfc-bg)) !important; }
+.hover\:ui-bg-info:hover { background: color-mix(in srgb, var(--color-info) 82%, var(--nfc-bg)) !important; }
+.hover\:ui-surface-hover:hover { background: var(--nfc-surface-hover) !important; }
+.focus-visible\:ui-surface-hover:focus-visible { background: var(--nfc-surface-hover) !important; }
+.hover\:ui-border-accent:hover { border-color: var(--nfc-accent-border) !important; }
+.focus\:ui-border-accent:focus { border-color: var(--nfc-accent-border) !important; }
+.focus-visible\:ui-ring-accent:focus-visible { --tw-ring-color: color-mix(in srgb, var(--nfc-accent-strong) 70%, transparent) !important; }
+.focus-visible\:ui-ring-offset:focus-visible { --tw-ring-offset-color: var(--nfc-accent-contrast) !important; }
+.disabled\:ui-text-disabled:disabled { color: var(--color-white-45) !important; }
+
+/* ===============================
+   Base Reset
+================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  color: var(--text);
+  background: var(--bg);
+
+  /* Material uses this for native form controls, etc. */
+  color-scheme: dark;
+}
+
+/* ===============================
+   Cards
+================================ */
+.card {
+  background: linear-gradient(180deg, var(--panel-strong), var(--panel));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg),
+  0 0 0 1px var(--color-primary-line);
+  padding: 16px;
+  backdrop-filter: blur(10px);
+}
+
+/* ===============================
+   Buttons
+================================ */
+.btn {
+  border: 1px solid var(--border);
+  background: var(--color-white-06);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1;
+  cursor: pointer;
+  transition: 160ms ease;
+  user-select: none;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: var(--color-white-12);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.primary {
+    border-color: var(--color-primary-border);
+    background: linear-gradient(180deg, var(--color-primary-bright), var(--color-primary));
+    box-shadow: 0 10px 30px var(--color-primary-glow),
+    inset 0 1px 0 var(--color-white-25);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 14px 40px var(--color-primary-shadow-lg),
+      inset 0 1px 0 var(--color-white-30);
+    }
+  }
+
+  &.ghost {
+    background: transparent;
+  }
+
+  &.small {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+.btn mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1em;
+  height: 1.1em;
+  font-size: 1.1em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ===============================
+   Forms
+================================ */
+input:not([type='checkbox']):not([type='radio']):not([type='file']) {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--color-surface-glass);
+  color: var(--text);
+  outline: none;
+  transition: 160ms ease;
+
+  &::placeholder {
+    color: var(--color-white-45);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 6px var(--color-primary-focus);
+  }
+
+  &.invalid {
+    border-color: var(--danger-focus-border);
+    box-shadow: 0 0 0 6px var(--danger-focus-bg);
+  }
+}
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--color-surface-glass);
+  color: var(--text);
+  outline: none;
+
+  &::placeholder {
+    color: var(--color-white-45);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 6px var(--color-primary-focus);
+  }
+
+  &.invalid {
+    border-color: var(--danger-focus-border);
+    box-shadow: 0 0 0 6px var(--danger-focus-bg);
+  }
+}
+
+select {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--color-surface-glass);
+  color: var(--text);
+  outline: none;
+  transition: 160ms ease;
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 6px var(--color-primary-focus);
+  }
+}
+
+mat-select.nfc-select {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--color-surface-glass);
+  color: var(--text);
+  transition: 160ms ease;
+}
+
+mat-select.nfc-select:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 6px var(--color-primary-focus);
+}
+
+mat-select.nfc-select .mat-mdc-select-trigger {
+  min-height: 44px;
+  align-items: center;
+}
+
+mat-select.nfc-select .mat-mdc-select-placeholder {
+  color: var(--color-white-45);
+}
+
+mat-select.nfc-select .mat-mdc-select-arrow {
+  color: var(--nfc-accent-strong);
+}
+
+.cdk-overlay-pane.nfc-variable-menu-panel,
+.nfc-variable-menu-panel.mat-mdc-menu-panel,
+.nfc-variable-menu-panel .mat-mdc-menu-panel {
+  border-color: var(--nfc-border) !important;
+  background: var(--nfc-panel-solid) !important;
+  box-shadow: 0 18px 50px var(--nfc-shadow) !important;
+  backdrop-filter: none !important;
+}
+
+.cdk-overlay-pane.nfc-variable-menu-panel .mat-mdc-menu-panel,
+.nfc-variable-menu-panel .mat-mdc-menu-content {
+  background: var(--nfc-panel-solid) !important;
+}
+
+.nfc-variable-menu-panel .mat-mdc-menu-item {
+  color: var(--nfc-text) !important;
+}
+
+.nfc-variable-menu-panel .mat-mdc-menu-submenu-icon {
+  color: var(--nfc-text) !important;
+}
+
+.nfc-variable-menu-panel .nfc-variable-menu-item:hover,
+.nfc-variable-menu-panel .nfc-variable-menu-item.nfc-menu-hovered {
+  border-color: var(--nfc-accent-border) !important;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--nfc-accent) 18%, transparent), color-mix(in srgb, var(--nfc-accent) 8%, transparent)) !important;
+  box-shadow: inset 3px 0 0 var(--nfc-accent-strong), 0 8px 22px var(--nfc-shadow-soft) !important;
+}
+
+.cdk-overlay-pane .nfc-select-panel.mat-mdc-select-panel {
+  border: 1px solid var(--nfc-border, var(--border));
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--nfc-panel-solid-alt), var(--nfc-panel-solid)) !important;
+  box-shadow: 0 18px 46px var(--nfc-shadow, var(--color-shadow-elevated));
+  backdrop-filter: none !important;
+  padding: 6px;
+  margin-left: -12px;
+  width: calc(100% + 24px);
+}
+
+.cdk-overlay-pane .nfc-select-panel .mat-mdc-option {
+  border-radius: 10px;
+  background: transparent !important;
+  color: var(--nfc-text, var(--text));
+}
+
+.cdk-overlay-pane .nfc-select-panel .mat-mdc-option:hover {
+  background: color-mix(in srgb, var(--nfc-accent) 16%, var(--nfc-panel-solid)) !important;
+}
+
+.cdk-overlay-pane .nfc-select-panel .mat-mdc-option.mdc-list-item--selected {
+  background: color-mix(in srgb, var(--nfc-accent) 22%, var(--nfc-panel-solid)) !important;
+  color: var(--nfc-accent-strong, var(--primary-soft));
+}
+
+label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ===============================
+   Utilities
+================================ */
+.muted {
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 760px) {
+  .grid.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .grid.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ===============================
+   Material background alignment
+   (optional but helps keep consistency)
+================================ */
+/* Keep body background consistent with app theme */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font: var(--ui-body-medium);
+}
+
+/* =================================
+   UI Shims (replaces Angular Material)
+================================= */
+.mat-icon {
+  display: inline-flex;
+  width: 1.2em;
+  height: 1.2em;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-style: normal;
+  user-select: none;
+}
+
+mat-form-field {
+  display: block;
+}
+
+.ui-form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.ui-form-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ui-icon-button {
+  border: 1px solid var(--border);
+  background: var(--pill-bg);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ui-icon-button mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+mat-progress-bar {
+  display: block;
+  width: min(380px, 60vw);
+}
+
+.ui-progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--color-white-06);
+  overflow: hidden;
+}
+
+.ui-progress-value {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-soft), var(--primary));
+  border-radius: inherit;
+  transition: width 220ms ease;
+}
+
+mat-checkbox {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ui-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.ui-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--color-surface-overlay);
+  backdrop-filter: blur(6px);
+}
+
+.ui-dialog-panel {
+  width: min(720px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.nfc-dialog-backdrop {
+  background: var(--color-surface-overlay) !important;
+  backdrop-filter: blur(8px);
+}
+
+.nfc-dialog-panel {
+  width: min(460px, 94vw) !important;
+  max-width: 94vw !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.ui-snackbar-container {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1400;
+  width: min(520px, calc(100vw - 32px));
+}

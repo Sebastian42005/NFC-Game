@@ -1,0 +1,21 @@
+<section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+  <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">{{ eyebrow() }}</p>
+  <h2 class="mt-1 text-xl font-black ui-text-strong">{{ title() }}</h2>
+  <div class="mt-5 grid gap-4">
+    @for (item of data(); track item.label) {
+      <div class="grid gap-2">
+        <div class="flex items-center justify-between text-sm">
+          <span class="font-semibold ui-text-strong">{{ item.label }}</span>
+          <span class="ui-text-muted">{{ winRate(item) | percent:'1.0-0' }}</span>
+        </div>
+        <div class="flex h-4 overflow-hidden rounded-full ui-surface">
+          <span class="ui-bg-accent" [style.width.%]="segment(item.won, item)"></span>
+          <span class="ui-bg-accent" [style.width.%]="segment(item.lost, item)"></span>
+          <span class="ui-surface-muted" [style.width.%]="segment(item.draw ?? 0, item)"></span>
+        </div>
+      </div>
+    } @empty {
+      <div class="rounded-md border border-dashed ui-border-subtle p-6 text-sm ui-text-muted">Noch keine Vergleichsdaten.</div>
+    }
+  </div>
+</section>

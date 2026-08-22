@@ -1,0 +1,22 @@
+<section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+  <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">{{ eyebrow() }}</p>
+  <h2 class="mt-1 text-xl font-black ui-text-strong">{{ title() }}</h2>
+  @if (data().length >= 3) {
+    <svg class="mt-5 h-72 w-full" viewBox="0 0 240 240" role="img">
+      <polygon class="radar-grid radar-grid-outer" points="120,28 207,76 207,174 120,222 33,174 33,76" />
+      <polygon class="radar-grid" points="120,62 177,90 177,158 120,190 63,158 63,90" />
+      <polygon class="radar-value" [attr.points]="polygon()">
+        <title>Profilform: Werte sind relativ zur bisherigen Arena-Leistung skaliert.</title>
+      </polygon>
+      @for (axis of axes(); track axis.label) {
+        <line class="radar-axis" x1="120" y1="120" [attr.x2]="axis.x" [attr.y2]="axis.y" />
+        <text [attr.x]="axis.labelX" [attr.y]="axis.labelY" text-anchor="middle" class="ui-fill-soft text-[10px] font-bold uppercase tracking-wide">{{ axis.label }}</text>
+        <circle class="radar-point" [attr.cx]="axis.valueX" [attr.cy]="axis.valueY" r="3">
+          <title>{{ axis.label }} · {{ axis.value | percent:'1.0-0' }}</title>
+        </circle>
+      }
+    </svg>
+  } @else {
+    <div class="mt-5 rounded-md border border-dashed ui-border-subtle p-6 text-sm ui-text-muted">Radar braucht noch mehr Datenpunkte.</div>
+  }
+</section>

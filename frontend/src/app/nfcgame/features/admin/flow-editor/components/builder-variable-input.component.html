@@ -1,0 +1,101 @@
+<label class="builder-variable-field grid gap-2 text-sm">
+  <span>{{ label() }}</span>
+  <div class="relative" cdkOverlayOrigin #autocompleteOrigin="cdkOverlayOrigin">
+    @if (multiline()) {
+      <textarea
+        #field
+        [rows]="rows()"
+        [ngModel]="value()"
+        (ngModelChange)="onValueChange($event)"
+        (keydown)="onKeydown($event)"
+        (keyup)="onKeyup($event, field)"
+        (blur)="onBlur()"
+        [placeholder]="placeholder()"
+      ></textarea>
+    } @else {
+      <input
+        #field
+        [ngModel]="value()"
+        (ngModelChange)="onValueChange($event)"
+        (keydown)="onKeydown($event)"
+        (keyup)="onKeyup($event, field)"
+        (blur)="onBlur()"
+        [placeholder]="placeholder()"
+      />
+    }
+  </div>
+
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="autocompleteOrigin"
+    [cdkConnectedOverlayOpen]="menuOpen && filteredGroups.length > 0"
+    [cdkConnectedOverlayPositions]="overlayPositions"
+    [cdkConnectedOverlayWidth]="overlayWidth"
+    [cdkConnectedOverlayPanelClass]="'nfc-builder-autocomplete-overlay'"
+  >
+    <div
+      class="relative w-full min-w-full"
+      [attr.data-autocomplete-owner]="autocompleteOwner"
+      (mousedown)="$event.preventDefault()"
+    >
+      <div
+        class="nfc-autocomplete-panel relative z-[2147483647] max-h-[280px] min-w-[220px] overflow-auto rounded-[14px] border p-2 shadow-2xl"
+      >
+        @for (group of filteredGroups; track group.title) {
+          <div class="nfc-menu-group-label">{{ group.title }}</div>
+          @for (item of group.items; track item.token) {
+            <button
+              type="button"
+              class="nfc-autocomplete-option group flex min-h-[38px] w-full items-center justify-between gap-3 rounded-[10px] border border-transparent bg-transparent px-2.5 py-[7px] text-left transition duration-150 hover:translate-x-0.5 hover:shadow-[inset_3px_0_0_var(--nfc-autocomplete-highlight),0_8px_22px_var(--nfc-autocomplete-shadow)]"
+              [ngClass]="isActiveMain(item) ? 'active translate-x-0.5 shadow-[inset_3px_0_0_var(--nfc-autocomplete-highlight),0_8px_22px_var(--nfc-autocomplete-shadow)]' : ''"
+              [class.has-submenu]="hasSubmenu(item)"
+              [attr.data-autocomplete-token]="item.token"
+              (mouseenter)="activateMain(item)"
+              (click)="handleMainClick(item)"
+            >
+              <span
+                class="nfc-menu-token group-hover:brightness-[1.15]"
+                [ngClass]="['kind-text-' + item.kind, isActiveMain(item) ? 'brightness-[1.15]' : '']"
+              >
+                {{ displayToken(item.token) }}
+              </span>
+              @if (hasSubmenu(item)) {
+                <span class="nfc-autocomplete-chevron text-lg leading-none">{{ submenuSide === 'left' ? '‹' : '›' }}</span>
+              }
+            </button>
+          }
+        }
+      </div>
+
+      @if (openSubmenuItem(); as submenu) {
+        <div
+          class="nfc-autocomplete-panel absolute top-0 z-[2147483647] max-h-[280px] w-60 min-w-[220px] overflow-auto rounded-[14px] border p-2 shadow-2xl"
+          [ngClass]="submenuSide === 'left' ? 'right-[calc(100%+8px)] left-auto' : 'left-[calc(100%+8px)]'"
+        >
+          <div class="nfc-autocomplete-submenu-title px-2.5 pb-[5px] pt-[7px] text-xs font-bold">{{ displayToken(submenu.token) }}</div>
+          @for (property of submenu.properties ?? []; track property.token) {
+            <button
+              type="button"
+              class="nfc-autocomplete-option group flex min-h-[38px] w-full items-center justify-between gap-3 rounded-[10px] border border-transparent bg-transparent px-2.5 py-[7px] text-left transition duration-150 hover:translate-x-0.5 hover:shadow-[inset_3px_0_0_var(--nfc-autocomplete-highlight),0_8px_22px_var(--nfc-autocomplete-shadow)]"
+              [ngClass]="isActiveProperty(property) ? 'active translate-x-0.5 shadow-[inset_3px_0_0_var(--nfc-autocomplete-highlight),0_8px_22px_var(--nfc-autocomplete-shadow)]' : ''"
+              [attr.data-autocomplete-token]="property.token"
+              (mouseenter)="activateProperty(property)"
+              (click)="insertSuggestion(property)"
+            >
+              <span
+                class="nfc-menu-token group-hover:brightness-[1.15]"
+                [ngClass]="['kind-text-' + property.kind, isActiveProperty(property) ? 'brightness-[1.15]' : '']"
+              >
+                {{ displayProperty(property.token) }}
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </ng-template>
+
+  @if (validation.status !== 'idle') {
+    <p class="validation-message -mt-0.5 mb-0 text-xs" [ngClass]="validation.status">{{ validation.message }}</p>
+  }
+</label>

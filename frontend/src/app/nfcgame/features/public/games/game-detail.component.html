@@ -1,0 +1,76 @@
+<nfc-public-shell [title]="title()" eyebrow="Spielstatistik">
+  @if (game(); as game) {
+    <section class="grid gap-5 lg:grid-cols-[1fr_360px]">
+      <article class="relative overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted p-5">
+        @if (game.imageUrl) {
+          <img [src]="game.imageUrl" [alt]="game.name" class="mb-5 h-80 w-full rounded-md object-cover" />
+        }
+        <p class="max-w-3xl text-lg ui-text-soft">{{ game.description || 'Keine Beschreibung.' }}</p>
+        <dl class="mt-5 grid gap-3 sm:grid-cols-2">
+          <div class="rounded-md ui-surface-muted p-3"><dt class="text-sm ui-text-muted">Siegregel</dt><dd>{{ game.winRuleType }}</dd></div>
+          <div class="rounded-md ui-surface-muted p-3"><dt class="text-sm ui-text-muted">Teamgröße</dt><dd>{{ game.minTeamSize }}-{{ game.maxTeamSize }}</dd></div>
+          <div class="rounded-md ui-surface-muted p-3"><dt class="text-sm ui-text-muted">Economy</dt><dd>{{ game.economyEnabled ? 'Aktiv' : 'Aus' }}</dd></div>
+          <div class="rounded-md ui-surface-muted p-3"><dt class="text-sm ui-text-muted">Startkapital</dt><dd>{{ game.startCapital }}</dd></div>
+        </dl>
+      </article>
+
+      <aside class="grid content-start gap-3">
+        <nfc-kpi-card label="Gespielt" [value]="stats()?.sessionsPlayed || gameSessions().length" subLabel="Sessions insgesamt" accent="teal" />
+        <nfc-kpi-card label="Dauer" [value]="avgDuration()" subLabel="Durchschnitt" accent="sky" />
+        <nfc-kpi-card label="Teamgröße" [value]="avgTeamSize()" subLabel="Durchschnitt" accent="amber" />
+        <nfc-kpi-card label="Punkte" [value]="avgPoints()" subLabel="Durchschnitt pro Session" accent="cyan" />
+        @if (stats()?.lastSessionId) {
+          <a class="rounded-lg border ui-border-subtle ui-surface-muted px-4 py-3 text-sm font-semibold ui-text-strong hover:ui-surface-hover" [routerLink]="['/nfc-game/sessions', stats()?.lastSessionId]">Letzte Session öffnen</a>
+        }
+      </aside>
+    </section>
+
+    <section class="mt-7">
+      <nfc-podium [entries]="topPlayers()" />
+    </section>
+
+    <section class="mt-7 grid gap-4 md:grid-cols-3">
+      @for (award of awards(); track award.label) {
+        <nfc-award-badge [label]="award.label" [owner]="award.owner" [value]="award.value" [tone]="award.tone" />
+      } @empty {
+        <div class="rounded-lg border border-dashed ui-border-subtle p-5 text-sm ui-text-muted md:col-span-3">Noch keine Highlights für dieses Spiel.</div>
+      }
+    </section>
+
+    <section class="mt-7 grid gap-5 xl:grid-cols-2">
+      <nfc-bar-chart title="Siege pro Spieler" eyebrow="Spielranking" [data]="winsChart()" />
+      <nfc-line-chart title="Nutzung über Zeit" eyebrow="Beliebtheit" [data]="usageChart()" emptyText="Noch zu wenig Sessions für einen Nutzungstrend." />
+    </section>
+
+    <section class="mt-7 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+      <article class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+        <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Aktivste Spieler</p>
+        <h2 class="mt-1 text-xl font-black ui-text-strong">Wer dieses Spiel oft wählt</h2>
+        <div class="mt-5 grid gap-3">
+          @for (entry of activePlayers(); track entry.playerId) {
+            <a [routerLink]="['/nfc-game/players', entry.playerId]" class="flex items-center gap-3 rounded-lg border ui-border-subtle ui-surface-muted p-3 hover:ui-surface-hover">
+              <span class="grid h-11 w-11 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface text-xs font-black">
+                @if (entry.imageUrl) {
+                  <img class="h-full w-full object-cover" [src]="entry.imageUrl" [alt]="entry.playerName || 'Spieler'" />
+                } @else {
+                  {{ initials(entry) }}
+                }
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-black ui-text-strong">{{ entry.playerName || entry.playerId }}</p>
+                <p class="text-sm ui-text-muted">{{ entry.gamesPlayed }} Spiele · {{ entry.winRate | percent:'1.0-0' }} Siegquote</p>
+              </div>
+              <strong class="text-xl ui-text-warm">{{ entry.gamesWon }}</strong>
+            </a>
+          } @empty {
+            <p class="rounded-md border border-dashed ui-border-subtle p-4 text-sm ui-text-muted">Noch keine Spielerwertung.</p>
+          }
+        </div>
+      </article>
+
+      <nfc-stat-timeline title="Letzte Sessions dieses Spiels" eyebrow="Session-Log" [items]="timeline()" emptyText="Dieses Spiel wartet noch auf Sessions." />
+    </section>
+  } @else {
+    <p class="rounded-lg border ui-border-subtle p-4 ui-text-muted">Spiel wurde nicht gefunden.</p>
+  }
+</nfc-public-shell>

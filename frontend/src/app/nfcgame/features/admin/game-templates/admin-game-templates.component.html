@@ -1,0 +1,113 @@
+<nfc-admin-shell title="Meine Spielbibliothek">
+  <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div class="flex min-w-0 flex-1 flex-col gap-3 md:flex-row md:items-center">
+      <div class="inline-flex w-fit rounded-lg border ui-border-subtle ui-surface-muted p-1">
+        <button
+          class="rounded-md px-4 py-2 text-sm w-50"
+          [class]="activeTab() === 'library' ? 'ui-bg-accent font-semibold ui-text-on-accent' : 'ui-text-soft'"
+          type="button"
+          (click)="activeTab.set('library')"
+        >
+          Meine Spielbibliothek
+        </button>
+        <button
+          class="rounded-md px-4 py-2 text-sm w-50"
+          [class]="activeTab() === 'public' ? 'ui-bg-accent font-semibold ui-text-on-accent' : 'ui-text-soft'"
+          type="button"
+          (click)="activeTab.set('public')"
+        >
+          Öffentliche Spiele
+        </button>
+      </div>
+      <input
+        class="max-w-120 flex-1"
+        placeholder="Spiele suchen"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+      />
+    </div>
+    @if (activeTab() === 'library') {
+      <a routerLink="/nfc-game/admin/game-templates/new" class="rounded-md ui-bg-accent px-4 py-2 text-sm font-semibold ui-text-on-accent">
+        Neues Spiel
+      </a>
+    }
+  </div>
+
+  @if (activeTab() === 'library') {
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (game of filteredGames(); track game.id) {
+        <article class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-semibold">{{ game.name }}</h2>
+              <p class="mt-1 text-xs ui-text-muted">Version {{ game.version }} · {{ game.cardUid || 'keine Karte' }}</p>
+            </div>
+            <span
+              class="rounded-md px-2 py-1 text-xs"
+              [class]="game.publicationStatus === 'PUBLISHED' ? 'ui-bg-success-soft ui-text-success' : 'ui-surface ui-text-soft'"
+            >
+              @switch (game.publicationStatus) {
+                @case ('PUBLISHED') { Veröffentlicht }
+                @case ('PENDING_REVIEW') { Beantragt }
+                @case ('REJECTED') { Abgelehnt }
+                @case ('BLOCKED') { Blockiert }
+                @default { Privat }
+              }
+            </span>
+          </div>
+          @if (game.publicationStatus === 'BLOCKED' && game.blockedReason) {
+            <p class="mt-3 rounded-md border ui-border-accent ui-bg-accent-soft p-2 text-xs ui-text-accent">{{ game.blockedReason }}</p>
+          }
+          <p class="mt-3 line-clamp-3 text-sm ui-text-muted">{{ game.description || 'Keine Beschreibung.' }}</p>
+          <div class="mt-5 flex flex-wrap gap-2">
+            <a class="rounded-md border ui-border-subtle px-3 py-2 text-sm" [routerLink]="['/nfc-game/admin/game-templates', game.id]">Basisdaten</a>
+            <a class="rounded-md ui-surface px-3 py-2 text-sm" [routerLink]="['/nfc-game/admin/game-templates', game.id, 'flow']">Builder öffnen</a>
+            <button class="rounded-md border ui-border-subtle px-3 py-2 text-sm" type="button" (click)="duplicate(game)">Duplizieren</button>
+            <button class="rounded-md border ui-border-accent px-3 py-2 text-sm ui-text-accent" type="button" (click)="deleteGame(game)">Löschen</button>
+          </div>
+        </article>
+      } @empty {
+        <p class="rounded-lg border border-dashed ui-border-subtle p-4 ui-text-muted">Deine Spielbibliothek ist noch leer.</p>
+      }
+    </section>
+  } @else {
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (game of filteredPublicGames(); track game.id) {
+        <article class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+          @if (game.imageUrl) {
+            <img [src]="game.imageUrl" [alt]="game.name" class="mb-4 h-40 w-full rounded-md object-cover" />
+          }
+          <div class="flex items-start justify-between gap-3">
+            <h2 class="text-xl font-semibold">{{ game.name }}</h2>
+            <span class="rounded-md ui-bg-success-soft px-2 py-1 text-xs ui-text-success">Öffentlich</span>
+          </div>
+          <p class="mt-2 text-sm ui-text-muted">{{ game.description || 'Keine Beschreibung.' }}</p>
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <span class="text-sm ui-text-soft">{{ ratingLabel(game) }}</span>
+            <div class="flex gap-1" aria-label="Spiel bewerten">
+              @for (rating of ratings; track rating) {
+                <button
+                  class="grid h-8 w-8 place-items-center rounded-md border ui-border-subtle text-sm"
+                  [class]="(game.myRating || 0) >= rating ? 'ui-bg-rating-active ui-text-on-accent' : 'ui-surface-muted ui-text-muted'"
+                  type="button"
+                  [attr.aria-label]="rating + ' Sterne geben'"
+                  [title]="rating + ' Sterne geben'"
+                  (click)="rateGame(game, rating)"
+                >
+                  ★
+                </button>
+              }
+            </div>
+          </div>
+          <div class="mt-5 flex flex-wrap gap-2">
+            <button class="rounded-md ui-bg-accent px-3 py-2 text-sm font-semibold ui-text-on-accent" type="button" (click)="addToLibrary(game)">
+              Zur Bibliothek hinzufügen
+            </button>
+          </div>
+        </article>
+      } @empty {
+        <p class="rounded-lg border border-dashed ui-border-subtle p-4 ui-text-muted">Es gibt noch keine öffentlichen Spiele.</p>
+      }
+    </section>
+  }
+</nfc-admin-shell>

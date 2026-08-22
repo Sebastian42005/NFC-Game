@@ -1,0 +1,119 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.nfc-product-stage {
+  background:
+    linear-gradient(90deg, rgba(0, 184, 255, 0.08), transparent 34%, transparent 62%, rgba(251, 191, 36, 0.08)),
+    linear-gradient(180deg, #050606, #11120f 52%, #040505);
+}
+
+.nfc-product-stage-wash {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.58), transparent 24%, transparent 70%, rgba(0, 0, 0, 0.48)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 36%, rgba(0, 0, 0, 0.44));
+}
+
+.nfc-product-kicker,
+.nfc-product-progress {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(248, 250, 252, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.nfc-product-kicker {
+  gap: 0.7rem;
+  padding: 0.78rem 0.95rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.nfc-product-kicker span {
+  width: 0.55rem;
+  height: 0.55rem;
+  background: var(--nfc-accent-strong);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--nfc-accent-strong) 70%, transparent);
+}
+
+.nfc-product-progress {
+  gap: 0.45rem;
+  padding: 0.72rem 0.85rem;
+}
+
+.nfc-product-progress span {
+  width: 2.2rem;
+  height: 0.18rem;
+  background: rgba(255, 255, 255, 0.18);
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.nfc-product-progress span.is-active {
+  background: linear-gradient(90deg, var(--nfc-accent-strong), var(--nfc-warm));
+  transform: scaleY(1.8);
+}
+
+.nfc-scroll-cue {
+  width: 1px;
+  height: 4.5rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nfc-scroll-cue span {
+  display: block;
+  width: 100%;
+  height: 42%;
+  background: rgba(255, 255, 255, 0.86);
+  animation: nfc-scroll-cue 1700ms ease-in-out infinite;
+}
+
+@keyframes nfc-scroll-cue {
+  0% {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+
+  38% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(250%);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .nfc-product-kicker {
+    padding: 0.68rem 0.78rem;
+    font-size: 0.64rem;
+  }
+
+  .nfc-product-progress {
+    gap: 0.32rem;
+    padding: 0.65rem 0.7rem;
+  }
+
+  .nfc-product-progress span {
+    width: 1.15rem;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nfc-product-progress span {
+    transition: none;
+  }
+
+  .nfc-scroll-cue span {
+    animation: none;
+  }
+}

@@ -1,0 +1,65 @@
+<main
+  class="nfc-game-font nfc-game-shell min-h-screen"
+  [class.nfc-game-shell-immersive]="immersive()"
+  [class.nfc-theme-dark]="theme() === 'dark'"
+  [class.nfc-theme-light]="theme() === 'light'"
+>
+  <nav class="nfc-game-nav">
+    <div class="nfc-game-nav-inner">
+      <a routerLink="/nfc-game" class="nfc-game-brand" aria-label="NFC Game Dashboard">
+        <span class="nfc-brand-mark">N</span>
+        <span>
+          <strong>NFC Arena</strong>
+          <small>Live Game System</small>
+        </span>
+      </a>
+
+      <div class="nfc-game-actions">
+        <div class="nfc-game-links">
+          @for (link of links; track link.href) {
+            <a
+              [routerLink]="link.href"
+              routerLinkActive="is-active"
+              [routerLinkActiveOptions]="link.href === '/nfc-game' ? { exact: true } : { exact: false }"
+              class="nfc-nav-link"
+            >
+              {{ link.label }}
+            </a>
+          }
+        </div>
+
+        <div class="nfc-quick-links">
+          <a routerLink="/nfc-game/admin" class="nfc-icon-link" aria-label="NFC Game verwalten" title="Verwalten">
+            <mat-icon>tune</mat-icon>
+          </a>
+          <a routerLink="/nfc-game/tv" class="nfc-icon-link nfc-tv-link" aria-label="TV View öffnen" title="TV">
+            <mat-icon>tv</mat-icon>
+          </a>
+          <button
+            type="button"
+            class="nfc-theme-toggle"
+            [attr.aria-label]="themeLabel()"
+            [attr.title]="themeLabel()"
+            (click)="toggleTheme()"
+          >
+            <span class="nfc-theme-symbol" aria-hidden="true">{{ theme() === 'dark' ? '☼' : '◐' }}</span>
+            <span>{{ theme() === 'dark' ? 'Light' : 'Dark' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <section
+    class="nfc-game-page mx-auto max-w-7xl px-4 py-8 sm:px-6"
+    [class.nfc-game-page-immersive]="immersive()"
+  >
+    @if (!immersive()) {
+      <div class="nfc-page-heading">
+        <p>{{ eyebrow() }}</p>
+        <h1>{{ title() }}</h1>
+      </div>
+    }
+    <ng-content />
+  </section>
+</main>

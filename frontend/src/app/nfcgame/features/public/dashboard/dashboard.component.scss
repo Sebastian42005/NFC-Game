@@ -1,0 +1,677 @@
+:host {
+  display: block;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.nfc-dashboard-alert,
+.nfc-standby-panel,
+.nfc-arena-stage,
+.nfc-live-card,
+.nfc-team-card,
+.nfc-team-row,
+.nfc-timeline-item {
+  box-shadow: 0 18px 60px var(--nfc-shadow);
+}
+
+.nfc-dashboard-alert {
+  position: absolute;
+  top: clamp(0.75rem, 1.6vw, 1.4rem);
+  left: clamp(0.75rem, 1.6vw, 1.4rem);
+  z-index: 50;
+  width: min(30rem, calc(100% - 1.5rem));
+  margin: 0 !important;
+  background: color-mix(in srgb, var(--nfc-accent) 12%, var(--nfc-surface-strong)) !important;
+  backdrop-filter: blur(18px);
+}
+
+.nfc-standby-panel,
+.nfc-arena-stage {
+  border-color: var(--nfc-border) !important;
+  background:
+    radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--nfc-accent) 22%, transparent), transparent 30rem),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--nfc-warm) 18%, transparent), transparent 28rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--nfc-surface-strong) 82%, transparent), color-mix(in srgb, var(--nfc-bg-alt) 92%, transparent)) !important;
+}
+
+.nfc-standby-panel,
+.nfc-arena-stage {
+  height: 100%;
+  min-height: 0;
+  margin: 0 !important;
+  border-inline: 0 !important;
+  border-radius: 0 !important;
+}
+
+.nfc-arena-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0 48%, color-mix(in srgb, var(--nfc-accent) 14%, transparent) 49% 51%, transparent 52% 100%),
+    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--nfc-accent) 12%, transparent), transparent 26rem);
+  opacity: 0.75;
+}
+
+.nfc-arena-stage > :where(.nfc-arena-layout, .victory-stage) {
+  height: 100%;
+  min-height: 0;
+}
+
+.nfc-arena-layout {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 24vw);
+  gap: clamp(0.75rem, 1.45vw, 1.5rem);
+  padding: clamp(0.75rem, 1.6vw, 1.8rem);
+}
+
+.nfc-arena-main {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(0.7rem, 1.25vw, 1.35rem);
+}
+
+.nfc-arena-header {
+  display: flex;
+  min-height: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: clamp(0.8rem, 1.6vw, 1.4rem);
+}
+
+.nfc-arena-title-block {
+  min-width: 0;
+}
+
+.nfc-arena-title {
+  margin-top: clamp(0.55rem, 1.4vh, 1.25rem) !important;
+  font-size: clamp(2rem, min(4.7vw, 7.2vh), 4.4rem) !important;
+  line-height: 0.92;
+}
+
+.nfc-arena-phase {
+  margin-top: clamp(0.25rem, 0.8vh, 0.75rem) !important;
+  font-size: clamp(1rem, min(2vw, 2.6vh), 1.5rem) !important;
+  line-height: 1.05;
+}
+
+.nfc-arena-status-panel {
+  min-width: min(16rem, 34vw) !important;
+}
+
+.nfc-race-card,
+.nfc-timeline-card {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  padding: clamp(0.75rem, 1.4vw, 1.25rem) !important;
+}
+
+.nfc-race-list {
+  min-height: 0;
+  flex: 1 1 auto;
+  gap: clamp(0.5rem, 1.05vh, 1.15rem) !important;
+  margin-top: clamp(0.65rem, 1.35vh, 1.5rem) !important;
+}
+
+.nfc-compact-race-list,
+.nfc-bar-race-list {
+  align-content: space-evenly;
+}
+
+.nfc-team-row {
+  padding-block: clamp(0.42rem, 1vh, 0.75rem) !important;
+}
+
+.nfc-team-card {
+  padding: clamp(0.65rem, 1.2vh, 1rem) !important;
+}
+
+.nfc-race-entry {
+  min-height: 0;
+  gap: clamp(0.35rem, 0.8vh, 0.75rem) !important;
+}
+
+.nfc-race-entry > .grid {
+  min-height: 0;
+  gap: clamp(0.45rem, 1vh, 1rem) !important;
+}
+
+.nfc-player-avatar {
+  width: clamp(3rem, 8vh, 6rem) !important;
+  height: clamp(3rem, 8vh, 6rem) !important;
+  font-size: clamp(1rem, 2.6vh, 1.85rem) !important;
+}
+
+.nfc-race-team-name {
+  font-size: clamp(1.75rem, min(3.7vw, 5vh), 3.2rem) !important;
+  line-height: 0.95;
+}
+
+.nfc-race-track {
+  height: clamp(0.75rem, 1.9vh, 1.25rem) !important;
+}
+
+.nfc-dashboard-side,
+.nfc-timeline-card,
+.nfc-timeline-list {
+  min-height: 0;
+}
+
+.nfc-timeline-card {
+  height: 100%;
+}
+
+.nfc-timeline-list {
+  flex: 1 1 auto;
+  align-content: start;
+  gap: clamp(0.45rem, 0.95vh, 0.75rem) !important;
+  margin-top: clamp(0.55rem, 1vh, 1rem) !important;
+}
+
+.nfc-timeline-item {
+  padding-block: clamp(0.35rem, 0.75vh, 0.5rem) !important;
+}
+
+.nfc-top-status > .grid {
+  width: clamp(4rem, 10vh, 6rem) !important;
+  height: clamp(4rem, 10vh, 6rem) !important;
+}
+
+.nfc-status-pill {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--nfc-accent-border) !important;
+  background: color-mix(in srgb, var(--nfc-accent) 13%, var(--nfc-surface)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nfc-accent) 8%, transparent);
+}
+
+.nfc-status-pill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--nfc-accent-strong) 22%, transparent), transparent);
+  animation: hud-sweep 2800ms ease-in-out infinite;
+}
+
+.nfc-danger-action,
+.nfc-primary-link {
+  border-color: var(--nfc-accent-border) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--nfc-accent) 18%, transparent), color-mix(in srgb, var(--nfc-accent-2) 12%, transparent)) !important;
+  color: var(--nfc-text) !important;
+}
+
+.nfc-danger-action:hover,
+.nfc-primary-link:hover {
+  box-shadow: 0 14px 38px var(--nfc-accent-glow);
+}
+
+.nfc-top-status {
+  color: var(--nfc-muted);
+}
+
+.nfc-live-card,
+.nfc-team-card,
+.nfc-team-row,
+.nfc-timeline-item {
+  border-color: var(--nfc-border) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--nfc-surface-strong) 86%, transparent), color-mix(in srgb, var(--nfc-surface) 92%, transparent)) !important;
+  backdrop-filter: blur(18px);
+}
+
+.nfc-live-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.nfc-live-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--nfc-accent), var(--nfc-warm), var(--nfc-accent-2));
+  opacity: 0.9;
+}
+
+.nfc-leader-chip {
+  background: color-mix(in srgb, var(--nfc-warm) 14%, var(--nfc-surface)) !important;
+}
+
+.nfc-team-row,
+.nfc-team-card,
+.nfc-race-entry {
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.nfc-team-row:hover,
+.nfc-team-card:hover,
+.nfc-race-entry:hover {
+  transform: translateY(-2px);
+}
+
+.nfc-team-row:hover,
+.nfc-team-card:hover {
+  border-color: var(--nfc-border-strong) !important;
+  box-shadow: 0 22px 70px var(--nfc-shadow), 0 0 0 1px var(--nfc-accent-border);
+}
+
+.nfc-race-track {
+  position: relative;
+  height: 1.15rem;
+  border: 1px solid var(--nfc-border);
+  background: color-mix(in srgb, var(--nfc-bg) 38%, var(--nfc-surface)) !important;
+}
+
+.nfc-race-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0 24%, var(--color-white-12) 25% 26%, transparent 27% 100%);
+  background-size: 4rem 100%;
+  opacity: 0.45;
+}
+
+.nfc-race-fill {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--nfc-accent) 34%, transparent);
+}
+
+.nfc-race-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-canvas-white) 42%, transparent), transparent);
+  transform: translateX(-100%);
+  animation: race-shine 1800ms ease-in-out infinite;
+}
+
+.nfc-timeline-item {
+  border-radius: 0.72rem !important;
+}
+
+.nfc-podium {
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.16fr) minmax(0, 0.88fr);
+  align-items: end;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  margin-top: clamp(1rem, 2.5vh, 2.5rem) !important;
+}
+
+.nfc-podium-slot {
+  display: grid;
+  min-width: 0;
+  align-items: end;
+  justify-items: center;
+}
+
+.nfc-podium-slot.is-second {
+  order: 1;
+}
+
+.nfc-podium-slot.is-first {
+  order: 2;
+}
+
+.nfc-podium-slot.is-third {
+  order: 3;
+}
+
+.nfc-podium-players {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-bottom: -0.45rem;
+}
+
+.nfc-podium-player {
+  display: grid;
+  max-width: 7.5rem;
+  justify-items: center;
+  gap: 0.45rem;
+}
+
+.nfc-podium-player span {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--nfc-text);
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nfc-podium-avatar {
+  display: grid;
+  width: clamp(4.8rem, 7vw, 7.2rem);
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 4px solid color-mix(in srgb, var(--nfc-warm) 34%, var(--nfc-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nfc-warm) 12%, var(--nfc-panel-solid));
+  color: var(--nfc-text);
+  font-size: 1.7rem;
+  font-weight: 900;
+  box-shadow:
+    0 16px 42px color-mix(in srgb, var(--nfc-warm) 18%, transparent),
+    0 0 0 8px color-mix(in srgb, var(--nfc-panel-solid) 72%, transparent);
+}
+
+.nfc-podium-step {
+  position: relative;
+  display: grid;
+  width: 100%;
+  align-content: start;
+  justify-items: center;
+  min-height: clamp(6rem, 15vh, 9.5rem);
+  padding: clamp(1.35rem, 3vh, 2.35rem) 1rem clamp(0.7rem, 1.6vh, 1.2rem);
+  border: 1px solid color-mix(in srgb, var(--nfc-border) 78%, var(--nfc-warm) 22%);
+  border-radius: 0.9rem 0.9rem 0.45rem 0.45rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--nfc-panel-solid-alt) 92%, var(--nfc-warm) 8%), var(--nfc-panel-solid));
+  box-shadow: 0 24px 70px var(--nfc-shadow);
+}
+
+.nfc-podium-step p,
+.nfc-podium-step h3,
+.nfc-podium-step strong {
+  margin: 0;
+}
+
+.nfc-podium-step p {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--nfc-warm-soft);
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nfc-podium-step h3 {
+  color: color-mix(in srgb, var(--nfc-text) 86%, var(--nfc-warm) 14%);
+  font-size: clamp(4.4rem, 9vw, 8.5rem);
+  font-weight: 900;
+  line-height: 0.86;
+  text-shadow:
+    0 0 30px color-mix(in srgb, var(--nfc-warm) 24%, transparent),
+    0 16px 42px var(--nfc-shadow);
+}
+
+.nfc-podium-step strong {
+  margin-top: 0.45rem;
+  color: var(--nfc-warm-soft);
+  font-size: clamp(1.05rem, 1.8vw, 1.55rem);
+  font-weight: 900;
+}
+
+.nfc-podium-step > span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 0.35rem;
+  color: color-mix(in srgb, var(--nfc-text) 86%, var(--nfc-muted) 14%);
+  font-size: clamp(0.85rem, 1.25vw, 1.05rem);
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nfc-podium-slot.is-first .nfc-podium-step {
+  min-height: clamp(7.6rem, 20vh, 13.6rem);
+  padding-top: clamp(1.4rem, 3vh, 2.35rem);
+  border-color: color-mix(in srgb, var(--nfc-warm) 42%, var(--nfc-border));
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--nfc-warm) 22%, transparent), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--nfc-panel-solid-alt) 82%, var(--nfc-warm) 18%), var(--nfc-panel-solid));
+}
+
+.nfc-podium-slot.is-first .nfc-podium-avatar {
+  width: clamp(5.8rem, 8.6vw, 8.5rem);
+}
+
+.nfc-podium-slot.is-first .nfc-podium-step h3 {
+  font-size: clamp(5.8rem, 11vw, 10.5rem);
+}
+
+.nfc-podium-slot.is-third .nfc-podium-step {
+  min-height: clamp(5.5rem, 13vh, 8rem);
+}
+
+.nfc-live-podium {
+  width: min(100%, 70rem);
+  align-content: end;
+  margin-inline: auto;
+}
+
+.nfc-live-podium .nfc-podium-avatar {
+  width: clamp(4.2rem, min(6.2vw, 8.2vh), 6.4rem);
+  border-width: 3px;
+}
+
+.nfc-live-podium .nfc-podium-step {
+  min-height: clamp(6.4rem, 17vh, 10rem);
+  padding: clamp(1.05rem, 2.2vh, 1.9rem) clamp(0.75rem, 1.35vw, 1rem) clamp(0.7rem, 1.3vh, 1rem);
+}
+
+.nfc-live-podium .nfc-podium-slot.is-first .nfc-podium-step {
+  min-height: clamp(8rem, 23vh, 14rem);
+}
+
+.nfc-live-podium .nfc-podium-step h3 {
+  font-size: clamp(4rem, min(8.2vw, 12vh), 7.8rem);
+}
+
+.victory-avatar {
+  animation: avatar-float 2600ms ease-in-out infinite;
+}
+
+.victory-avatar:nth-child(2n) {
+  animation-delay: 260ms;
+}
+
+.victory-avatar:nth-child(3n) {
+  animation-delay: 520ms;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -32px;
+  z-index: 1;
+  border-radius: 2px;
+  opacity: 0.96;
+  transform: translate3d(0, -40px, 0) rotate(0deg);
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, -40px, 0) rotate(0deg); }
+  45% { transform: translate3d(42px, 48vh, 0) rotate(380deg); }
+  100% { transform: translate3d(-34px, 106vh, 0) rotate(760deg); }
+}
+
+@keyframes victory-rise {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(8px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes victory-scan {
+  0%, 100% { transform: translateX(-18%) scaleX(0.72); opacity: 0.18; }
+  45% { transform: translateX(18%) scaleX(1); opacity: 0.78; }
+}
+
+@keyframes avatar-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+
+@keyframes hud-sweep {
+  0%, 42% { transform: translateX(-120%); }
+  68%, 100% { transform: translateX(120%); }
+}
+
+@keyframes race-shine {
+  0%, 38% { transform: translateX(-100%); }
+  72%, 100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .winner-burst,
+  .team-card-winner,
+  .victory-content,
+  .victory-avatar,
+  .confetti-piece,
+  .nfc-status-pill::after,
+  .nfc-race-fill::after,
+  .victory-stage::before {
+    animation: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .nfc-arena-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .nfc-arena-header {
+    align-items: start;
+  }
+
+  .nfc-dashboard-side {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .nfc-arena-layout {
+    padding: 0.7rem;
+  }
+
+  .nfc-arena-header {
+    display: grid;
+  }
+
+  .nfc-arena-status-panel {
+    width: 100%;
+    min-width: 0 !important;
+    justify-items: start !important;
+  }
+
+  .nfc-podium {
+    grid-template-columns: 1fr;
+  }
+
+  .nfc-podium-slot,
+  .nfc-podium-slot.is-first,
+  .nfc-podium-slot.is-second,
+  .nfc-podium-slot.is-third {
+    order: initial;
+  }
+
+  .nfc-podium-slot.is-first {
+    order: -1;
+  }
+
+  .nfc-podium-step,
+  .nfc-podium-slot.is-first .nfc-podium-step,
+  .nfc-podium-slot.is-third .nfc-podium-step {
+    min-height: 8.5rem;
+  }
+}
+
+@media (max-height: 780px) {
+  .nfc-status-pill {
+    padding-block: 0.35rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .nfc-danger-action {
+    padding-block: 0.38rem !important;
+  }
+
+  .nfc-live-card h3 {
+    font-size: 1rem !important;
+  }
+
+  .nfc-leader-chip {
+    padding-block: 0.55rem !important;
+  }
+
+  .nfc-team-row h4,
+  .nfc-team-card h4 {
+    font-size: clamp(1.35rem, 3vh, 2rem) !important;
+  }
+
+  .nfc-team-row strong,
+  .nfc-team-card strong,
+  .nfc-race-entry strong {
+    font-size: clamp(1.2rem, 3vh, 1.85rem) !important;
+  }
+
+  .nfc-timeline-list {
+    font-size: 0.88rem;
+  }
+
+  .victory-content > p,
+  .victory-content > div:last-child {
+    margin-top: clamp(0.65rem, 1.5vh, 1rem) !important;
+  }
+}
+
+@media (max-height: 640px) {
+  .nfc-arena-layout {
+    padding: 0.55rem;
+  }
+
+  .nfc-arena-main {
+    gap: 0.45rem;
+  }
+
+  .nfc-race-card,
+  .nfc-timeline-card {
+    padding: 0.62rem !important;
+  }
+
+  .nfc-race-card > .flex {
+    gap: 0.55rem !important;
+  }
+
+  .nfc-race-card > .flex h3 {
+    margin-top: 0.15rem !important;
+  }
+
+  .nfc-race-card > .flex .nfc-leader-chip {
+    display: none;
+  }
+
+  .nfc-race-entry span,
+  .nfc-race-entry p {
+    font-size: 0.82rem !important;
+  }
+
+  .victory-content {
+    transform: scale(0.92);
+  }
+}

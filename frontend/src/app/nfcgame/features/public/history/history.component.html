@@ -1,0 +1,42 @@
+<nfc-public-shell title="Archiv" eyebrow="Session-History">
+  <section class="grid gap-3">
+    @for (row of rows(); track row.session.id) {
+      <article class="grid gap-4 rounded-lg border ui-border-subtle ui-surface-muted px-4 py-4 hover:ui-surface-hover lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
+        <a [routerLink]="['/nfc-game/sessions', row.session.id]" class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="truncate font-black ui-text-strong">{{ row.session.gameName || row.session.id }}</h2>
+            <span class="rounded-md border ui-border-subtle ui-surface-muted px-2 py-1 text-xs font-bold uppercase ui-text-soft">{{ row.participantCount }} Spieler</span>
+          </div>
+          <p class="mt-1 text-sm ui-text-muted">{{ row.occurredAt | date:'dd.MM.yy, HH:mm' }} · {{ row.winnerLabel }}</p>
+          @if (row.topTeams.length) {
+            <div class="mt-3 flex flex-wrap gap-2">
+              @for (team of row.topTeams; track team.id) {
+                <span class="rounded-md border ui-border-subtle ui-surface-muted px-2 py-1 text-xs ui-text-soft">
+                  #{{ team.placementRank || team.teamOrder }} {{ team.name }} · {{ team.globalPointsAwarded || 0 }} Punkte
+                </span>
+              }
+            </div>
+          }
+        </a>
+        <div class="flex flex-wrap items-center gap-2">
+          <nfc-status-badge [status]="row.session.status" />
+          <span class="rounded-md border px-3 py-2 text-sm font-bold" [ngClass]="pointsClass(row.finished)">
+            {{ row.finished ? ('+' + row.totalPoints) : 'offen' }}
+          </span>
+        </div>
+        @if (isAdmin()) {
+          <button
+            class="rounded-md border ui-border-accent px-3 py-2 text-sm font-semibold ui-text-accent hover:ui-bg-accent-soft disabled:cursor-wait disabled:opacity-60"
+            type="button"
+            [disabled]="deletingSessionId() === row.session.id"
+            (click)="deleteSession(row.session)"
+          >
+            {{ deletingSessionId() === row.session.id ? 'Lösche...' : 'Löschen' }}
+          </button>
+        }
+      </article>
+    } @empty {
+      <p class="rounded-lg border border-dashed ui-border-subtle p-4 ui-text-muted">Noch keine Sessions.</p>
+    }
+  </section>
+</nfc-public-shell>

@@ -1,0 +1,134 @@
+.sound-lab {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.recorder-card,
+.library-card,
+.sound-tile {
+  border: 1px solid var(--nfc-border);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--nfc-accent) 18%, transparent), transparent 34rem),
+    var(--nfc-surface);
+  box-shadow: 0 24px 80px color-mix(in srgb, #000 24%, transparent);
+}
+
+.recorder-card,
+.library-card {
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.kicker {
+  margin: 0 0 0.35rem;
+  color: var(--nfc-accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 4vw, 2.25rem);
+}
+
+.copy,
+.sound-meta,
+.empty {
+  color: var(--nfc-text-muted);
+}
+
+.sound-field {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.sound-field input {
+  width: 100%;
+  border: 1px solid var(--nfc-border);
+  border-radius: 0.85rem;
+  background: var(--nfc-surface-muted);
+  color: var(--nfc-text);
+  padding: 0.75rem 0.9rem;
+}
+
+.recorder-actions,
+.tile-actions,
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+button {
+  border: 1px solid var(--nfc-border);
+  border-radius: 999px;
+  background: var(--nfc-surface-muted);
+  color: var(--nfc-text);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.65rem 0.95rem;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+button.primary,
+.tabs button.active,
+button.selected {
+  border-color: transparent;
+  background: var(--nfc-accent);
+  color: var(--nfc-on-accent);
+}
+
+button.secondary {
+  border-color: var(--nfc-accent);
+  color: var(--nfc-accent);
+}
+
+button.danger {
+  border-color: color-mix(in srgb, var(--nfc-warm) 60%, var(--nfc-border));
+  color: var(--nfc-warm);
+}
+
+.sound-player,
+.sound-tile audio {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.sound-grid {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.sound-tile {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.sound-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.sound-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+}
+
+@media (min-width: 900px) {
+  .sound-lab {
+    grid-template-columns: minmax(18rem, 0.85fr) minmax(0, 1.4fr);
+    align-items: start;
+  }
+}

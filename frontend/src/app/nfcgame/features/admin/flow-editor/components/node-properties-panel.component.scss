@@ -1,0 +1,62 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.variable-kind-pill,
+.variable-code {
+  border: 1px solid var(--color-white-10);
+  border-radius: 999px;
+  background: var(--color-surface-glass);
+  padding: 3px 7px;
+}
+
+.variable-code {
+  border-radius: 7px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 11px;
+}
+
+.kind-object {
+  color: var(--nfc-kind-object);
+}
+
+.kind-string {
+  color: var(--nfc-kind-string);
+}
+
+.kind-integer {
+  color: var(--nfc-kind-integer);
+}
+
+.kind-boolean {
+  color: var(--nfc-kind-boolean);
+}
+
+.nfc-nested-select {
+  display: flex;
+  min-height: 42px;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-white-12);
+  border-radius: 12px;
+  background: var(--color-surface-glass);
+  color: var(--nfc-text);
+  padding: 0 12px;
+  text-align: left;
+}
+
+.nfc-nested-select:hover,
+.nfc-nested-select:focus-visible {
+  outline: none;
+  border-color: var(--nfc-accent-border);
+}
+
+.nfc-select-chevron {
+  color: var(--nfc-accent-strong);
+  font-size: 16px;
+}

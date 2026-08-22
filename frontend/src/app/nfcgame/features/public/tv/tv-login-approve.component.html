@@ -1,0 +1,64 @@
+<nfc-public-shell title="TV Login" eyebrow="NFC Game">
+  <section class="mx-auto grid max-w-2xl gap-5 rounded-lg border ui-border-subtle ui-surface-muted p-5">
+    <div class="grid gap-2">
+      <p class="text-sm ui-text-muted">Fernseher koppeln</p>
+      <h2 class="text-3xl font-semibold">Code {{ code() }}</h2>
+    </div>
+
+    @if (approved()) {
+      <div class="grid gap-4 rounded-lg border ui-border-accent ui-bg-accent-soft p-5">
+        <p class="text-lg font-semibold ui-text-accent">Der Fernseher ist angemeldet.</p>
+        <a routerLink="/nfc-game" class="w-fit rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent">
+          Zum Dashboard
+        </a>
+      </div>
+    } @else {
+      @if (!auth.isAuthenticated()) {
+        <form class="grid gap-4" (ngSubmit)="login()">
+          <label class="grid gap-2 text-sm">
+            Username
+            <input name="username" [ngModel]="username()" (ngModelChange)="username.set($event)" autocomplete="username" required />
+          </label>
+          <label class="grid gap-2 text-sm">
+            Passwort
+            <input
+              type="password"
+              name="password"
+              [ngModel]="password()"
+              (ngModelChange)="password.set($event)"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+
+          <div class="grid gap-3 sm:grid-cols-2">
+            <button class="rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent" type="submit" [disabled]="loading() || authDisabled()">
+              Anmelden
+            </button>
+            <button
+              class="rounded-md border ui-border-subtle px-4 py-3 font-semibold ui-text-strong hover:ui-surface-hover"
+              type="button"
+              (click)="register()"
+              [disabled]="loading() || authDisabled()"
+            >
+              Account erstellen
+            </button>
+          </div>
+        </form>
+      } @else {
+        <div class="grid gap-4">
+          <p class="rounded-md border ui-border-subtle ui-surface-muted p-4 ui-text-soft">
+            Angemeldet als {{ auth.user()?.username }}.
+          </p>
+          <button class="rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent" type="button" (click)="approve()" [disabled]="loading()">
+            Fernseher anmelden
+          </button>
+        </div>
+      }
+    }
+
+    @if (error()) {
+      <p class="rounded-md border ui-border-accent ui-bg-accent-soft p-3 text-sm ui-text-accent">{{ error() }}</p>
+    }
+  </section>
+</nfc-public-shell>

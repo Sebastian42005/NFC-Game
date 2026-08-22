@@ -1,0 +1,167 @@
+<nfc-public-shell title="Ranking" eyebrow="Statistik">
+  <section class="mb-7">
+    <nfc-podium [entries]="topThree()" />
+  </section>
+
+  <section class="mb-6 grid gap-4 md:grid-cols-4">
+    <nfc-kpi-card label="Gesamtspiele" [value]="totalGames()" [subLabel]="selectedTimeframeLabel() + ' · ' + selectedGameLabel()" accent="teal" />
+    <nfc-kpi-card label="Gesamtpunkte" [value]="totalPoints()" subLabel="Punkte in der aktuellen Rangliste" accent="amber" />
+    <nfc-kpi-card label="Aktivster Spieler" [value]="activePlayer()?.playerName || '-'" [subLabel]="(activePlayer()?.gamesPlayed || 0) + ' Spiele gespielt'" accent="sky" />
+    <nfc-kpi-card label="Beste Siegquote" [value]="bestWinRate() ? ((bestWinRate()!.winRate | percent:'1.0-0') || '-') : '-'" [subLabel]="bestWinRate() ? (bestWinRate()!.playerName || 'Spieler') + ' · ' + bestWinRate()!.gamesWon + ' Siege' : 'Noch offen'" accent="cyan" />
+  </section>
+
+  <section class="mb-7 grid gap-5 rounded-lg border ui-border-subtle ui-surface-muted p-5 ui-shadow-elevated">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Zeitraumfilter</p>
+        <h2 class="mt-1 text-lg font-black ui-text-strong">Ranking gezielt auswerten</h2>
+      </div>
+      <p class="rounded-full border ui-border-subtle ui-surface-muted px-3 py-1 text-sm font-semibold ui-text-soft">
+        Sortiert nach {{ selectedSortLabel() }}
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2" aria-label="Zeitraum wählen">
+      @for (option of timeframes; track option.value) {
+        <button
+          type="button"
+          class="min-h-11 rounded-md border px-4 py-2 text-sm font-black transition outline-none hover:ui-border-accent hover:ui-surface-hover focus-visible:ring-2 focus-visible:ui-ring-accent focus-visible:ring-offset-2 focus-visible:ui-ring-offset"
+          [class.ui-border-accent]="timeframe() === option.value"
+          [class.ui-bg-accent]="timeframe() === option.value"
+          [class.ui-text-on-accent]="timeframe() === option.value"
+          [class.ui-border-subtle]="timeframe() !== option.value"
+          [class.bg-transparent]="timeframe() !== option.value"
+          [class.ui-text-soft]="timeframe() !== option.value"
+          [attr.aria-pressed]="timeframe() === option.value"
+          (click)="setTimeframe(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+
+    <div class="grid gap-3 md:grid-cols-[1fr_1fr]">
+      <label class="grid gap-2 rounded-lg border ui-border-subtle ui-surface-muted p-3 text-sm ui-text-soft">
+        <span class="text-xs font-bold uppercase tracking-[0.14em] ui-text-muted">Spielauswahl</span>
+        <mat-select
+          class="nfc-select"
+          panelClass="nfc-select-panel"
+          name="rankingGame"
+          [ngModel]="gameId()"
+          (ngModelChange)="setGame($event)"
+        >
+          <mat-option value="all">Alle Spiele</mat-option>
+          @for (game of games(); track game.id) {
+            <mat-option [value]="game.id">{{ game.name }}</mat-option>
+          }
+        </mat-select>
+        <span class="text-xs font-medium ui-text-muted">Filtert Punkte, Siege und Siegquote nach Spiel.</span>
+      </label>
+
+      <label class="grid gap-2 rounded-lg border ui-border-subtle ui-surface-muted p-3 text-sm ui-text-soft">
+        <span class="text-xs font-bold uppercase tracking-[0.14em] ui-text-muted">Sortierung</span>
+        <mat-select
+          class="nfc-select"
+          panelClass="nfc-select-panel"
+          name="rankingSort"
+          [ngModel]="sort()"
+          (ngModelChange)="sortBy($event)"
+        >
+          @for (option of sortOptions; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+        <span class="text-xs font-medium ui-text-muted">Bestimmt die Reihenfolge in Podium und Rangliste.</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="grid gap-5">
+    <div class="overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted">
+      <div class="flex flex-wrap items-end justify-between gap-3 border-b ui-border-subtle p-5">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Rangliste</p>
+          <h2 class="mt-1 text-lg font-black ui-text-strong">Alle Spieler im Vergleich</h2>
+        </div>
+        <p class="text-sm font-medium ui-text-muted">
+          {{ ranking().length }} Spieler · {{ selectedGameLabel() }} · {{ selectedTimeframeLabel() }}
+        </p>
+      </div>
+      <div class="overflow-x-auto">
+        @if (ranking().length) {
+          <table class="w-full min-w-[760px] text-left text-sm">
+            <caption class="sr-only">Vollständige Rangliste mit Punkten, gespielten Spielen, Siegen und Siegquote</caption>
+            <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
+              <tr>
+                <th class="px-4 py-3">Rang</th>
+                <th class="px-4 py-3">Spieler</th>
+                <th class="px-4 py-3">
+                  <button type="button" class="rounded-md px-2 py-1 font-black hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent" [class.ui-text-warm]="isSortedBy('totalPoints')" [attr.aria-pressed]="isSortedBy('totalPoints')" (click)="sortBy('totalPoints')">Punkte</button>
+                </th>
+                <th class="px-4 py-3">
+                  <button type="button" class="rounded-md px-2 py-1 font-black hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent" [class.ui-text-warm]="isSortedBy('gamesPlayed')" [attr.aria-pressed]="isSortedBy('gamesPlayed')" (click)="sortBy('gamesPlayed')">Spiele</button>
+                </th>
+                <th class="px-4 py-3">
+                  <button type="button" class="rounded-md px-2 py-1 font-black hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent" [class.ui-text-warm]="isSortedBy('gamesWon')" [attr.aria-pressed]="isSortedBy('gamesWon')" (click)="sortBy('gamesWon')">Siege</button>
+                </th>
+                <th class="px-4 py-3">
+                  <button type="button" class="rounded-md px-2 py-1 font-black hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent" [class.ui-text-warm]="isSortedBy('winRate')" [attr.aria-pressed]="isSortedBy('winRate')" (click)="sortBy('winRate')">Siegquote</button>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of ranking(); track entry.playerId) {
+                <tr class="border-t ui-border-subtle transition hover:ui-surface-hover">
+                  <td class="px-4 py-4">
+                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-md border ui-border-warm ui-bg-warm-soft px-2 font-black ui-text-warm">
+                      {{ entry.rank }}.
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <a [routerLink]="['/nfc-game/players', entry.playerId]" class="flex items-center gap-3 rounded-md font-medium ui-text-strong outline-none focus-visible:ring-2 focus-visible:ui-ring-accent">
+                      <span class="grid h-10 w-10 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface text-xs font-black">
+                        @if (entry.imageUrl) {
+                          <img class="h-full w-full object-cover" [src]="entry.imageUrl" [alt]="entry.playerName || 'Spieler'" />
+                        } @else {
+                          {{ initials(entry.playerName || entry.playerId) }}
+                        }
+                      </span>
+                      <span class="min-w-0">
+                        <span class="block truncate font-black">{{ entry.playerName || entry.playerId }}</span>
+                        <span class="block text-xs font-medium ui-text-muted">{{ entry.gamesPlayed }} Spiele gespielt</span>
+                      </span>
+                    </a>
+                  </td>
+                  <td class="px-4 py-3">
+                    <strong class="block text-lg font-black ui-text-strong">{{ entry.totalPoints }}</strong>
+                    <span class="text-xs ui-text-muted">Punkte</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <strong class="block font-black ui-text-strong">{{ entry.gamesPlayed }}</strong>
+                    <span class="text-xs ui-text-muted">Spiele</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <strong class="block font-black ui-text-strong">{{ entry.gamesWon }}</strong>
+                    <span class="text-xs ui-text-muted">Siege</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <strong class="block font-black ui-text-accent">{{ entry.winRate | percent:'1.0-1' }}</strong>
+                    <span class="text-xs ui-text-muted">Siegquote</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <div class="px-5 py-10 text-center ui-text-muted">
+            Für diesen Filter gibt es noch keine Ranking-Daten. Spiel ein paar Spiele und die Arena füllt sich.
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-7">
+    <nfc-heatmap title="Spieler vs. Spiele" eyebrow="Performance-Heatmap" [data]="heatmap()" />
+  </section>
+</nfc-public-shell>

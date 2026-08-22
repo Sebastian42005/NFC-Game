@@ -1,0 +1,169 @@
+<nfc-public-shell title="Spielabend" eyebrow="Heute">
+  <section class="grid min-h-[calc(100vh-9rem)] content-start gap-5">
+    <section class="grid gap-3 md:grid-cols-3">
+      <nfc-kpi-card label="Spiele" [value]="summary().sessions.length" subLabel="heute gespielt" accent="teal" />
+      <nfc-kpi-card label="Spieler" [value]="totalPlayers()" subLabel="beteiligt" accent="sky" />
+      <nfc-kpi-card
+        label="Meistgespielt"
+        [value]="summary().mostPlayedGame?.name || '-'"
+        [subLabel]="(summary().mostPlayedGame?.count || 0) + ' Sessions'"
+        accent="cyan"
+      />
+    </section>
+
+    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      @for (award of summary().awards.slice(0, 4); track award.label) {
+        <nfc-award-badge
+          [label]="award.label"
+          [owner]="award.owner"
+          [value]="award.value"
+          [subLabel]="award.subLabel"
+          [tone]="award.tone || 'teal'"
+        />
+      } @empty {
+        <div class="rounded-lg border border-dashed ui-border-subtle p-5 text-sm ui-text-muted sm:col-span-2 xl:col-span-4">
+          Noch keine Awards. Der Abend braucht noch ein paar Spiele.
+        </div>
+      }
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+      <nfc-podium [entries]="summary().ranking.slice(0, 3)" />
+
+      <section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+        <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Abend-Highlights</p>
+        <h2 class="mt-1 text-xl font-black ui-text-strong">Momente des Abends</h2>
+        <div class="mt-5 grid gap-3">
+          @for (moment of summary().moments; track moment.label) {
+            @if (moment.sessionId) {
+              <a
+                [routerLink]="['/nfc-game/sessions', moment.sessionId]"
+                class="rounded-lg border ui-border-subtle ui-surface-muted p-4 transition hover:-translate-y-0.5 hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent"
+              >
+                <p class="text-[11px] font-black uppercase tracking-[0.16em] ui-text-warm">{{ moment.label }}</p>
+                <h3 class="mt-2 truncate text-lg font-black ui-text-strong">{{ moment.title }}</h3>
+                <p class="mt-1 text-sm leading-6 ui-text-muted">{{ moment.detail }}</p>
+              </a>
+            } @else {
+              <article class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+                <p class="text-[11px] font-black uppercase tracking-[0.16em] ui-text-warm">{{ moment.label }}</p>
+                <h3 class="mt-2 truncate text-lg font-black ui-text-strong">{{ moment.title }}</h3>
+                <p class="mt-1 text-sm leading-6 ui-text-muted">{{ moment.detail }}</p>
+              </article>
+            }
+          } @empty {
+            <p class="rounded-md border border-dashed ui-border-subtle p-4 text-sm ui-text-muted">
+              Noch keine besonderen Momente ableitbar.
+            </p>
+          }
+        </div>
+      </section>
+    </section>
+
+    <nfc-bar-chart title="Punkte pro Spieler" eyebrow="Abendwertung" [data]="pointsChart()" />
+
+    <section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+      <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Session-Liste</p>
+      <h2 class="mt-1 text-xl font-black ui-text-strong">Zuletzt gespielt</h2>
+      <div class="mt-5 grid gap-3">
+        @for (session of sessionRows(); track session.id) {
+          <a
+            [routerLink]="['/nfc-game/sessions', session.id]"
+            class="grid gap-3 rounded-lg border ui-border-subtle ui-surface-muted p-4 transition hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+          >
+            <div class="min-w-0">
+              <h3 class="truncate font-black ui-text-strong">{{ session.title }}</h3>
+              <p class="mt-1 text-sm ui-text-muted">{{ session.meta }}</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+              <span class="rounded-md border ui-border-warm ui-bg-warm-soft px-3 py-2 text-sm font-bold ui-text-warm">
+                {{ session.winner }}
+              </span>
+              <span class="rounded-md border ui-border-subtle ui-surface-muted px-3 py-2 text-sm font-bold ui-text-strong">
+                {{ session.points }} Punkte
+              </span>
+            </div>
+          </a>
+        } @empty {
+          <p class="rounded-md border border-dashed ui-border-subtle p-4 text-sm ui-text-muted">
+            Noch keine Sessions für heute.
+          </p>
+        }
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted">
+      <div class="border-b ui-border-subtle p-4">
+        <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Gesamtwertung</p>
+        <h2 class="mt-1 text-lg font-black ui-text-strong">Alle Spieler des Abends</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[760px] text-left text-sm">
+          <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
+          <tr>
+            <th class="px-4 py-3">Rang</th>
+            <th class="px-4 py-3">Spieler</th>
+            <th class="px-4 py-3">Punkte</th>
+            <th class="px-4 py-3">Siege</th>
+            <th class="px-4 py-3">Sessions</th>
+            <th class="px-4 py-3">Siegquote</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (entry of summary().ranking; track entry.playerId) {
+              <tr
+                [routerLink]="['/nfc-game/players', entry.playerId]"
+                tabindex="0"
+                class="cursor-pointer border-t ui-border-subtle transition hover:ui-surface-hover focus-visible:ui-surface-hover focus-visible:outline-none"
+                [class.ui-bg-warm-soft]="entry.rank === 1"
+              >
+                <td class="px-4 py-3">
+                  <span
+                    class="inline-flex min-w-20 justify-center rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em]"
+                    [class.ui-border-warm]="entry.rank === 1"
+                    [class.ui-bg-warm-soft]="entry.rank === 1"
+                    [class.ui-text-warm]="entry.rank === 1"
+                    [class.ui-border-subtle]="entry.rank !== 1"
+                    [class.ui-surface-muted]="entry.rank !== 1"
+                    [class.ui-text-soft]="entry.rank !== 1"
+                  >
+                    {{ entry.rankLabel || ('#' + entry.rank) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface text-xs font-black ui-text-strong">
+                      @if (entry.imageUrl) {
+                        <img class="h-full w-full object-cover" [src]="entry.imageUrl" [alt]="entry.playerName || 'Spieler'" />
+                      } @else {
+                        {{ initials(entry.playerName || entry.playerId) }}
+                      }
+                    </span>
+                    <div class="min-w-0">
+                      <p class="truncate font-bold ui-text-strong">{{ entry.playerName || entry.playerId }}</p>
+                      @if (entry.isTied) {
+                        <p class="mt-0.5 text-xs ui-text-warm">Gleichstand · {{ entry.tieReason }}</p>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 font-black ui-text-strong">{{ entry.totalPoints }}</td>
+                <td class="px-4 py-3">{{ entry.gamesWon }}</td>
+                <td class="px-4 py-3">{{ entry.gamesPlayed }}</td>
+                <td class="px-4 py-3">
+                  <span class="rounded-md border ui-border-subtle ui-surface-muted px-2 py-1 font-bold ui-text-accent">
+                    {{ entry.winRate | percent:'1.0-0' }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="px-4 py-8 text-center ui-text-muted">Noch keine Spielabend-Wertung.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+</nfc-public-shell>

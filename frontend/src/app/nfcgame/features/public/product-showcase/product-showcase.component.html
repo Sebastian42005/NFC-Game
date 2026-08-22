@@ -1,0 +1,23 @@
+<main #scrollRoot class="nfc-reader-experience nfc-game-font nfc-game-shell relative isolate min-h-[1000svh] overflow-x-clip">
+  <h1 class="sr-only">NFC Reader</h1>
+
+  <div class="sticky top-0 h-svh overflow-hidden">
+    <nfc-product-viewer [scrollRoot]="scrollRootElement()"></nfc-product-viewer>
+  </div>
+
+  <div class="pointer-events-none absolute inset-0 z-10">
+    @for (step of steps; track step.title; let first = $first) {
+      <section
+        class="nfc-reader-step flex min-h-[142svh] items-end px-5 pb-12 pt-8 sm:px-8 lg:px-12 lg:pb-16"
+        [class.is-first]="first"
+        [class.is-right-step]="step.align === 'right'"
+      >
+        <div class="nfc-reader-copy max-w-[32rem]" [class.is-right]="step.align === 'right'">
+          <p class="nfc-reader-step-label">{{ step.label }}</p>
+          <h2>{{ step.title }}</h2>
+          <p>{{ step.text }}</p>
+        </div>
+      </section>
+    }
+  </div>
+</main>

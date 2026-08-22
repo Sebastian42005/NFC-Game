@@ -1,0 +1,17 @@
+<div class="fixed bottom-5 right-5 z-[1000] grid w-[min(360px,calc(100vw-2rem))] gap-2">
+  @for (toast of toasts.toasts(); track toast.id) {
+    <button
+      type="button"
+      class="rounded-lg border px-4 py-3 text-left text-sm shadow-2xl backdrop-blur transition"
+      [class]="toast.type === 'success'
+        ? 'ui-border-success ui-bg-success-soft ui-text-success'
+        : 'ui-border-accent ui-bg-accent-soft ui-text-accent'"
+      (click)="toasts.dismiss(toast.id)"
+    >
+      <span class="block text-xs font-semibold uppercase tracking-[0.14em] opacity-75">
+        {{ toast.type === 'success' ? 'Erfolgreich' : 'Fehler' }}
+      </span>
+      <span class="mt-1 block">{{ toast.message }}</span>
+    </button>
+  }
+</div>

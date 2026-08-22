@@ -1,0 +1,108 @@
+<section
+  class="relative h-full overflow-auto ui-bg-nfc-muted"
+  data-canvas-scroll
+  (wheel)="zoomWithTrackpad($event)"
+  (click)="canvasClicked()"
+  (dragover)="allowNodeDrop($event)"
+  (drop)="dropNodeOnCanvas($event)"
+>
+  <div class="sticky left-4 top-4 z-20 inline-flex rounded border ui-border-subtle ui-surface-muted px-3 py-2 text-xs ui-text-soft shadow-lg backdrop-blur">
+    Scrollen zum Navigieren, Pinch zum Zoomen
+  </div>
+  <div class="relative" [style.width.px]="scaledCanvasWidth()" [style.height.px]="scaledCanvasHeight()">
+    <div class="absolute left-0 top-0 origin-top-left" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()" [style.transform]="'scale(' + zoom() + ')'">
+      <svg class="absolute left-0 top-0" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()" [attr.width]="canvasWidth()" [attr.height]="canvasHeight()">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path class="flow-edge-arrow" d="M0,0 L0,6 L9,3 z"></path>
+          </marker>
+        </defs>
+        @for (edge of edges(); track edge.id) {
+          @if (nodeById(edge.sourceNodeId); as source) {
+            @if (nodeById(edge.targetNodeId); as target) {
+              <g class="cursor-pointer" (click)="selectEdge.emit(edge.id); $event.stopPropagation()">
+                <line
+                  class="transition"
+                  [attr.x1]="edgeStartX(source)"
+                  [attr.y1]="edgeStartY(source)"
+                  [attr.x2]="edgeEndX(target)"
+                  [attr.y2]="edgeEndY(target)"
+                  stroke="transparent"
+                  stroke-width="18"
+                />
+                <line
+                  [attr.x1]="edgeStartX(source)"
+                  [attr.y1]="edgeStartY(source)"
+                  [attr.x2]="edgeEndX(target)"
+                  [attr.y2]="edgeEndY(target)"
+                  [attr.stroke]="selectedEdgeId() === edge.id ? 'var(--nfc-accent)' : 'var(--nfc-kind-string)'"
+                  [attr.stroke-width]="selectedEdgeId() === edge.id ? 4 : 2"
+                  marker-end="url(#arrow)"
+                />
+                <text
+                  [attr.x]="edgeMidX(source, target)"
+                  [attr.y]="edgeMidY(source, target) - 10"
+                  [attr.fill]="selectedEdgeId() === edge.id ? 'var(--nfc-accent-strong)' : 'var(--nfc-muted-soft)'"
+                  font-size="12"
+                  text-anchor="middle"
+                >
+                  {{ edge.eventType }}
+                </text>
+                @if (selectedEdgeId() === edge.id) {
+                  <g
+                    class="cursor-pointer"
+                    [attr.transform]="'translate(' + (edgeMidX(source, target) - 13) + ' ' + (edgeMidY(source, target) + 6) + ')'"
+                    (click)="deleteEdge.emit(edge.id); $event.stopPropagation()"
+                  >
+                    <rect class="flow-edge-delete-bg" width="26" height="20" rx="4"></rect>
+                    <text class="flow-edge-delete-text" x="13" y="14" font-size="14" text-anchor="middle">x</text>
+                  </g>
+                }
+              </g>
+            }
+          }
+        }
+      </svg>
+
+      @for (node of nodes(); track node.id) {
+        <article
+          class="absolute w-[220px] rounded-lg border p-3 shadow-xl"
+          [class.ui-border-accent]="selectedNodeId() === node.id"
+          [class.ui-border-warm]="startNodeId() === node.id"
+          [style.left.px]="node.x"
+          [style.top.px]="node.y"
+          [style.background]="'linear-gradient(135deg, ' + nodeTint(node) + ', var(--nfc-panel-solid) 72%)'"
+          [style.border-color]="selectedNodeId() === node.id ? 'var(--nfc-accent)' : nodeBorder(node)"
+          (click)="selectNode.emit(node.id); $event.stopPropagation()"
+          (mousedown)="startDrag($event, node)"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-wide" [style.color]="nodeAccent(node)">{{ node.type }}</p>
+              <h3 class="mt-1 text-sm font-semibold">{{ node.title }}</h3>
+            </div>
+            @if (startNodeId() === node.id) {
+              <span class="rounded ui-bg-warm-soft px-2 py-1 text-[10px] ui-text-warm">START</span>
+            }
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button
+              class="rounded border ui-border-subtle px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50 disabled:ui-text-disabled"
+              type="button"
+              [disabled]="!canConnectFrom(node)"
+              [title]="connectFromTitle(node)"
+              (click)="connectFrom.emit(node.id); $event.stopPropagation()"
+            >
+              Von
+            </button>
+            <button class="rounded border ui-border-subtle px-2 py-1 text-xs" type="button" (click)="connectTo.emit(node.id); $event.stopPropagation()">Zu</button>
+            @if (node.type !== 'START') {
+              <button class="rounded border ui-border-subtle px-2 py-1 text-xs" type="button" (click)="duplicateNode.emit(node.id); $event.stopPropagation()">Dupl.</button>
+              <button class="rounded border ui-border-accent px-2 py-1 text-xs ui-text-accent" type="button" (click)="deleteNode.emit(node.id); $event.stopPropagation()">Löschen</button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+</section>

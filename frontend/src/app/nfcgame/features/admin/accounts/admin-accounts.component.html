@@ -1,0 +1,87 @@
+<nfc-admin-shell title="Accounts">
+  @if (!auth.canManageAccounts()) {
+    <section class="rounded-lg border ui-border-subtle ui-surface-muted p-6 text-sm ui-text-soft">
+      Nur administrator4 kann Accounts verwalten.
+    </section>
+  } @else {
+    <section class="grid gap-4 md:grid-cols-5">
+      <div class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <span class="text-xs uppercase tracking-wide ui-text-muted">Accounts</span>
+        <strong class="mt-2 block text-3xl">{{ accounts().length }}</strong>
+      </div>
+      <div class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <span class="text-xs uppercase tracking-wide ui-text-muted">Spieler</span>
+        <strong class="mt-2 block text-3xl">{{ totals().players }}</strong>
+      </div>
+      <div class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <span class="text-xs uppercase tracking-wide ui-text-muted">Karten</span>
+        <strong class="mt-2 block text-3xl">{{ totals().cards }}</strong>
+      </div>
+      <div class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <span class="text-xs uppercase tracking-wide ui-text-muted">Devices</span>
+        <strong class="mt-2 block text-3xl">{{ totals().devices }}</strong>
+      </div>
+      <div class="rounded-lg border ui-border-subtle ui-surface-muted p-4">
+        <span class="text-xs uppercase tracking-wide ui-text-muted">Sessions</span>
+        <strong class="mt-2 block text-3xl">{{ totals().sessions }}</strong>
+      </div>
+    </section>
+
+    <section class="mt-6 overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b ui-border-subtle px-4 py-3">
+        <p class="text-sm ui-text-soft">
+          Löschen entfernt den Account und alle zugehörigen NFC-Daten wie Spieler, Karten, Devices, Games und Sessions.
+        </p>
+        <button type="button" class="rounded-md border ui-border-subtle px-3 py-2 text-sm" (click)="load()">
+          Aktualisieren
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[920px] text-left text-sm">
+          <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
+            <tr>
+              <th class="px-4 py-3">ID</th>
+              <th class="px-4 py-3">Username</th>
+              <th class="px-4 py-3">Rolle</th>
+              <th class="px-4 py-3">Spieler</th>
+              <th class="px-4 py-3">Karten</th>
+              <th class="px-4 py-3">Devices</th>
+              <th class="px-4 py-3">Games</th>
+              <th class="px-4 py-3">Sessions</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (account of accounts(); track account.id) {
+              <tr class="border-t ui-border-subtle">
+                <td class="px-4 py-3 ui-text-muted">{{ account.id }}</td>
+                <td class="px-4 py-3 font-medium ui-text-strong">{{ account.username }}</td>
+                <td class="px-4 py-3">{{ account.role }}</td>
+                <td class="px-4 py-3">{{ account.playerCount }}</td>
+                <td class="px-4 py-3">{{ account.cardCount }}</td>
+                <td class="px-4 py-3">{{ account.deviceCount }}</td>
+                <td class="px-4 py-3">{{ account.gameCount }}</td>
+                <td class="px-4 py-3">{{ account.sessionCount }}</td>
+                <td class="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    class="rounded-md border ui-border-accent px-3 py-2 text-sm font-medium ui-text-accent hover:ui-bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+                    [disabled]="account.username === auth.user()?.username || deletingId() === account.id"
+                    (click)="confirmDelete(account)"
+                  >
+                    {{ deletingId() === account.id ? 'Lösche...' : 'Löschen' }}
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="px-4 py-8 text-center ui-text-muted">Keine Accounts gefunden.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</nfc-admin-shell>

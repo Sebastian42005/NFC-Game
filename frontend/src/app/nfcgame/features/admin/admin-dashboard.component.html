@@ -1,0 +1,10 @@
+<nfc-admin-shell title="Übersicht">
+  <section class="grid gap-4 md:grid-cols-4 xl:grid-cols-5">
+    @for (item of cards(); track item.label) {
+      <a [routerLink]="item.href" class="rounded-lg border ui-border-subtle ui-surface-muted p-5 hover:ui-surface-hover">
+        <span class="text-sm ui-text-muted">{{ item.label }}</span>
+        <strong class="mt-2 block text-3xl">{{ item.value }}</strong>
+      </a>
+    }
+  </section>
+</nfc-admin-shell>

@@ -1,0 +1,19 @@
+<section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+  <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">{{ eyebrow() }}</p>
+  <h2 class="mt-1 text-xl font-black ui-text-strong">{{ title() }}</h2>
+  <div class="mt-5 grid gap-3">
+    @for (item of items(); track item.id) {
+      <a [routerLink]="['/nfc-game/sessions', item.id]" class="grid gap-2 rounded-lg border ui-border-subtle ui-surface-muted p-4 hover:ui-surface-hover sm:grid-cols-[1fr_auto] sm:items-center">
+        <div class="min-w-0">
+          <h3 class="truncate font-black ui-text-strong">{{ item.title }}</h3>
+          <p class="mt-1 text-sm ui-text-muted">{{ item.meta }}</p>
+        </div>
+        @if (item.value) {
+          <span class="rounded-md border ui-border-warm ui-bg-warm-soft px-3 py-2 text-sm font-bold ui-text-warm">{{ item.value }}</span>
+        }
+      </a>
+    } @empty {
+      <div class="rounded-md border border-dashed ui-border-subtle p-6 text-sm ui-text-muted">{{ emptyText() }}</div>
+    }
+  </div>
+</section>

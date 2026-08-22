@@ -1,0 +1,94 @@
+<nfc-public-shell title="Spiele">
+  <div class="mb-5 inline-flex rounded-lg border ui-border-subtle ui-surface-muted p-1">
+    <button
+      class="rounded-md px-4 py-2 text-sm"
+      [class]="activeTab() === 'mine' ? 'ui-bg-accent font-semibold ui-text-on-accent' : 'ui-text-soft'"
+      type="button"
+      (click)="activeTab.set('mine')"
+    >
+      Meine Spiele
+    </button>
+    <button
+      class="rounded-md px-4 py-2 text-sm"
+      [class]="activeTab() === 'public' ? 'ui-bg-accent font-semibold ui-text-on-accent' : 'ui-text-soft'"
+      type="button"
+      (click)="activeTab.set('public')"
+    >
+      Öffentliche Spiele
+    </button>
+  </div>
+
+  @if (activeTab() === 'mine') {
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (game of games(); track game.id) {
+        <a [routerLink]="['/nfc-game/games', game.id]" class="rounded-lg border ui-border-subtle ui-surface-muted p-5 hover:ui-surface-hover">
+          @if (game.imageUrl) {
+            <img [src]="game.imageUrl" [alt]="game.name" class="mb-4 h-40 w-full rounded-md object-cover" />
+          }
+          <div class="flex items-start justify-between gap-3">
+            <h2 class="text-xl font-semibold">{{ game.name }}</h2>
+            <span
+              class="rounded-md px-2 py-1 text-xs"
+              [class]="game.publicationStatus === 'PUBLISHED' ? 'ui-bg-success-soft ui-text-success' : game.publicationStatus === 'BLOCKED' ? 'ui-bg-accent-soft ui-text-accent' : 'ui-surface ui-text-soft'"
+            >
+              @switch (game.publicationStatus) {
+                @case ('PUBLISHED') { Öffentlich }
+                @case ('BLOCKED') { Blockiert }
+                @default { Privat }
+              }
+            </span>
+          </div>
+          @if (game.publicationStatus === 'BLOCKED' && game.blockedReason) {
+            <p class="mt-2 rounded-md border ui-border-accent ui-bg-accent-soft p-2 text-xs ui-text-accent">{{ game.blockedReason }}</p>
+          }
+          <p class="mt-2 text-sm ui-text-muted">{{ game.description || 'Keine Beschreibung.' }}</p>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs ui-text-soft">
+            <span class="rounded-md ui-surface-muted px-2 py-1">Teams {{ game.minTeamSize }}-{{ game.maxTeamSize }}</span>
+            @if (game.economyEnabled) { <span class="rounded-md ui-surface-muted px-2 py-1">Economy</span> }
+          </div>
+        </a>
+      } @empty {
+        <p class="rounded-lg border border-dashed ui-border-subtle p-4 ui-text-muted">Noch keine Spiele.</p>
+      }
+    </section>
+  } @else {
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (game of publicGames(); track game.id) {
+        <article class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+          @if (game.imageUrl) {
+            <img [src]="game.imageUrl" [alt]="game.name" class="mb-4 h-40 w-full rounded-md object-cover" />
+          }
+          <div class="flex items-start justify-between gap-3">
+            <h2 class="text-xl font-semibold">{{ game.name }}</h2>
+            <span class="rounded-md ui-bg-success-soft px-2 py-1 text-xs ui-text-success">Öffentlich</span>
+          </div>
+          <p class="mt-2 text-sm ui-text-muted">{{ game.description || 'Keine Beschreibung.' }}</p>
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <span class="text-sm ui-text-soft">{{ ratingLabel(game) }}</span>
+            <div class="flex gap-1" aria-label="Spiel bewerten">
+              @for (rating of ratings; track rating) {
+                <button
+                  class="grid h-8 w-8 place-items-center rounded-md border ui-border-subtle text-sm"
+                  [class]="(game.myRating || 0) >= rating ? 'ui-bg-rating-active ui-text-on-accent' : 'ui-surface-muted ui-text-muted'"
+                  type="button"
+                  [attr.aria-label]="rating + ' Sterne geben'"
+                  [title]="rating + ' Sterne geben'"
+                  (click)="rateGame(game, rating)"
+                >
+                  ★
+                </button>
+              }
+            </div>
+          </div>
+          <div class="mt-5 flex flex-wrap items-center gap-2">
+            <button class="rounded-md ui-bg-accent px-3 py-2 text-sm font-semibold ui-text-on-accent" type="button" (click)="addToLibrary(game)">
+              Zur Bibliothek hinzufügen
+            </button>
+          </div>
+        </article>
+      } @empty {
+        <p class="rounded-lg border border-dashed ui-border-subtle p-4 ui-text-muted">Noch keine öffentlichen Spiele.</p>
+      }
+    </section>
+  }
+</nfc-public-shell>

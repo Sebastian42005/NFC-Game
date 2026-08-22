@@ -1,0 +1,32 @@
+.nfc-autocomplete-panel {
+  border-color: var(--nfc-border);
+  background: var(--nfc-panel-solid);
+  --tw-shadow-color: var(--nfc-shadow);
+}
+
+.nfc-autocomplete-submenu-title {
+  color: var(--nfc-muted-soft);
+}
+
+.nfc-autocomplete-option {
+  --nfc-autocomplete-highlight: var(--nfc-accent-strong);
+  --nfc-autocomplete-shadow: var(--nfc-shadow-soft);
+}
+
+.nfc-autocomplete-option:hover,
+.nfc-autocomplete-option.active {
+  border-color: var(--nfc-accent-border);
+  background: linear-gradient(90deg, var(--nfc-accent-surface), var(--nfc-accent-surface-soft));
+}
+
+.nfc-autocomplete-chevron {
+  color: var(--nfc-text);
+}
+
+.validation-message.valid {
+  color: var(--nfc-accent-strong);
+}
+
+.validation-message.invalid {
+  color: var(--nfc-danger-soft);
+}

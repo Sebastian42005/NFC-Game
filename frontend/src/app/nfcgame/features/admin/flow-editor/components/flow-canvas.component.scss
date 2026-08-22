@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+}
+
+.flow-edge-arrow {
+  fill: var(--nfc-kind-string);
+}
+
+.flow-edge-delete-bg {
+  fill: color-mix(in srgb, var(--nfc-accent) 20%, var(--nfc-bg));
+  stroke: var(--nfc-accent);
+}
+
+.flow-edge-delete-text {
+  fill: var(--nfc-accent-strong);
+}

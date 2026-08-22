@@ -1,0 +1,89 @@
+<main
+  class="nfc-game-font nfc-game-shell min-h-screen text-ui"
+  [class.nfc-theme-dark]="theme() === 'dark'"
+  [class.nfc-theme-light]="theme() === 'light'"
+>
+  <aside class="fixed inset-y-0 left-0 hidden w-64 border-r ui-border-subtle ui-surface-muted p-5 lg:block">
+    <a routerLink="/nfc-game" class="block text-lg font-semibold">NFC Game Admin</a>
+    <nav class="mt-8 grid gap-2 text-sm">
+      @for (link of links; track link.href) {
+        <a
+          [routerLink]="link.href"
+          routerLinkActive="ui-surface ui-text-strong"
+          [routerLinkActiveOptions]="link.href === '/admin' ? { exact: true } : { exact: false }"
+          class="rounded-md px-3 py-2 ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
+        >
+          {{ link.label }}
+        </a>
+      }
+      @if (auth.canManageAccounts()) {
+        <a
+          routerLink="/nfc-game/admin/publication-requests"
+          routerLinkActive="ui-surface ui-text-strong"
+          class="rounded-md px-3 py-2 ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
+        >
+          Spiele moderieren
+        </a>
+        <a
+          routerLink="/nfc-game/admin/accounts"
+          routerLinkActive="ui-surface ui-text-strong"
+          class="rounded-md px-3 py-2 ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
+        >
+          Accounts
+        </a>
+      }
+    </nav>
+    <div class="absolute bottom-5 left-5 right-5 grid gap-2">
+      <button
+        type="button"
+        class="rounded-md border ui-border-subtle px-3 py-2 text-sm"
+        [attr.aria-label]="themeLabel()"
+        [attr.title]="themeLabel()"
+        (click)="toggleTheme()"
+      >
+        <span aria-hidden="true">{{ theme() === 'dark' ? '☼' : '◐' }}</span>
+        {{ theme() === 'dark' ? 'Light' : 'Dark' }}
+      </button>
+      <a
+        routerLink="/nfc-game/account"
+        class="rounded-md border ui-border-subtle px-3 py-2 text-xs ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
+        aria-label="Account öffnen"
+        title="Account öffnen"
+      >
+        {{ auth.user()?.username || 'Admin' }}
+      </a>
+      <button type="button" class="rounded-md border ui-border-subtle px-3 py-2 text-sm" (click)="auth.logout()">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <section [class]="fullScreen() ? 'h-screen overflow-hidden lg:pl-64' : 'lg:pl-64'">
+    @if (!fullScreen()) {
+      <div class="border-b ui-border-subtle px-4 py-4 lg:hidden">
+        <div class="flex flex-wrap gap-2">
+          @for (link of links; track link.href) {
+            <a [routerLink]="link.href" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">{{ link.label }}</a>
+          }
+          @if (auth.canManageAccounts()) {
+            <a routerLink="/nfc-game/admin/publication-requests" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">Spiele moderieren</a>
+            <a routerLink="/nfc-game/admin/accounts" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">Accounts</a>
+          }
+          <button type="button" class="rounded-md border ui-border-subtle px-3 py-2 text-sm" (click)="toggleTheme()">
+            {{ theme() === 'dark' ? 'Light' : 'Dark' }}
+          </button>
+        </div>
+      </div>
+    }
+    <div [class]="fullScreen() ? 'h-full overflow-hidden' : 'mx-auto max-w-9xl px-4 py-8 sm:px-6'">
+      @if (!fullScreen()) {
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] ui-text-accent">Admin</p>
+        <h1 class="mt-2 text-3xl font-semibold tracking-normal">{{ title() }}</h1>
+      }
+      <div [class]="fullScreen() ? 'h-full overflow-hidden' : 'mt-6'">
+        <ng-content />
+      </div>
+    </div>
+  </section>
+  <nfc-toast-host />
+</main>

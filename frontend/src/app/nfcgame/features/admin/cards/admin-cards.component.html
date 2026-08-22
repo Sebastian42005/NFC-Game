@@ -1,0 +1,115 @@
+<nfc-admin-shell title="NFC Karten">
+  <section class="grid gap-5 xl:grid-cols-[1fr_420px]">
+    <div class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+      <label class="mb-4 flex items-center gap-3 text-sm">
+        <input type="checkbox" [ngModel]="showUnassignedOnly()" (ngModelChange)="showUnassignedOnly.set($event)" />
+        Nur unassigned
+      </label>
+      <div class="overflow-auto">
+        <table class="w-full min-w-[760px] text-left text-sm">
+          <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
+            <tr><th class="px-4 py-3">UID</th><th class="px-4 py-3">Typ</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Ziel</th><th class="px-4 py-3"></th></tr>
+          </thead>
+          <tbody>
+            @for (card of visibleCards(); track card.id) {
+              <tr class="border-t ui-border-subtle">
+                <td class="px-4 py-3 font-mono">{{ card.cardUid }}</td>
+                <td class="px-4 py-3">{{ card.cardType }}</td>
+                <td class="px-4 py-3">{{ card.status }}</td>
+                <td class="px-4 py-3">
+                  @if (card.cardType === 'PLAYER' && card.playerId) {
+                    <a class="font-medium ui-text-accent underline-offset-4 hover:underline" [routerLink]="['/nfc-game/players', card.playerId]">
+                      {{ cardTargetLabel(card) }}
+                    </a>
+                  } @else if (card.cardType === 'GAME' && card.gameTemplateId) {
+                    <a class="font-medium ui-text-accent underline-offset-4 hover:underline" [routerLink]="['/nfc-game/games', card.gameTemplateId]">
+                      {{ cardTargetLabel(card) }}
+                    </a>
+                  } @else {
+                    <span class="font-medium">{{ cardTargetLabel(card) }}</span>
+                  }
+                  @if (cardTargetLabel(card) !== '-' && (card.playerId || card.gameTemplateId)) {
+                    <span class="mt-1 block max-w-[220px] truncate font-mono text-xs ui-text-muted">
+                      {{ card.playerId || card.gameTemplateId }}
+                    </span>
+                  }
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap gap-2">
+                    <button class="rounded-md border ui-border-subtle px-3 py-2" type="button" (click)="choose(card)">Zuweisen</button>
+                    <button
+                      class="rounded-md border ui-border-danger px-3 py-2 ui-text-danger disabled:cursor-not-allowed disabled:opacity-40"
+                      type="button"
+                      [disabled]="deletingCardId() === card.id"
+                      (click)="confirmDelete(card)"
+                    >
+                      Löschen
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="px-4 py-8 text-center ui-text-muted">Keine Karten.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <form class="grid content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="assign()">
+      <h2 class="text-xl font-semibold">Karte zuweisen</h2>
+      <label class="grid gap-2 text-sm">Card UID <input name="cardUid" [ngModel]="form().cardUid" (ngModelChange)="patch({ cardUid: $event })" required /></label>
+      <label class="grid gap-2 text-sm">
+        Kartentyp
+        <mat-select class="nfc-select" panelClass="nfc-select-panel" name="cardType" [ngModel]="form().cardType" (ngModelChange)="setCardType($event)">
+          <mat-option value="PLAYER">PLAYER</mat-option>
+          <mat-option value="GAME">GAME</mat-option>
+        </mat-select>
+      </label>
+      @if (form().cardType === 'PLAYER') {
+        <label class="grid gap-2 text-sm">Spieler
+          <mat-select
+            class="nfc-select"
+            panelClass="nfc-select-panel"
+            name="playerId"
+            [ngModel]="form().playerId"
+            (ngModelChange)="patch({ playerId: $event })"
+            required
+          >
+            <mat-option [value]="null">Bitte wählen</mat-option>
+            @for (player of players(); track player.id) { <mat-option [value]="player.id">{{ player.name }}</mat-option> }
+          </mat-select>
+        </label>
+        <a
+          class="rounded-md border ui-border-accent px-3 py-2 text-center text-sm ui-text-accent"
+          routerLink="/nfc-game/admin/players/new"
+          [queryParams]="playerCreateQueryParams()"
+        >
+          Neuen Spieler mit dieser Karte erstellen
+        </a>
+      } @else {
+        <label class="grid gap-2 text-sm">Game Template
+          <mat-select
+            class="nfc-select"
+            panelClass="nfc-select-panel"
+            name="gameTemplateId"
+            [ngModel]="form().gameTemplateId"
+            (ngModelChange)="patch({ gameTemplateId: $event })"
+            required
+          >
+            <mat-option [value]="null">Bitte wählen</mat-option>
+            @for (game of games(); track game.id) { <mat-option [value]="game.id">{{ game.name }}</mat-option> }
+          </mat-select>
+        </label>
+        <a
+          class="rounded-md border ui-border-accent px-3 py-2 text-center text-sm ui-text-accent"
+          routerLink="/nfc-game/admin/game-templates/new"
+          [queryParams]="gameCreateQueryParams()"
+        >
+          Neues Spiel mit dieser Karte erstellen
+        </a>
+      }
+      <button class="rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent" type="submit">Speichern</button>
+    </form>
+  </section>
+</nfc-admin-shell>

@@ -1,0 +1,43 @@
+<section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+  <div class="flex items-end justify-between gap-4">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">{{ eyebrow() }}</p>
+      <h2 class="mt-1 text-xl font-black ui-text-strong">{{ title() }}</h2>
+    </div>
+  </div>
+  <div class="mt-5 grid gap-3">
+    @for (item of data(); track item.label) {
+      <div
+        class="grid gap-2 rounded-lg border p-3 transition duration-200 hover:ui-surface-hover"
+        [class.ui-border-warm]="item.highlighted"
+        [class.ui-bg-warm-soft]="item.highlighted"
+        [class.ui-border-subtle]="!item.highlighted"
+        [class.ui-surface-muted]="!item.highlighted"
+      >
+        <div class="flex items-center justify-between gap-4 text-sm">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface text-xs font-black ui-text-strong">
+              @if (item.imageUrl) {
+                <img class="h-full w-full object-cover" [src]="item.imageUrl" [alt]="item.label" />
+              } @else {
+                {{ initials(item.label) }}
+              }
+            </span>
+            <span class="min-w-0">
+              <span class="block truncate font-semibold ui-text-strong">{{ item.label }}</span>
+              @if (item.subLabel) {
+                <span class="mt-0.5 block truncate text-xs ui-text-muted">{{ item.subLabel }}</span>
+              }
+            </span>
+          </div>
+          <span class="shrink-0 text-xl font-black ui-text-strong">{{ item.value | number:'1.0-0' }}</span>
+        </div>
+        <div class="h-3 overflow-hidden rounded-full ui-surface">
+          <div class="h-full rounded-full ui-gradient-accent-warm" [style.width.%]="width(item.value)"></div>
+        </div>
+      </div>
+    } @empty {
+      <div class="rounded-md border border-dashed ui-border-subtle p-4 text-sm ui-text-muted">{{ emptyText() }}</div>
+    }
+  </div>
+</section>

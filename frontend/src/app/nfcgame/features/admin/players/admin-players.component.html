@@ -1,0 +1,50 @@
+<nfc-admin-shell title="Spieler">
+  <div class="mb-4 flex justify-end">
+    <a routerLink="/nfc-game/admin/players/new" class="rounded-md ui-bg-accent px-4 py-2 text-sm font-semibold ui-text-on-accent">Neuer Spieler</a>
+  </div>
+  <div class="overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted">
+    <table class="w-full min-w-[720px] text-left text-sm">
+      <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
+        <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Punkte</th><th class="px-4 py-3">Bild</th><th class="px-4 py-3">Aktion</th></tr>
+      </thead>
+      <tbody>
+        @for (player of players(); track player.id) {
+          <tr class="border-t ui-border-subtle">
+            <td class="px-4 py-3">
+              <a class="font-medium ui-text-accent underline-offset-4 hover:underline" [routerLink]="['/nfc-game/players', player.id]">
+                {{ player.name }}
+              </a>
+            </td>
+            <td class="px-4 py-3">{{ player.active ? 'Aktiv' : 'Inaktiv' }}</td>
+            <td class="px-4 py-3">
+              <span class="font-semibold tabular-nums">{{ player.totalPoints }}</span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="grid h-12 w-12 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface-muted">
+                @if (player.imageUrl) {
+                  <img class="h-full w-full object-cover" [src]="player.imageUrl" [alt]="player.name" />
+                } @else {
+                  <span class="text-sm font-semibold ui-text-muted">{{ player.name.slice(0, 1) || '?' }}</span>
+                }
+              </div>
+            </td>
+            <td class="flex gap-2 px-4 py-3">
+              <a class="rounded-md ui-surface px-3 py-2" [routerLink]="['/nfc-game/players', player.id]">Ansehen</a>
+              <a class="rounded-md border ui-border-subtle px-3 py-2" [routerLink]="['/nfc-game/admin/players', player.id]">Bearbeiten</a>
+              <button
+                class="rounded-md border px-3 py-2"
+                [class]="player.active ? 'ui-border-accent ui-text-accent' : 'ui-border-success ui-text-success'"
+                type="button"
+                (click)="toggleActive(player)"
+              >
+                {{ player.active ? 'Inaktiv setzen' : 'Aktiv setzen' }}
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="px-4 py-8 text-center ui-text-muted">Keine Spieler.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</nfc-admin-shell>

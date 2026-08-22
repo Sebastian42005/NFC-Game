@@ -1,0 +1,19 @@
+:host {
+  display: block;
+}
+
+.line-stop-accent {
+  stop-color: var(--nfc-accent-strong);
+}
+
+.line-stop-info {
+  stop-color: var(--nfc-brand-primary-soft);
+}
+
+.line-stop-warm {
+  stop-color: var(--nfc-warm-soft);
+}
+
+.line-point {
+  fill: var(--nfc-text);
+}

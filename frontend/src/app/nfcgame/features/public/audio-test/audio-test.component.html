@@ -1,0 +1,83 @@
+<nfc-public-shell title="Audio Test" eyebrow="Browser -> Server -> Geraet">
+  <section class="audio-test-grid">
+    <article class="audio-test-card">
+      <p class="audio-test-kicker">Testseite</p>
+      <h2>Sprachnachricht aufnehmen</h2>
+      <p class="audio-test-copy">
+        Nimm hier eine kurze Nachricht auf, hoer sie lokal an und schicke sie dann als testweise `latest.wav` an das NFC-Geraet.
+      </p>
+
+      <div class="audio-test-actions">
+        <button type="button" class="audio-test-button" [disabled]="!canRecord()" (click)="startRecording()">
+          Aufnahme starten
+        </button>
+        <button type="button" class="audio-test-button is-secondary" [disabled]="!canStop()" (click)="stopRecording()">
+          Stop
+        </button>
+        <button type="button" class="audio-test-button is-ghost" (click)="resetRecording()">
+          Zuruecksetzen
+        </button>
+      </div>
+
+      <div class="audio-test-status-row">
+        <span>Status: {{ state() }}</span>
+        <span>Dauer: {{ seconds() }}s</span>
+      </div>
+
+      @if (error()) {
+        <p class="audio-test-alert">{{ error() }}</p>
+      }
+
+      @if (previewUrl()) {
+        <div class="audio-test-player">
+          <p>Lokale Vorschau</p>
+          <audio controls [src]="previewUrl()"></audio>
+        </div>
+      }
+
+      <button type="button" class="audio-test-button is-accent" [disabled]="!canSend()" (click)="sendToDevice()">
+        An Geraet senden
+      </button>
+    </article>
+
+    <article class="audio-test-card">
+      <p class="audio-test-kicker">Serverstatus</p>
+      <h2>Zuletzt hochgeladene Testdatei</h2>
+
+      @if (latest()?.available) {
+        <div class="audio-test-meta">
+          <span>Version {{ latest()?.version }}</span>
+          <span>{{ latest()?.uploadedAt | date: 'short' }}</span>
+          <span>{{ latest()?.sizeBytes }} Bytes</span>
+        </div>
+
+        @if (serverPreviewUrl()) {
+          <div class="audio-test-player">
+            <p>Server-WAV</p>
+            <audio controls [src]="serverPreviewUrl()"></audio>
+          </div>
+        }
+
+        @if (latest()?.lastPlayedAt) {
+          <p class="audio-test-copy">
+            Letztes Playback: {{ latest()?.lastPlayedAt | date: 'short' }}
+            @if (latest()?.lastPlayedDeviceId) {
+              <span> auf {{ latest()?.lastPlayedDeviceId }}</span>
+            }
+          </p>
+        }
+      } @else {
+        <p class="audio-test-copy">Noch keine Datei hochgeladen.</p>
+      }
+
+      <div class="audio-test-steps">
+        <p>Testablauf</p>
+        <ol>
+          <li>Seite oeffnen und kurz aufnehmen.</li>
+          <li>Mit "An Geraet senden" hochladen.</li>
+          <li>ESP32 pollt die Test-API und spielt die neueste WAV-Datei ab.</li>
+        </ol>
+      </div>
+    </article>
+  </section>
+</nfc-public-shell>

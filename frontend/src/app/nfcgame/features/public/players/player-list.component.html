@@ -1,0 +1,19 @@
+<nfc-public-shell title="Spieler">
+  <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (player of players(); track player.id) {
+      <a [routerLink]="['/nfc-game/players', player.id]" class="rounded-lg border ui-border-subtle ui-surface-muted p-5 hover:ui-surface-hover">
+        <div class="mb-4 grid h-24 w-24 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface-muted">
+          @if (player.imageUrl) {
+            <img [src]="player.imageUrl" [alt]="player.name" class="h-full w-full object-cover" />
+          } @else {
+            <span class="text-2xl font-semibold ui-text-muted">{{ player.name.slice(0, 1) || '?' }}</span>
+          }
+        </div>
+        <h2 class="text-xl font-semibold">{{ player.name }}</h2>
+        <p class="mt-2 line-clamp-3 text-sm ui-text-muted">{{ player.description || 'Keine Beschreibung.' }}</p>
+      </a>
+    } @empty {
+      <p class="rounded-lg border border-dashed ui-border-subtle p-4 ui-text-muted">Noch keine Spieler.</p>
+    }
+  </section>
+</nfc-public-shell>

@@ -1,0 +1,121 @@
+:host {
+  display: block;
+}
+
+.nfc-reader-experience {
+  --nfc-reader-bg: #050606;
+  --nfc-reader-line: rgba(255, 255, 255, 0.055);
+  --nfc-reader-text: rgba(248, 250, 252, 0.96);
+  --nfc-reader-muted: rgba(226, 232, 240, 0.64);
+  --nfc-reader-accent: var(--nfc-accent-strong);
+  min-height: 1000svh;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(120deg, #050606 0%, #10110f 42%, #050606 100%);
+  background-size: 72px 72px, 72px 72px, auto;
+  color: var(--nfc-reader-text);
+  color-scheme: dark;
+}
+
+.nfc-reader-experience::before,
+.nfc-reader-experience::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.nfc-reader-experience::before {
+  background:
+    linear-gradient(90deg, rgba(0, 184, 255, 0.13), transparent 34%, transparent 64%, rgba(251, 191, 36, 0.1)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 24%, transparent 72%, rgba(0, 0, 0, 0.52));
+}
+
+.nfc-reader-experience::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.48), transparent 22%, transparent 78%, rgba(0, 0, 0, 0.42));
+}
+
+.nfc-reader-step {
+  position: relative;
+}
+
+.nfc-reader-step:not(.is-first) {
+  align-items: flex-end;
+}
+
+.nfc-reader-step.is-right-step {
+  justify-content: flex-end;
+}
+
+.nfc-reader-copy {
+  max-width: min(32rem, calc(100vw - 2.5rem));
+  text-shadow: 0 16px 42px rgba(0, 0, 0, 0.52);
+}
+
+.nfc-reader-step-label {
+  margin: 0 0 1rem;
+  color: var(--nfc-reader-accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.nfc-reader-copy h2 {
+  margin: 0;
+  color: var(--nfc-reader-text);
+  font-size: clamp(2.45rem, 5.4vw, 6.3rem);
+  font-weight: 950;
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+}
+
+.nfc-reader-copy p:last-child {
+  max-width: 22rem;
+  margin: 1rem 0 0;
+  color: var(--nfc-reader-muted);
+  font-size: clamp(1rem, 1.1rem, 1.2rem);
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.nfc-reader-copy.is-right {
+  text-align: right;
+}
+
+.nfc-reader-copy.is-right p:last-child {
+  margin-left: auto;
+}
+
+@media (max-width: 760px) {
+  .nfc-reader-experience {
+    min-height: 980svh;
+    background-size: 48px 48px, 48px 48px, auto;
+  }
+
+  .nfc-reader-step {
+    min-height: 140svh;
+    padding: 1rem 1rem 5.5rem;
+  }
+
+  .nfc-reader-step:not(.is-first) {
+    align-items: flex-end;
+  }
+
+  .nfc-reader-copy h2 {
+    font-size: clamp(2.15rem, 2.8rem, 3.25rem);
+  }
+
+  .nfc-reader-copy p:last-child {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nfc-reader-experience {
+    scroll-behavior: auto;
+  }
+}

@@ -1,0 +1,316 @@
+:root {
+  /* Base palette */
+  --color-bg: #0b1020;
+  --color-surface-overlay: rgba(0, 0, 0, 0.55);
+  --color-surface-glass: rgba(0, 0, 0, 0.22);
+  --color-surface-muted: rgba(0, 0, 0, 0.28);
+  --color-surface-subtle: rgba(0, 0, 0, 0.18);
+
+  /* White alpha scale */
+  --color-white-01: rgba(255, 255, 255, 0.01);
+  --color-white-02: rgba(255, 255, 255, 0.02);
+  --color-white-03: rgba(255, 255, 255, 0.03);
+  --color-white-04: rgba(255, 255, 255, 0.04);
+  --color-white-06: rgba(255, 255, 255, 0.06);
+  --color-white-10: rgba(255, 255, 255, 0.10);
+  --color-white-12: rgba(255, 255, 255, 0.12);
+  --color-white-14: rgba(255, 255, 255, 0.14);
+  --color-white-22: rgba(255, 255, 255, 0.22);
+  --color-white-25: rgba(255, 255, 255, 0.25);
+  --color-white-30: rgba(255, 255, 255, 0.30);
+  --color-white-45: rgba(255, 255, 255, 0.45);
+  --color-white-62: rgba(255, 255, 255, 0.62);
+  --color-white-82: rgba(255, 255, 255, 0.82);
+  --color-white-84: rgba(255, 255, 255, 0.84);
+  --color-white-92: rgba(255, 255, 255, 0.92);
+
+  /* Brand */
+  --color-primary: #ff2f92;
+  --color-primary-soft: #ff77b7;
+  --color-primary-bright: #ff5fb2;
+  --color-primary-glow: rgba(255, 47, 146, 0.35);
+  --color-primary-border: rgba(255, 47, 146, 0.55);
+  --color-primary-soft-bg: rgba(255, 47, 146, 0.08);
+  --color-primary-shadow-sm: rgba(255, 47, 146, 0.18);
+  --color-primary-shadow-md: rgba(255, 47, 146, 0.25);
+  --color-primary-shadow-lg: rgba(255, 47, 146, 0.45);
+  --color-primary-focus: rgba(255, 47, 146, 0.22);
+  --color-primary-line: rgba(255, 47, 146, 0.04);
+
+  /* Status */
+  --color-success: #4ade80;
+  --color-success-contrast: #217740;
+  --color-success-soft-bg: rgba(74, 222, 128, 0.08);
+  --color-success-soft-border: rgba(74, 222, 128, 0.18);
+  --color-success-pill-bg: rgba(74, 222, 128, 0.12);
+  --color-success-pill-border: rgba(74, 222, 128, 0.40);
+  --color-success-active-bg: rgba(110, 231, 183, 0.16);
+  --color-success-active-border: rgba(110, 231, 183, 0.55);
+  --color-success-heading-border: rgba(110, 231, 183, 0.35);
+  --color-success-heading-bg: rgba(110, 231, 183, 0.14);
+  --color-success-glow-soft: rgba(110, 231, 183, 0.08);
+  --color-success-glow-md: rgba(110, 231, 183, 0.12);
+  --color-success-glow-lg: rgba(110, 231, 183, 0.14);
+  --color-success-preview: #6ee7b7;
+
+  --color-danger: #fb7185;
+  --color-danger-contrast: #7f1d1d;
+  --color-danger-soft-bg: rgba(251, 113, 133, 0.10);
+  --color-danger-soft-border: rgba(251, 113, 133, 0.35);
+  --color-danger-focus: rgba(251, 113, 133, 0.14);
+  --color-danger-focus-border: rgba(251, 113, 133, 0.65);
+  --color-danger-alert-bg: rgba(248, 113, 113, 0.08);
+  --color-danger-alert-border: rgba(248, 113, 113, 0.28);
+  --color-danger-active-bg: rgba(248, 113, 113, 0.16);
+  --color-danger-active-border: rgba(248, 113, 113, 0.55);
+  --color-danger-icon: #ef4444;
+  --color-danger-preview: #f87171;
+
+  --color-info: #60a5fa;
+  --color-info-contrast: #062f4a;
+  --color-info-soft-bg: rgba(96, 165, 250, 0.06);
+  --color-info-soft-border: rgba(96, 165, 250, 0.10);
+  --color-autocomplete-bg: rgb(26, 27, 35);
+
+  /* Canvas and neutral utility tokens */
+  --color-canvas-white: #ffffff;
+  --color-neutral-ink: #0f172a;
+  --color-neutral-cloud: #f8fafc;
+  --color-neutral-mist: #e2e8f0;
+  --color-neutral-muted: #94a3b8;
+  --color-neutral-soft: #cbd5e1;
+  --color-shadow-soft: rgba(0, 0, 0, 0.22);
+
+  /* Decorative gradients */
+  --color-decor-emerald: rgba(110, 231, 183, 0.18);
+  --color-decor-sky: rgba(59, 130, 246, 0.18);
+  --color-decor-violet: rgba(168, 85, 247, 0.16);
+
+  /* Component-specific */
+  --color-border-subtle: var(--color-white-04);
+  --color-icon-muted: rgba(255, 255, 255, 0.55);
+  --color-file-fallback-text: rgba(255, 255, 255, 0.74);
+  --color-file-fallback-border: rgba(255, 255, 255, 0.22);
+  --color-shadow-elevated: rgba(0, 0, 0, 0.35);
+
+  /* NFC brand palette */
+  --nfc-brand-primary: #00b8ff;
+  --nfc-brand-secondary: #34d399;
+  --nfc-brand-primary-soft: #7dd3fc;
+  --nfc-brand-primary-muted: #0284c7;
+  --nfc-brand-primary-deep: #0369a1;
+  --nfc-brand-primary-contrast: #061018;
+  --nfc-brand-warm: #fbbf24;
+  --nfc-brand-warm-soft: #fde68a;
+  --nfc-brand-warm-muted: #b45309;
+  --nfc-brand-warm-deep: #92400e;
+
+  /* NFC dark theme */
+  --nfc-dark-bg: #070a12;
+  --nfc-dark-bg-alt: #0e1622;
+  --nfc-dark-nav-bg: #080d16;
+  --nfc-dark-surface: rgba(255, 255, 255, 0.06);
+  --nfc-dark-surface-strong: rgba(255, 255, 255, 0.10);
+  --nfc-dark-surface-muted: rgba(255, 255, 255, 0.04);
+  --nfc-dark-surface-hover: rgba(255, 255, 255, 0.12);
+  --nfc-dark-panel: #101820;
+  --nfc-dark-panel-alt: #16222c;
+  --nfc-dark-text: var(--color-neutral-cloud);
+  --nfc-dark-muted: #a7b3c7;
+  --nfc-dark-muted-soft: #748198;
+  --nfc-dark-border: rgba(226, 232, 240, 0.12);
+  --nfc-dark-border-strong: rgba(226, 232, 240, 0.22);
+  --nfc-dark-accent-border: rgba(125, 211, 252, 0.46);
+  --nfc-dark-accent-glow: rgba(0, 184, 255, 0.32);
+  --nfc-dark-grid-line: rgba(148, 163, 184, 0.06);
+  --nfc-dark-aura-primary: rgba(0, 184, 255, 0.20);
+  --nfc-dark-aura-warm: rgba(251, 191, 36, 0.12);
+  --nfc-dark-shadow: rgba(0, 0, 0, 0.42);
+
+  /* NFC light theme */
+  --nfc-light-bg: #f7f9fc;
+  --nfc-light-bg-alt: #eaf1f8;
+  --nfc-light-nav-bg: #ffffff;
+  --nfc-light-surface: rgba(255, 255, 255, 0.76);
+  --nfc-light-surface-strong: rgba(255, 255, 255, 0.94);
+  --nfc-light-surface-muted: rgba(15, 23, 42, 0.045);
+  --nfc-light-surface-hover: rgba(14, 165, 233, 0.10);
+  --nfc-light-panel: #ffffff;
+  --nfc-light-panel-alt: #eef7fd;
+  --nfc-light-text: var(--color-neutral-ink);
+  --nfc-light-muted: #475569;
+  --nfc-light-muted-soft: #64748b;
+  --nfc-light-border: rgba(15, 23, 42, 0.12);
+  --nfc-light-border-strong: rgba(14, 165, 233, 0.35);
+  --nfc-light-accent-border: rgba(2, 132, 199, 0.32);
+  --nfc-light-accent-glow: rgba(2, 132, 199, 0.20);
+  --nfc-light-grid-line: rgba(15, 23, 42, 0.045);
+  --nfc-light-aura-primary: rgba(14, 165, 233, 0.18);
+  --nfc-light-aura-warm: rgba(245, 158, 11, 0.16);
+  --nfc-light-shadow: rgba(15, 23, 42, 0.14);
+
+  /* NFC active theme defaults */
+  --nfc-bg: var(--nfc-dark-bg);
+  --nfc-bg-alt: var(--nfc-dark-bg-alt);
+  --nfc-nav-bg: var(--nfc-dark-nav-bg);
+  --nfc-surface: var(--nfc-dark-surface);
+  --nfc-surface-strong: var(--nfc-dark-surface-strong);
+  --nfc-surface-muted: var(--nfc-dark-surface-muted);
+  --nfc-surface-hover: var(--nfc-dark-surface-hover);
+  --nfc-panel-solid: var(--nfc-dark-panel);
+  --nfc-panel-solid-alt: var(--nfc-dark-panel-alt);
+  --nfc-text: var(--nfc-dark-text);
+  --nfc-muted: var(--nfc-dark-muted);
+  --nfc-muted-soft: var(--nfc-dark-muted-soft);
+  --nfc-border: var(--nfc-dark-border);
+  --nfc-border-strong: var(--nfc-dark-border-strong);
+  --nfc-accent: var(--nfc-brand-primary);
+  --nfc-accent-2: var(--nfc-brand-secondary);
+  --nfc-accent-strong: var(--nfc-brand-primary-soft);
+  --nfc-accent-contrast: var(--nfc-brand-primary-contrast);
+  --nfc-accent-border: var(--nfc-dark-accent-border);
+  --nfc-accent-glow: var(--nfc-dark-accent-glow);
+  --nfc-accent-surface: rgba(20, 184, 166, 0.22);
+  --nfc-accent-surface-soft: rgba(6, 182, 212, 0.10);
+  --nfc-warm: var(--nfc-brand-warm);
+  --nfc-warm-soft: var(--nfc-brand-warm-soft);
+  --nfc-danger: var(--color-danger);
+  --nfc-danger-soft: #fca5a5;
+  --nfc-grid-line: var(--nfc-dark-grid-line);
+  --nfc-aura-primary: var(--nfc-dark-aura-primary);
+  --nfc-aura-warm: var(--nfc-dark-aura-warm);
+  --nfc-shadow: var(--nfc-dark-shadow);
+  --nfc-shadow-soft: var(--color-shadow-soft);
+
+  /* NFC overlays and variable-kind colors */
+  --nfc-variable-menu-bg: #071110;
+  --nfc-variable-menu-border: rgba(45, 212, 191, 0.24);
+  --nfc-variable-menu-text: var(--color-neutral-mist);
+  --nfc-variable-menu-muted: var(--color-neutral-muted);
+  --nfc-variable-menu-hover-border: rgba(94, 234, 212, 0.28);
+  --nfc-variable-menu-hover-bg: rgba(20, 184, 166, 0.24);
+  --nfc-variable-menu-hover-bg-soft: rgba(20, 184, 166, 0.10);
+  --nfc-kind-object: #5eead4;
+  --nfc-kind-string: #67e8f9;
+  --nfc-kind-integer: #fde047;
+  --nfc-kind-boolean: #93c5fd;
+
+  /* NFC flow builder category colors */
+  --nfc-flow-ui-accent: var(--nfc-kind-boolean);
+  --nfc-flow-ui-tint: rgba(147, 197, 253, 0.13);
+  --nfc-flow-ui-border: rgba(147, 197, 253, 0.28);
+  --nfc-flow-input-accent: #86efac;
+  --nfc-flow-input-tint: rgba(134, 239, 172, 0.12);
+  --nfc-flow-input-border: rgba(134, 239, 172, 0.27);
+  --nfc-flow-session-accent: #fcd34d;
+  --nfc-flow-session-tint: rgba(252, 211, 77, 0.12);
+  --nfc-flow-session-border: rgba(252, 211, 77, 0.27);
+  --nfc-flow-score-accent: #fdba74;
+  --nfc-flow-score-tint: rgba(253, 186, 116, 0.12);
+  --nfc-flow-score-border: rgba(253, 186, 116, 0.26);
+  --nfc-flow-economy-accent: #a7f3d0;
+  --nfc-flow-economy-tint: rgba(167, 243, 208, 0.12);
+  --nfc-flow-economy-border: rgba(167, 243, 208, 0.27);
+  --nfc-flow-logic-accent: #d8b4fe;
+  --nfc-flow-logic-tint: rgba(216, 180, 254, 0.12);
+  --nfc-flow-logic-border: rgba(216, 180, 254, 0.27);
+  --nfc-flow-fallback-accent: var(--color-neutral-soft);
+  --nfc-flow-fallback-tint: rgba(226, 232, 240, 0.08);
+  --nfc-flow-fallback-border: rgba(226, 232, 240, 0.16);
+
+  /* NFC dashboard effects */
+  --nfc-dashboard-score-aura: rgba(45, 212, 191, 0.26);
+  --nfc-dashboard-score-bg-start: rgba(6, 17, 15, 0.99);
+  --nfc-dashboard-score-bg-end: rgba(12, 18, 16, 0.98);
+  --nfc-dashboard-score-glow: rgba(45, 212, 191, 0.28);
+  --nfc-dashboard-score-ring: rgba(94, 234, 212, 0.18);
+  --nfc-dashboard-team-pulse: rgba(45, 212, 191, 0.22);
+  --nfc-dashboard-victory-warm-aura: rgba(251, 191, 36, 0.28);
+  --nfc-dashboard-victory-accent-aura: rgba(45, 212, 191, 0.24);
+  --nfc-dashboard-victory-cyan-aura: rgba(34, 211, 238, 0.18);
+  --nfc-dashboard-victory-bg-start: rgba(3, 7, 18, 0.78);
+  --nfc-dashboard-victory-bg-end: rgba(6, 17, 15, 0.86);
+  --nfc-dashboard-victory-scan-warm: rgba(251, 191, 36, 0.80);
+  --nfc-dashboard-victory-scan-accent: rgba(45, 212, 191, 0.72);
+  --nfc-dashboard-title-warm-glow: rgba(251, 191, 36, 0.42);
+  --nfc-dashboard-title-accent-glow: rgba(45, 212, 191, 0.34);
+
+  /* Backwards-compatible aliases */
+  --bg: var(--color-bg);
+  --panel: var(--color-white-06);
+  --panel-strong: var(--color-white-10);
+  --border: var(--color-white-12);
+  --text: var(--color-white-92);
+  --muted: var(--color-white-62);
+  --primary: var(--color-primary);
+  --primary-soft: var(--color-primary-soft);
+  --primary-glow: var(--color-primary-glow);
+  --success: var(--color-success);
+  --success-contrast: var(--color-success-contrast);
+  --danger: var(--color-danger);
+  --info: var(--color-info);
+  --info-contrast: var(--color-info-contrast);
+  --ui-autocomplete-background-color: var(--color-autocomplete-bg);
+}
+
+.nfc-theme-dark,
+:root[data-nfc-theme='dark'] {
+  --nfc-bg: var(--nfc-dark-bg);
+  --nfc-bg-alt: var(--nfc-dark-bg-alt);
+  --nfc-nav-bg: var(--nfc-dark-nav-bg);
+  --nfc-surface: var(--nfc-dark-surface);
+  --nfc-surface-strong: var(--nfc-dark-surface-strong);
+  --nfc-surface-muted: var(--nfc-dark-surface-muted);
+  --nfc-surface-hover: var(--nfc-dark-surface-hover);
+  --nfc-panel-solid: var(--nfc-dark-panel);
+  --nfc-panel-solid-alt: var(--nfc-dark-panel-alt);
+  --nfc-text: var(--nfc-dark-text);
+  --nfc-muted: var(--nfc-dark-muted);
+  --nfc-muted-soft: var(--nfc-dark-muted-soft);
+  --nfc-border: var(--nfc-dark-border);
+  --nfc-border-strong: var(--nfc-dark-border-strong);
+  --nfc-accent: var(--nfc-brand-primary);
+  --nfc-accent-2: var(--nfc-brand-secondary);
+  --nfc-accent-strong: var(--nfc-brand-primary-soft);
+  --nfc-accent-contrast: var(--nfc-brand-primary-contrast);
+  --nfc-accent-border: var(--nfc-dark-accent-border);
+  --nfc-accent-glow: var(--nfc-dark-accent-glow);
+  --nfc-warm: var(--nfc-brand-warm);
+  --nfc-warm-soft: var(--nfc-brand-warm-soft);
+  --nfc-danger: var(--color-danger);
+  --nfc-grid-line: var(--nfc-dark-grid-line);
+  --nfc-aura-primary: var(--nfc-dark-aura-primary);
+  --nfc-aura-warm: var(--nfc-dark-aura-warm);
+  --nfc-shadow: var(--nfc-dark-shadow);
+}
+
+.nfc-theme-light,
+:root[data-nfc-theme='light'] {
+  --nfc-bg: var(--nfc-light-bg);
+  --nfc-bg-alt: var(--nfc-light-bg-alt);
+  --nfc-nav-bg: var(--nfc-light-nav-bg);
+  --nfc-surface: var(--nfc-light-surface);
+  --nfc-surface-strong: var(--nfc-light-surface-strong);
+  --nfc-surface-muted: var(--nfc-light-surface-muted);
+  --nfc-surface-hover: var(--nfc-light-surface-hover);
+  --nfc-panel-solid: var(--nfc-light-panel);
+  --nfc-panel-solid-alt: var(--nfc-light-panel-alt);
+  --nfc-text: var(--nfc-light-text);
+  --nfc-muted: var(--nfc-light-muted);
+  --nfc-muted-soft: var(--nfc-light-muted-soft);
+  --nfc-border: var(--nfc-light-border);
+  --nfc-border-strong: var(--nfc-light-border-strong);
+  --nfc-accent: var(--nfc-brand-primary-muted);
+  --nfc-accent-2: #10b981;
+  --nfc-accent-strong: var(--nfc-brand-primary-deep);
+  --nfc-accent-contrast: var(--color-canvas-white);
+  --nfc-accent-border: var(--nfc-light-accent-border);
+  --nfc-accent-glow: var(--nfc-light-accent-glow);
+  --nfc-warm: var(--nfc-brand-warm-muted);
+  --nfc-warm-soft: var(--nfc-brand-warm-deep);
+  --nfc-danger: #be123c;
+  --nfc-grid-line: var(--nfc-light-grid-line);
+  --nfc-aura-primary: var(--nfc-light-aura-primary);
+  --nfc-aura-warm: var(--nfc-light-aura-warm);
+  --nfc-shadow: var(--nfc-light-shadow);
+}

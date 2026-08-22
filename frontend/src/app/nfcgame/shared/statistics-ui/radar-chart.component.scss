@@ -1,0 +1,27 @@
+:host {
+  display: block;
+}
+
+.radar-grid {
+  fill: none;
+  stroke: var(--color-white-10);
+}
+
+.radar-grid-outer {
+  fill: var(--color-white-03);
+  stroke: var(--color-white-12);
+}
+
+.radar-value {
+  fill: color-mix(in srgb, var(--nfc-accent) 24%, transparent);
+  stroke: var(--nfc-accent-strong);
+  stroke-width: 3;
+}
+
+.radar-axis {
+  stroke: var(--color-white-10);
+}
+
+.radar-point {
+  fill: var(--nfc-warm-soft);
+}

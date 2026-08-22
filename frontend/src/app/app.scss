@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+
+  background:
+    radial-gradient(900px 600px at 15% 10%, var(--color-decor-emerald), transparent 60%),
+    radial-gradient(900px 600px at 85% 0%, var(--color-decor-sky), transparent 55%),
+    radial-gradient(1000px 700px at 30% 90%, var(--color-decor-violet), transparent 60%),
+    var(--bg);
+}

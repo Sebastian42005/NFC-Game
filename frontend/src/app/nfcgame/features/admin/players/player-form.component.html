@@ -1,0 +1,38 @@
+<nfc-admin-shell [title]="title()">
+  <form class="grid max-w-2xl gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="save()">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div class="grid h-28 w-28 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface-muted">
+        @if (previewImageUrl()) {
+          <img class="h-full w-full object-cover" [src]="previewImageUrl()" alt="Spielerbild Vorschau" />
+        } @else {
+          <span class="text-3xl font-semibold ui-text-muted">{{ form().name.slice(0, 1) || '?' }}</span>
+        }
+      </div>
+      <div class="grid flex-1 gap-3">
+        <label class="grid gap-2 text-sm">Name <input name="name" [ngModel]="form().name" (ngModelChange)="patch({ name: $event })" required /></label>
+        <div class="grid gap-2 text-sm">
+          Profilbild
+          <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md border ui-border-subtle ui-surface-muted px-3 py-2 hover:ui-surface-hover">
+            <span class="truncate ui-text-soft">{{ selectedImage()?.file?.name || 'Bild auswählen' }}</span>
+            <span class="shrink-0 rounded ui-bg-accent px-2 py-1 text-xs font-semibold ui-text-on-accent">Datei</span>
+            <input class="sr-only" type="file" accept="image/*" (change)="onImageSelected($event)" />
+          </label>
+        </div>
+      </div>
+    </div>
+    <label class="grid gap-2 text-sm">Beschreibung <textarea name="description" rows="4" [ngModel]="form().description" (ngModelChange)="patch({ description: $event })"></textarea></label>
+    <label class="grid gap-2 text-sm">
+      NFC Karte
+      <mat-select class="nfc-select" panelClass="nfc-select-panel" name="cardUidSelect" [ngModel]="cardUid()" (ngModelChange)="cardUid.set($event)">
+        <mat-option value="">Keine Karte zuweisen</mat-option>
+        @for (card of unassignedCards(); track card.id) {
+          <mat-option [value]="card.cardUid">{{ card.cardUid }} · {{ card.cardType }}</mat-option>
+        }
+      </mat-select>
+    </label>
+    <label class="grid gap-2 text-sm">Oder Card UID direkt <input name="cardUid" [ngModel]="cardUid()" (ngModelChange)="cardUid.set($event)" /></label>
+    <label class="flex items-center gap-3 text-sm"><input type="checkbox" name="active" [ngModel]="form().active" (ngModelChange)="patch({ active: $event })" /> Aktiv</label>
+    @if (error()) { <p class="rounded-md border ui-border-accent ui-bg-accent-soft p-3 ui-text-accent">{{ error() }}</p> }
+    <button class="rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent" type="submit">Speichern</button>
+  </form>
+</nfc-admin-shell>
