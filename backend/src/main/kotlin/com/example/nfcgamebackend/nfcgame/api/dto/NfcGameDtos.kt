@@ -91,6 +91,7 @@ data class DeviceProvisioningResponse(
     val name: String,
     val active: Boolean,
     val linked: Boolean,
+    val accountUsername: String? = null,
     val pairingCode: String,
     val lastSeenAt: Instant?,
     val createdAt: Instant,

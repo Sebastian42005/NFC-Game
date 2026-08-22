@@ -46,6 +46,7 @@ static const char *BACKEND_BASE_URL = "https://sebis-projects.at";
 static const bool DISPLAY_INVERT_COLORS = true;
 static const char *FIRMWARE_VERSION = "1.0.1";
 static const unsigned long OTA_CHECK_INTERVAL_MS = 24UL * 60UL * 60UL * 1000UL;
+static const unsigned long DEVICE_LINK_CHECK_INTERVAL_MS = 5000;
 
 // =====================================================
 // Device identity
@@ -209,12 +210,14 @@ String savedWifiPassword = "";
 String deviceId = "";
 String deviceKey = "";
 String pairingCode = "";
+String linkedAccountUsername = "";
 String scannedWifiSsids[MAX_SCANNED_WIFI_NETWORKS];
 int scannedWifiRssis[MAX_SCANNED_WIFI_NETWORKS];
 int scannedWifiCount = 0;
 bool wifiScanDone = false;
 bool deviceRegistered = false;
 bool deviceLinked = false;
+unsigned long lastDeviceLinkCheckAt = 0;
 unsigned long lastOtaCheckAt = 0;
 int lastOtaProgressPercent = -1;
 unsigned long lastAudioPollAt = 0;
@@ -302,6 +305,7 @@ static const size_t CAP_WIFI_PASSWORD = 128;
 static const size_t CAP_DEVICE_ID = 56;
 static const size_t CAP_DEVICE_KEY = 40;
 static const size_t CAP_PAIRING_CODE = 12;
+static const size_t CAP_ACCOUNT_USERNAME = 48;
 static const size_t CAP_AUDIO_URL = 256;
 
 void reserveStringCapacity(String &value, size_t capacity) {
@@ -339,6 +343,10 @@ void setTransientFooterLimited(const String &value) {
   setStringLimited(transientFooterText, value.c_str(), CAP_TRANSIENT_FOOTER - 1);
 }
 
+void setLinkedAccountUsernameLimited(const String &value) {
+  setStringLimited(linkedAccountUsername, value.c_str(), CAP_ACCOUNT_USERNAME - 1);
+}
+
 void setLastRawUidLimited(const String &value) {
   setStringLimited(lastRawUid, value.c_str(), CAP_LAST_UUID - 1);
 }
@@ -359,6 +367,7 @@ void initStringCapacities() {
   reserveStringCapacity(deviceId, CAP_DEVICE_ID);
   reserveStringCapacity(deviceKey, CAP_DEVICE_KEY);
   reserveStringCapacity(pairingCode, CAP_PAIRING_CODE);
+  reserveStringCapacity(linkedAccountUsername, CAP_ACCOUNT_USERNAME);
 
   reserveStringCapacity(screen.screenType, CAP_SCREEN_TYPE);
   reserveStringCapacity(screen.title, CAP_SCREEN_TITLE);
@@ -540,6 +549,25 @@ void drawTextLineBuffer(
   if (text == nullptr) return;
 
   String displayText = fitText(String(text), maxChars);
+
+  tft.setTextColor(color, bgColor);
+  tft.setTextSize(textSize);
+  tft.setCursor(x, y);
+  tft.print(displayText);
+}
+
+void drawRightTextLine(
+  const String &text,
+  int rightX,
+  int y,
+  int maxChars,
+  uint16_t color,
+  int textSize,
+  uint16_t bgColor = COLOR_BG
+) {
+  String displayText = fitText(text, maxChars);
+  int textW = displayText.length() * 6 * textSize;
+  int x = max(0, rightX - textW);
 
   tft.setTextColor(color, bgColor);
   tft.setTextSize(textSize);
@@ -879,16 +907,37 @@ void buildFooterText(char *buffer, size_t bufferSize) {
   snprintf(buffer, bufferSize, "%s", statusText.length() > 0 ? statusText.c_str() : "Bereit");
 }
 
+String linkedAccountFooterText() {
+  if (!deviceRegistered) {
+    return "Backend offline";
+  }
+
+  if (!deviceLinked) {
+    return "Nicht verbunden";
+  }
+
+  if (linkedAccountUsername.length() > 0) {
+    return linkedAccountUsername;
+  }
+
+  return "Account verbunden";
+}
+
 void drawFooter() {
   const int footerY = SCREEN_H - 18;
   char footerBuffer[96];
 
   buildFooterText(footerBuffer, sizeof(footerBuffer));
+  String accountText = linkedAccountFooterText();
+  String fittedAccountText = fitText(accountText, 22);
+  int accountTextW = fittedAccountText.length() * 6;
+  int leftMaxChars = max(8, (SCREEN_W - accountTextW - 24) / 6);
 
   tft.fillRect(0, footerY, SCREEN_W, 18, COLOR_BG);
   tft.drawFastHLine(0, footerY, SCREEN_W, COLOR_LINE);
 
-  drawTextLineBuffer(footerBuffer, 6, footerY + 5, 52, COLOR_MUTED, 1);
+  drawTextLineBuffer(footerBuffer, 6, footerY + 5, leftMaxChars, COLOR_MUTED, 1);
+  drawRightTextLine(fittedAccountText, SCREEN_W - 6, footerY + 5, 22, COLOR_ACCENT, 1);
 }
 
 void setStartScreen(const String &status = "Bereit fuer neuen Scan") {
@@ -942,7 +991,8 @@ void drawPairingCodeScreen() {
   tft.print(code);
 
   drawTextLine("nfc-game/account", 92, 184, 30, COLOR_MUTED, 1);
-  drawTextLine("Nach dem Verbinden neu starten", 58, 204, 34, COLOR_MUTED, 1);
+  drawTextLine("Verbindung wird automatisch erkannt", 42, 204, 40, COLOR_MUTED, 1);
+  drawFooter();
 }
 
 void drawWifiRecoveryScreen() {
@@ -2037,6 +2087,8 @@ bool registerDeviceWithBackend() {
     return false;
   }
 
+  lastDeviceLinkCheckAt = millis();
+
   static StaticJsonDocument<256> doc;
   doc.clear();
   doc["name"] = deviceId;
@@ -2072,18 +2124,28 @@ bool registerDeviceWithBackend() {
     if (!error) {
       setStringLimited(pairingCode, responseDoc["pairingCode"] | "", CAP_PAIRING_CODE - 1);
       deviceLinked = responseDoc["linked"] | false;
+      const char *accountUsername = responseDoc["accountUsername"] | nullptr;
+      if (accountUsername == nullptr) accountUsername = responseDoc["username"] | nullptr;
+      if (accountUsername == nullptr) accountUsername = responseDoc["accountName"] | nullptr;
+      if (deviceLinked && accountUsername != nullptr) {
+        setLinkedAccountUsernameLimited(String(accountUsername));
+      } else {
+        linkedAccountUsername = "";
+      }
     } else {
       pairingCode = "";
       deviceLinked = false;
+      linkedAccountUsername = "";
     }
 
     deviceRegistered = true;
-    setStatusTextLimited(deviceLinked ? "Device verbunden" : "Pairing Code bereit");
+    setStatusTextLimited(deviceLinked ? "Account geprueft" : "Pairing Code bereit");
     return true;
   }
 
   deviceRegistered = false;
   deviceLinked = false;
+  linkedAccountUsername = "";
   setLastErrorLimited("Register HTTP " + String(code));
   return false;
 }
@@ -3786,11 +3848,33 @@ void loop() {
       ensureWifiConnected(false);
     }
   } else if (!deviceRegistered) {
-    if (registerDeviceWithBackend() && lastOtaCheckAt == 0) {
-      checkForFirmwareUpdate(false);
+    if (millis() - lastDeviceLinkCheckAt > DEVICE_LINK_CHECK_INTERVAL_MS) {
+      if (registerDeviceWithBackend() && lastOtaCheckAt == 0) {
+        checkForFirmwareUpdate(false);
+      }
     }
   } else if (millis() - lastOtaCheckAt > OTA_CHECK_INTERVAL_MS) {
     checkForFirmwareUpdate(false);
+  }
+
+  if (!deviceRegistered) {
+    return;
+  }
+
+  if (deviceRegistered && !deviceLinked) {
+    if (millis() - lastDeviceLinkCheckAt > DEVICE_LINK_CHECK_INTERVAL_MS) {
+      bool wasLinked = deviceLinked;
+      registerDeviceWithBackend();
+
+      if (!wasLinked && deviceLinked) {
+        setStartScreen("Account verbunden");
+        drawScreen();
+      } else {
+        drawPairingCodeScreen();
+      }
+    }
+
+    return;
   }
 
   handleAudioTestPlayback();

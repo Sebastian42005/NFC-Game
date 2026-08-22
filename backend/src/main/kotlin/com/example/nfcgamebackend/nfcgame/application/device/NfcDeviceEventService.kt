@@ -29,6 +29,7 @@ import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcSessionEvent
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcSessionTeamMemberRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcSessionTeamRepository
 import com.example.nfcgamebackend.nfcgame.security.DeviceAuthenticator
+import com.example.nfcgamebackend.repositories.AppUserRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.http.HttpStatus
 import org.springframework.messaging.simp.SimpMessagingTemplate
@@ -48,6 +49,7 @@ class NfcDeviceEventService(
     private val moneyTransactionRepository: NfcMoneyTransactionRepository,
     private val cardRepository: NfcCardRepository,
     private val deviceRepository: NfcDeviceRepository,
+    private val appUserRepository: AppUserRepository,
     private val sessionRepository: NfcGameSessionRepository,
     private val playerRepository: NfcPlayerRepository,
     private val teamRepository: NfcSessionTeamRepository,
@@ -239,15 +241,24 @@ class NfcDeviceEventService(
         throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not generate pairing code")
     }
 
-    private fun toProvisioningResponse(device: NfcDevice) = DeviceProvisioningResponse(
-        id = requireNotNull(device.id),
-        name = device.name,
-        active = device.active,
-        linked = device.accountId != null,
-        pairingCode = requireNotNull(device.pairingCode),
-        lastSeenAt = device.lastSeenAt,
-        createdAt = device.createdAt,
-    )
+    private fun toProvisioningResponse(device: NfcDevice): DeviceProvisioningResponse {
+        val account = device.accountId?.let { appUserRepository.findById(it).orElse(null) }
+        if (device.accountId != null && account == null) {
+            device.accountId = null
+            deviceRepository.save(device)
+        }
+
+        return DeviceProvisioningResponse(
+            id = requireNotNull(device.id),
+            name = device.name,
+            active = device.active,
+            linked = account != null,
+            accountUsername = account?.username,
+            pairingCode = requireNotNull(device.pairingCode),
+            lastSeenAt = device.lastSeenAt,
+            createdAt = device.createdAt,
+        )
+    }
 
     private fun publishSessionUpdates(sessionId: java.util.UUID?) {
         val rawSession = sessionId?.let { sessionRepository.findById(it).orElse(null) }
