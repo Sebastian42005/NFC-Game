@@ -250,6 +250,7 @@ long lastKnownAudioTestVersion = 0;
 bool audioOutputInitialized = false;
 uint32_t audioOutputSampleRate = 0;
 int audioStartupPresetIndex = 1;
+uint32_t audioDiagnosticExtraSkipMs = 0;
 String audioSerialCommand = "";
 
 enum WifiRecoveryChoice {
@@ -1979,7 +1980,7 @@ void printAudioPresets() {
   for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
     printAudioPreset(i);
   }
-  Serial.println("Commands: audio:test, audio:sweep, audio:preset N, audio:presets, audio:tone");
+  Serial.println("Commands: audio:test, audio:sweep, audio:skips, audio:silence, audio:preset N, audio:presets, audio:tone");
 }
 
 bool playAudioDiagnosticTone(uint32_t durationMs = 450) {
@@ -2053,6 +2054,27 @@ bool playAudioDiagnosticTone(uint32_t durationMs = 450) {
   return true;
 }
 
+bool playAudioDiagnosticSilence(uint32_t durationMs = 900) {
+  const AudioStartupPreset &preset = currentAudioStartupPreset();
+  const uint32_t sampleRate = 16000;
+
+  Serial.printf("Audio silence diagnostic preset %d (%s), duration=%lums\n", audioStartupPresetIndex, preset.name, durationMs);
+
+  if (!initAudioOutput(sampleRate)) {
+    Serial.println("Audio silence diagnostic: I2S init failed");
+    return false;
+  }
+
+  bool ok = writeAudioSilence(sampleRate, durationMs);
+  deinitAudioOutput();
+
+  if (!ok) {
+    Serial.println("Audio silence diagnostic: silence write failed");
+  }
+
+  return ok;
+}
+
 bool playLatestAudioDiagnosticSource(const String &label, const String &metadataPath) {
   AudioTestMetadata metadata;
   if (!fetchAudioMetadata(metadataPath, -1, metadata)) {
@@ -2080,6 +2102,21 @@ bool playLatestAudioDiagnostic() {
 
   Serial.println("No backend audio found. Upload an Audio Test or queue a Game Sound first.");
   return false;
+}
+
+void sweepAudioDiagnosticSkips() {
+  static const uint32_t skipValuesMs[] = { 0, 160, 400, 800, 1200, 2000 };
+  uint32_t previousExtraSkipMs = audioDiagnosticExtraSkipMs;
+
+  for (uint32_t skipMs : skipValuesMs) {
+    audioDiagnosticExtraSkipMs = skipMs;
+    Serial.printf("Audio skip diagnostic: extraSkip=%lums totalSkip=%lums\n", skipMs, AUDIO_SKIP_INITIAL_MS + skipMs);
+    playLatestAudioDiagnostic();
+    delay(1200);
+  }
+
+  audioDiagnosticExtraSkipMs = previousExtraSkipMs;
+  Serial.println("Audio skip diagnostic done");
 }
 
 void processAudioDiagnosticCommand(String command) {
@@ -2117,7 +2154,18 @@ void processAudioDiagnosticCommand(String command) {
   }
 
   if (command == "audio test" || command == "audio latest") {
+    audioDiagnosticExtraSkipMs = 0;
     playLatestAudioDiagnostic();
+    return;
+  }
+
+  if (command == "audio silence") {
+    playAudioDiagnosticSilence();
+    return;
+  }
+
+  if (command == "audio skips" || command == "audio skip") {
+    sweepAudioDiagnosticSkips();
     return;
   }
 
@@ -2131,12 +2179,14 @@ void processAudioDiagnosticCommand(String command) {
 
     for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
       audioStartupPresetIndex = i;
+      audioDiagnosticExtraSkipMs = 0;
       printAudioPreset(i);
       playLatestAudioDiagnostic();
       delay(1200);
     }
 
     audioStartupPresetIndex = previousPreset;
+    audioDiagnosticExtraSkipMs = 0;
     Serial.print("Restored ");
     printAudioPreset(audioStartupPresetIndex);
     return;
@@ -3144,7 +3194,8 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
     return false;
   }
 
-  uint32_t initialSkipBytes = ((sampleRate * static_cast<uint32_t>(bitsPerSample / 8) * AUDIO_SKIP_INITIAL_MS) / 1000);
+  uint32_t initialSkipMs = AUDIO_SKIP_INITIAL_MS + audioDiagnosticExtraSkipMs;
+  uint32_t initialSkipBytes = ((sampleRate * static_cast<uint32_t>(bitsPerSample / 8) * initialSkipMs) / 1000);
   if ((initialSkipBytes % 2) == 1) {
     initialSkipBytes -= 1;
   }
@@ -3155,7 +3206,7 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
       return false;
     }
     dataSize -= initialSkipBytes;
-    Serial.printf("WAV initial skip: %lu ms, %lu bytes\n", AUDIO_SKIP_INITIAL_MS, initialSkipBytes);
+    Serial.printf("WAV initial skip: %lu ms, %lu bytes\n", initialSkipMs, initialSkipBytes);
   }
 
   if (!initAudioOutput(sampleRate)) {
