@@ -251,6 +251,9 @@ bool audioOutputInitialized = false;
 uint32_t audioOutputSampleRate = 0;
 int audioStartupPresetIndex = 1;
 uint32_t audioDiagnosticExtraSkipMs = 0;
+bool audioDiagnosticDecodeOverrideActive = false;
+bool audioDiagnosticSwapWavBytes = AUDIO_SWAP_WAV_BYTES;
+int audioDiagnosticVolumeDivisor = AUDIO_WAV_VOLUME_DIVISOR;
 String audioSerialCommand = "";
 
 enum WifiRecoveryChoice {
@@ -1709,11 +1712,15 @@ uint16_t readLe16(const uint8_t *buffer, int offset) {
 }
 
 int16_t readAudioSample16(const uint8_t *buffer, int offset) {
-  uint16_t value = AUDIO_SWAP_WAV_BYTES
+  bool swapBytes = audioDiagnosticDecodeOverrideActive ? audioDiagnosticSwapWavBytes : AUDIO_SWAP_WAV_BYTES;
+  int volumeDivisor = audioDiagnosticDecodeOverrideActive
+    ? max(1, audioDiagnosticVolumeDivisor)
+    : AUDIO_WAV_VOLUME_DIVISOR;
+  uint16_t value = swapBytes
     ? (static_cast<uint16_t>(buffer[offset]) << 8) | static_cast<uint16_t>(buffer[offset + 1])
     : readLe16(buffer, offset);
 
-  return static_cast<int16_t>(value) / AUDIO_WAV_VOLUME_DIVISOR;
+  return static_cast<int16_t>(value) / volumeDivisor;
 }
 
 bool readStreamBytes(WiFiClient *stream, uint8_t *buffer, size_t length) {
@@ -1980,7 +1987,7 @@ void printAudioPresets() {
   for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
     printAudioPreset(i);
   }
-  Serial.println("Commands: audio:test, audio:sweep, audio:skips, audio:silence, audio:preset N, audio:presets, audio:tone");
+  Serial.println("Commands: audio:test, audio:decode, audio:sweep, audio:skips, audio:silence, audio:preset N, audio:presets, audio:tone");
 }
 
 bool playAudioDiagnosticTone(uint32_t durationMs = 450) {
@@ -2119,6 +2126,49 @@ void sweepAudioDiagnosticSkips() {
   Serial.println("Audio skip diagnostic done");
 }
 
+void sweepAudioDiagnosticDecode() {
+  struct DecodeDiagnosticCase {
+    const char *name;
+    bool swapBytes;
+    int volumeDivisor;
+  };
+
+  static const DecodeDiagnosticCase decodeCases[] = {
+    { "current-swap-div4", true, 4 },
+    { "little-endian-div4", false, 4 },
+    { "current-swap-div8", true, 8 },
+    { "little-endian-div8", false, 8 },
+    { "little-endian-div12", false, 12 },
+  };
+
+  bool previousOverrideActive = audioDiagnosticDecodeOverrideActive;
+  bool previousSwap = audioDiagnosticSwapWavBytes;
+  int previousDivisor = audioDiagnosticVolumeDivisor;
+  uint32_t previousExtraSkipMs = audioDiagnosticExtraSkipMs;
+
+  audioDiagnosticExtraSkipMs = 0;
+  audioDiagnosticDecodeOverrideActive = true;
+
+  for (DecodeDiagnosticCase decodeCase : decodeCases) {
+    audioDiagnosticSwapWavBytes = decodeCase.swapBytes;
+    audioDiagnosticVolumeDivisor = decodeCase.volumeDivisor;
+    Serial.printf(
+      "Audio decode diagnostic: %s swap=%s divisor=%d\n",
+      decodeCase.name,
+      decodeCase.swapBytes ? "true" : "false",
+      decodeCase.volumeDivisor
+    );
+    playLatestAudioDiagnostic();
+    delay(1400);
+  }
+
+  audioDiagnosticDecodeOverrideActive = previousOverrideActive;
+  audioDiagnosticSwapWavBytes = previousSwap;
+  audioDiagnosticVolumeDivisor = previousDivisor;
+  audioDiagnosticExtraSkipMs = previousExtraSkipMs;
+  Serial.println("Audio decode diagnostic done");
+}
+
 void processAudioDiagnosticCommand(String command) {
   command.trim();
   if (command.length() == 0) {
@@ -2166,6 +2216,11 @@ void processAudioDiagnosticCommand(String command) {
 
   if (command == "audio skips" || command == "audio skip") {
     sweepAudioDiagnosticSkips();
+    return;
+  }
+
+  if (command == "audio decode" || command == "audio format" || command == "audio formats") {
+    sweepAudioDiagnosticDecode();
     return;
   }
 
