@@ -104,7 +104,7 @@ static const unsigned long AUDIO_POLL_INTERVAL_MS = 5000;
 static const i2s_port_t AUDIO_I2S_PORT = I2S_NUM_1;
 static const int AUDIO_DMA_BUFFER_COUNT = 6;
 static const int AUDIO_DMA_BUFFER_LEN = 256;
-static const int AUDIO_WAV_VOLUME_DIVISOR = 4;
+static const int AUDIO_WAV_VOLUME_DIVISOR = 6;
 static const uint32_t AUDIO_PREROLL_SILENCE_MS = 12;
 static const uint32_t AUDIO_SKIP_INITIAL_MS = 160;
 static const uint32_t AUDIO_FADE_IN_MS = 650;
@@ -1987,7 +1987,7 @@ void printAudioPresets() {
   for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
     printAudioPreset(i);
   }
-  Serial.println("Commands: audio:test, audio:decode, audio:sweep, audio:skips, audio:silence, audio:preset N, audio:presets, audio:tone");
+  Serial.println("Commands: audio:test, audio:volume, audio:decode, audio:sweep, audio:skips, audio:silence, audio:preset N, audio:presets, audio:tone");
 }
 
 bool playAudioDiagnosticTone(uint32_t durationMs = 450) {
@@ -2137,8 +2137,6 @@ void sweepAudioDiagnosticDecode() {
     { "current-swap-div4", true, 4 },
     { "little-endian-div4", false, 4 },
     { "current-swap-div8", true, 8 },
-    { "little-endian-div8", false, 8 },
-    { "little-endian-div12", false, 12 },
   };
 
   bool previousOverrideActive = audioDiagnosticDecodeOverrideActive;
@@ -2167,6 +2165,32 @@ void sweepAudioDiagnosticDecode() {
   audioDiagnosticVolumeDivisor = previousDivisor;
   audioDiagnosticExtraSkipMs = previousExtraSkipMs;
   Serial.println("Audio decode diagnostic done");
+}
+
+void sweepAudioDiagnosticVolume() {
+  static const int volumeDivisors[] = { 4, 5, 6, 7, 8 };
+
+  bool previousOverrideActive = audioDiagnosticDecodeOverrideActive;
+  bool previousSwap = audioDiagnosticSwapWavBytes;
+  int previousDivisor = audioDiagnosticVolumeDivisor;
+  uint32_t previousExtraSkipMs = audioDiagnosticExtraSkipMs;
+
+  audioDiagnosticExtraSkipMs = 0;
+  audioDiagnosticDecodeOverrideActive = true;
+  audioDiagnosticSwapWavBytes = true;
+
+  for (int divisor : volumeDivisors) {
+    audioDiagnosticVolumeDivisor = divisor;
+    Serial.printf("Audio volume diagnostic: swap=true divisor=%d\n", divisor);
+    playLatestAudioDiagnostic();
+    delay(1400);
+  }
+
+  audioDiagnosticDecodeOverrideActive = previousOverrideActive;
+  audioDiagnosticSwapWavBytes = previousSwap;
+  audioDiagnosticVolumeDivisor = previousDivisor;
+  audioDiagnosticExtraSkipMs = previousExtraSkipMs;
+  Serial.println("Audio volume diagnostic done");
 }
 
 void processAudioDiagnosticCommand(String command) {
@@ -2221,6 +2245,11 @@ void processAudioDiagnosticCommand(String command) {
 
   if (command == "audio decode" || command == "audio format" || command == "audio formats") {
     sweepAudioDiagnosticDecode();
+    return;
+  }
+
+  if (command == "audio volume" || command == "audio gain" || command == "audio levels") {
+    sweepAudioDiagnosticVolume();
     return;
   }
 
