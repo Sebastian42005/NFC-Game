@@ -10,6 +10,7 @@
 #include <TFT_eSPI.h>
 #include <XPT2046_Touchscreen.h>
 #include <driver/i2s.h>
+#include <math.h>
 
 #include <MFRC522v2.h>
 #include <MFRC522DriverPinSimple.h>
@@ -104,12 +105,29 @@ static const i2s_port_t AUDIO_I2S_PORT = I2S_NUM_1;
 static const int AUDIO_DMA_BUFFER_COUNT = 6;
 static const int AUDIO_DMA_BUFFER_LEN = 256;
 static const int AUDIO_WAV_VOLUME_DIVISOR = 4;
-static const uint32_t AUDIO_PREROLL_SILENCE_MS = 120;
+static const uint32_t AUDIO_PREROLL_SILENCE_MS = 12;
 static const uint32_t AUDIO_SKIP_INITIAL_MS = 160;
-static const uint32_t AUDIO_FADE_IN_MS = 500;
+static const uint32_t AUDIO_FADE_IN_MS = 650;
 static const uint32_t AUDIO_DC_SETTLE_MS = 80;
-static const uint32_t AUDIO_SHUTDOWN_SILENCE_MS = 260;
+static const uint32_t AUDIO_SHUTDOWN_SILENCE_MS = 80;
 static const bool AUDIO_SWAP_WAV_BYTES = true;
+
+struct AudioStartupPreset {
+  const char *name;
+  uint32_t prerollMs;
+  uint32_t fadeInMs;
+  uint32_t dcSettleMs;
+  uint32_t shutdownSilenceMs;
+};
+
+static const AudioStartupPreset AUDIO_STARTUP_PRESETS[] = {
+  { "minimal", 0, 650, 80, 80 },
+  { "short-silence", AUDIO_PREROLL_SILENCE_MS, AUDIO_FADE_IN_MS, AUDIO_DC_SETTLE_MS, AUDIO_SHUTDOWN_SILENCE_MS },
+  { "medium-silence", 50, 650, 80, 120 },
+  { "legacy", 120, 500, 80, 260 },
+  { "long-soft", 12, 1000, 120, 80 },
+};
+static const int AUDIO_STARTUP_PRESET_COUNT = sizeof(AUDIO_STARTUP_PRESETS) / sizeof(AUDIO_STARTUP_PRESETS[0]);
 
 // =====================================================
 // Objects
@@ -231,6 +249,8 @@ long lastKnownGameSoundVersion = 0;
 long lastKnownAudioTestVersion = 0;
 bool audioOutputInitialized = false;
 uint32_t audioOutputSampleRate = 0;
+int audioStartupPresetIndex = 1;
+String audioSerialCommand = "";
 
 enum WifiRecoveryChoice {
   WIFI_RECOVERY_RETRY,
@@ -374,6 +394,7 @@ void initStringCapacities() {
   reserveStringCapacity(deviceKey, CAP_DEVICE_KEY);
   reserveStringCapacity(pairingCode, CAP_PAIRING_CODE);
   reserveStringCapacity(linkedAccountUsername, CAP_ACCOUNT_USERNAME);
+  reserveStringCapacity(audioSerialCommand, 96);
 
   reserveStringCapacity(screen.screenType, CAP_SCREEN_TYPE);
   reserveStringCapacity(screen.title, CAP_SCREEN_TITLE);
@@ -1805,17 +1826,35 @@ bool readWavHeader(WiFiClient *stream, uint16_t &channels, uint32_t &sampleRate,
 
 bool writeAudioSilence(uint32_t sampleRate, uint32_t durationMs);
 
+const AudioStartupPreset &currentAudioStartupPreset() {
+  int index = constrain(audioStartupPresetIndex, 0, AUDIO_STARTUP_PRESET_COUNT - 1);
+  return AUDIO_STARTUP_PRESETS[index];
+}
+
+void driveAudioPinsLow() {
+  digitalWrite(AUDIO_I2S_BCLK_PIN, LOW);
+  digitalWrite(AUDIO_I2S_LRC_PIN, LOW);
+  digitalWrite(AUDIO_I2S_DOUT_PIN, LOW);
+  pinMode(AUDIO_I2S_BCLK_PIN, OUTPUT);
+  pinMode(AUDIO_I2S_LRC_PIN, OUTPUT);
+  pinMode(AUDIO_I2S_DOUT_PIN, OUTPUT);
+}
+
 bool initAudioOutput(uint32_t sampleRate) {
   if (audioOutputInitialized) {
     if (audioOutputSampleRate != sampleRate) {
+      i2s_stop(AUDIO_I2S_PORT);
       i2s_zero_dma_buffer(AUDIO_I2S_PORT);
       esp_err_t clockResult = i2s_set_clk(AUDIO_I2S_PORT, sampleRate, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
       if (clockResult != ESP_OK) {
         Serial.printf("i2s_set_clk failed: %d\n", clockResult);
+        i2s_start(AUDIO_I2S_PORT);
         return false;
       }
+      i2s_zero_dma_buffer(AUDIO_I2S_PORT);
+      i2s_start(AUDIO_I2S_PORT);
       audioOutputSampleRate = sampleRate;
-      writeAudioSilence(sampleRate, 120);
+      writeAudioSilence(sampleRate, AUDIO_PREROLL_SILENCE_MS);
     }
     return true;
   }
@@ -1839,6 +1878,9 @@ bool initAudioOutput(uint32_t sampleRate) {
   pinConfig.data_out_num = AUDIO_I2S_DOUT_PIN;
   pinConfig.data_in_num = I2S_PIN_NO_CHANGE;
 
+  driveAudioPinsLow();
+  delay(4);
+
   i2s_driver_uninstall(AUDIO_I2S_PORT);
 
   esp_err_t installResult = i2s_driver_install(AUDIO_I2S_PORT, &config, 0, nullptr);
@@ -1846,6 +1888,9 @@ bool initAudioOutput(uint32_t sampleRate) {
     Serial.printf("i2s_driver_install failed: %d\n", installResult);
     return false;
   }
+
+  i2s_stop(AUDIO_I2S_PORT);
+  i2s_zero_dma_buffer(AUDIO_I2S_PORT);
 
   esp_err_t pinResult = i2s_set_pin(AUDIO_I2S_PORT, &pinConfig);
   if (pinResult != ESP_OK) {
@@ -1862,6 +1907,13 @@ bool initAudioOutput(uint32_t sampleRate) {
   }
 
   i2s_zero_dma_buffer(AUDIO_I2S_PORT);
+  esp_err_t startResult = i2s_start(AUDIO_I2S_PORT);
+  if (startResult != ESP_OK) {
+    Serial.printf("i2s_start failed: %d\n", startResult);
+    i2s_driver_uninstall(AUDIO_I2S_PORT);
+    return false;
+  }
+
   audioOutputInitialized = true;
   audioOutputSampleRate = sampleRate;
   return true;
@@ -1876,9 +1928,7 @@ void deinitAudioOutput() {
     audioOutputSampleRate = 0;
   }
 
-  pinMode(AUDIO_I2S_BCLK_PIN, INPUT_PULLDOWN);
-  pinMode(AUDIO_I2S_LRC_PIN, INPUT_PULLDOWN);
-  pinMode(AUDIO_I2S_DOUT_PIN, INPUT_PULLDOWN);
+  driveAudioPinsLow();
 }
 
 bool writeAudioSilence(uint32_t sampleRate, uint32_t durationMs) {
@@ -1902,6 +1952,182 @@ bool writeAudioSilence(uint32_t sampleRate, uint32_t durationMs) {
   }
 
   return true;
+}
+
+void printAudioPreset(const int index) {
+  if (index < 0 || index >= AUDIO_STARTUP_PRESET_COUNT) {
+    return;
+  }
+
+  const AudioStartupPreset &preset = AUDIO_STARTUP_PRESETS[index];
+  Serial.printf(
+    "%d: %s preroll=%lums fade=%lums dc=%lums shutdown=%lums%s\n",
+    index,
+    preset.name,
+    preset.prerollMs,
+    preset.fadeInMs,
+    preset.dcSettleMs,
+    preset.shutdownSilenceMs,
+    index == audioStartupPresetIndex ? " *" : ""
+  );
+}
+
+void printAudioPresets() {
+  Serial.println("Audio presets:");
+  for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
+    printAudioPreset(i);
+  }
+  Serial.println("Commands: audio:test, audio:sweep, audio:preset N, audio:presets");
+}
+
+bool playAudioDiagnosticTone(uint32_t durationMs = 900) {
+  const AudioStartupPreset &preset = currentAudioStartupPreset();
+  const uint32_t sampleRate = 16000;
+  const float frequency = 880.0f;
+  const float twoPi = 6.28318530718f;
+  const float phaseStep = (twoPi * frequency) / static_cast<float>(sampleRate);
+  const uint32_t totalSamples = (sampleRate * durationMs) / 1000;
+  const uint32_t fadeSamples = max(static_cast<uint32_t>(1), (sampleRate * preset.fadeInMs) / 1000);
+  const uint32_t fadeOutSamples = max(static_cast<uint32_t>(1), sampleRate / 20);
+  const int16_t amplitude = 7000;
+
+  Serial.printf("Audio diagnostic preset %d (%s)\n", audioStartupPresetIndex, preset.name);
+
+  if (!initAudioOutput(sampleRate)) {
+    Serial.println("Audio diagnostic: I2S init failed");
+    return false;
+  }
+
+  if (preset.prerollMs > 0 && !writeAudioSilence(sampleRate, preset.prerollMs)) {
+    deinitAudioOutput();
+    Serial.println("Audio diagnostic: preroll failed");
+    return false;
+  }
+
+  int16_t stereoBuffer[256];
+  uint32_t writtenSamples = 0;
+  float phase = 0.0f;
+
+  while (writtenSamples < totalSamples) {
+    size_t monoSamples = min(static_cast<size_t>(128), static_cast<size_t>(totalSamples - writtenSamples));
+
+    for (size_t i = 0; i < monoSamples; i++) {
+      uint32_t absoluteSample = writtenSamples + i;
+      int32_t sample = static_cast<int32_t>(sinf(phase) * amplitude);
+
+      if (absoluteSample < fadeSamples) {
+        sample = (sample * static_cast<int32_t>(absoluteSample)) / static_cast<int32_t>(fadeSamples);
+      }
+
+      uint32_t remainingSamples = totalSamples - absoluteSample;
+      if (remainingSamples < fadeOutSamples) {
+        sample = (sample * static_cast<int32_t>(remainingSamples)) / static_cast<int32_t>(fadeOutSamples);
+      }
+
+      stereoBuffer[i * 2] = static_cast<int16_t>(sample);
+      stereoBuffer[i * 2 + 1] = static_cast<int16_t>(sample);
+      phase += phaseStep;
+      if (phase > twoPi) {
+        phase -= twoPi;
+      }
+    }
+
+    size_t bytesWritten = 0;
+    esp_err_t writeResult = i2s_write(AUDIO_I2S_PORT, stereoBuffer, monoSamples * 4, &bytesWritten, portMAX_DELAY);
+    if (writeResult != ESP_OK) {
+      deinitAudioOutput();
+      Serial.printf("Audio diagnostic: write failed %d\n", writeResult);
+      return false;
+    }
+
+    writtenSamples += monoSamples;
+  }
+
+  i2s_zero_dma_buffer(AUDIO_I2S_PORT);
+  if (preset.shutdownSilenceMs > 0) {
+    writeAudioSilence(sampleRate, preset.shutdownSilenceMs);
+  }
+  deinitAudioOutput();
+  return true;
+}
+
+void processAudioDiagnosticCommand(String command) {
+  command.trim();
+  if (command.length() == 0) {
+    return;
+  }
+
+  command.toLowerCase();
+  command.replace(':', ' ');
+
+  if (!command.startsWith("audio")) {
+    return;
+  }
+
+  if (command == "audio help" || command == "audio presets") {
+    printAudioPresets();
+    return;
+  }
+
+  if (command.startsWith("audio preset")) {
+    int separator = command.lastIndexOf(' ');
+    int index = separator >= 0 ? command.substring(separator + 1).toInt() : -1;
+
+    if (index < 0 || index >= AUDIO_STARTUP_PRESET_COUNT) {
+      Serial.println("Invalid audio preset");
+      printAudioPresets();
+      return;
+    }
+
+    audioStartupPresetIndex = index;
+    Serial.print("Selected ");
+    printAudioPreset(audioStartupPresetIndex);
+    return;
+  }
+
+  if (command == "audio test") {
+    playAudioDiagnosticTone();
+    return;
+  }
+
+  if (command == "audio sweep") {
+    int previousPreset = audioStartupPresetIndex;
+
+    for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
+      audioStartupPresetIndex = i;
+      printAudioPreset(i);
+      playAudioDiagnosticTone();
+      delay(1200);
+    }
+
+    audioStartupPresetIndex = previousPreset;
+    Serial.print("Restored ");
+    printAudioPreset(audioStartupPresetIndex);
+    return;
+  }
+
+  Serial.println("Unknown audio command");
+  printAudioPresets();
+}
+
+void handleAudioDiagnosticSerial() {
+  while (Serial.available() > 0) {
+    char c = static_cast<char>(Serial.read());
+
+    if (c == '\r') {
+      continue;
+    }
+
+    if (c == '\n') {
+      processAudioDiagnosticCommand(audioSerialCommand);
+      audioSerialCommand = "";
+      continue;
+    }
+
+    if (audioSerialCommand.length() < 80) {
+      audioSerialCommand += c;
+    }
+  }
 }
 
 bool isHttpsUrl(const String &url) {
@@ -2840,6 +3066,7 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
     return false;
   }
 
+  const AudioStartupPreset &audioPreset = currentAudioStartupPreset();
   String streamUrl = resolvedBackendUrl(metadata.audioUrl);
   HTTPClient http;
 
@@ -2901,7 +3128,7 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
     return false;
   }
 
-  if (!writeAudioSilence(sampleRate, AUDIO_PREROLL_SILENCE_MS)) {
+  if (audioPreset.prerollMs > 0 && !writeAudioSilence(sampleRate, audioPreset.prerollMs)) {
     setLastErrorLimited("I2S Stille fehlgeschlagen");
     deinitAudioOutput();
     http.end();
@@ -2914,8 +3141,8 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
   uint8_t buffer[512];
   int16_t stereoBuffer[512];
   uint32_t totalRead = 0;
-  uint32_t fadeInSamples = max(static_cast<uint32_t>(1), (sampleRate * AUDIO_FADE_IN_MS) / 1000);
-  uint32_t dcSettleSamples = max(static_cast<uint32_t>(1), (sampleRate * AUDIO_DC_SETTLE_MS) / 1000);
+  uint32_t fadeInSamples = max(static_cast<uint32_t>(1), (sampleRate * audioPreset.fadeInMs) / 1000);
+  uint32_t dcSettleSamples = max(static_cast<uint32_t>(1), (sampleRate * audioPreset.dcSettleMs) / 1000);
   int32_t dcOffset = 0;
   bool dcOffsetInitialized = false;
   uint8_t emptyReadCount = 0;
@@ -2985,7 +3212,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
   }
 
   i2s_zero_dma_buffer(AUDIO_I2S_PORT);
-  writeAudioSilence(sampleRate, AUDIO_SHUTDOWN_SILENCE_MS);
+  if (audioPreset.shutdownSilenceMs > 0) {
+    writeAudioSilence(sampleRate, audioPreset.shutdownSilenceMs);
+  }
   deinitAudioOutput();
   http.end();
   Serial.printf("WAV playback done: read %lu of %lu bytes\n", totalRead, dataSize);
@@ -3899,9 +4128,12 @@ void setup() {
   Serial.println("NFC Game Device started");
   Serial.println("Empty MIFARE Classic card -> UUID is written to block 4");
   Serial.println("Existing card -> UUID is read from block 4");
+  printAudioPresets();
 }
 
 void loop() {
+  handleAudioDiagnosticSerial();
+
   if (wifiSetupMode) {
     dnsServer.processNextRequest();
     setupServer.handleClient();
