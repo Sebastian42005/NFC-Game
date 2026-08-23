@@ -45,7 +45,7 @@ struct MenuLayout {
 // =====================================================
 static const char *BACKEND_BASE_URL = "https://projects.sebi4.com";
 static const bool DISPLAY_INVERT_COLORS = true;
-static const char *FIRMWARE_VERSION = "1.0.1";
+static const char *FIRMWARE_VERSION = "1.0.2";
 static const unsigned long OTA_CHECK_INTERVAL_MS = 24UL * 60UL * 60UL * 1000UL;
 static const unsigned long DEVICE_LINK_CHECK_INTERVAL_MS = 5000;
 
@@ -105,6 +105,7 @@ static const i2s_port_t AUDIO_I2S_PORT = I2S_NUM_1;
 static const int AUDIO_DMA_BUFFER_COUNT = 6;
 static const int AUDIO_DMA_BUFFER_LEN = 256;
 static const int AUDIO_WAV_VOLUME_DIVISOR = 6;
+static const bool AUDIO_VERBOSE_LOGS = false;
 static const uint32_t AUDIO_PREROLL_SILENCE_MS = 12;
 static const uint32_t AUDIO_SKIP_INITIAL_MS = 160;
 static const uint32_t AUDIO_FADE_IN_MS = 650;
@@ -254,6 +255,7 @@ uint32_t audioDiagnosticExtraSkipMs = 0;
 bool audioDiagnosticDecodeOverrideActive = false;
 bool audioDiagnosticSwapWavBytes = AUDIO_SWAP_WAV_BYTES;
 int audioDiagnosticVolumeDivisor = AUDIO_WAV_VOLUME_DIVISOR;
+bool audioDiagnosticRunning = false;
 String audioSerialCommand = "";
 
 enum WifiRecoveryChoice {
@@ -1753,6 +1755,10 @@ bool skipStreamBytes(WiFiClient *stream, uint32_t length) {
   return true;
 }
 
+bool shouldLogAudioDetails() {
+  return AUDIO_VERBOSE_LOGS && !audioDiagnosticRunning;
+}
+
 bool readWavHeader(WiFiClient *stream, uint16_t &channels, uint32_t &sampleRate, uint16_t &bitsPerSample, uint32_t &dataSize) {
   uint8_t riffHeader[12];
 
@@ -1808,7 +1814,9 @@ bool readWavHeader(WiFiClient *stream, uint16_t &channels, uint32_t &sampleRate,
       }
 
       dataSize = chunkSize;
-      Serial.printf("WAV data chunk gefunden: %u bytes\n", dataSize);
+      if (shouldLogAudioDetails()) {
+        Serial.printf("WAV data chunk gefunden: %u bytes\n", dataSize);
+      }
       return true;
     } else {
       char chunkName[5] = {
@@ -1818,7 +1826,9 @@ bool readWavHeader(WiFiClient *stream, uint16_t &channels, uint32_t &sampleRate,
         static_cast<char>(chunkHeader[3]),
         '\0'
       };
-      Serial.printf("WAV skip chunk %s: %u bytes\n", chunkName, chunkSize);
+      if (shouldLogAudioDetails()) {
+        Serial.printf("WAV skip chunk %s: %u bytes\n", chunkName, chunkSize);
+      }
       if (!skipStreamBytes(stream, chunkSize)) {
         Serial.println("WAV Chunk konnte nicht uebersprungen werden");
         return false;
@@ -1987,7 +1997,8 @@ void printAudioPresets() {
   for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
     printAudioPreset(i);
   }
-  Serial.println("Commands: audio:test, audio:volume, audio:decode, audio:sweep, audio:skips, audio:silence, audio:preset N, audio:presets, audio:tone");
+  Serial.println("Main command: audio:test");
+  Serial.println("Debug commands: audio:silence, audio:decode, audio:sweep, audio:skips, audio:preset N, audio:presets, audio:tone");
 }
 
 bool playAudioDiagnosticTone(uint32_t durationMs = 450) {
@@ -2001,7 +2012,9 @@ bool playAudioDiagnosticTone(uint32_t durationMs = 450) {
   const uint32_t fadeOutSamples = max(static_cast<uint32_t>(1), sampleRate / 20);
   const int16_t amplitude = 1800;
 
-  Serial.printf("Audio diagnostic preset %d (%s)\n", audioStartupPresetIndex, preset.name);
+  if (shouldLogAudioDetails()) {
+    Serial.printf("Audio diagnostic preset %d (%s)\n", audioStartupPresetIndex, preset.name);
+  }
 
   if (!initAudioOutput(sampleRate)) {
     Serial.println("Audio diagnostic: I2S init failed");
@@ -2065,7 +2078,9 @@ bool playAudioDiagnosticSilence(uint32_t durationMs = 900) {
   const AudioStartupPreset &preset = currentAudioStartupPreset();
   const uint32_t sampleRate = 16000;
 
-  Serial.printf("Audio silence diagnostic preset %d (%s), duration=%lums\n", audioStartupPresetIndex, preset.name, durationMs);
+  if (shouldLogAudioDetails()) {
+    Serial.printf("Audio silence diagnostic preset %d (%s), duration=%lums\n", audioStartupPresetIndex, preset.name, durationMs);
+  }
 
   if (!initAudioOutput(sampleRate)) {
     Serial.println("Audio silence diagnostic: I2S init failed");
@@ -2109,6 +2124,163 @@ bool playLatestAudioDiagnostic() {
 
   Serial.println("No backend audio found. Upload an Audio Test or queue a Game Sound first.");
   return false;
+}
+
+bool loadLatestAudioDiagnosticMetadata(AudioTestMetadata &metadata, String &sourceLabel) {
+  if (fetchAudioMetadata("/api/device/sounds/latest/metadata", -1, metadata)
+    && metadata.available
+    && metadata.version > 0
+    && metadata.audioUrl.length() > 0) {
+    sourceLabel = "Game Sound";
+    return true;
+  }
+
+  if (fetchAudioMetadata("/api/device/audio-test/latest/metadata", -1, metadata)
+    && metadata.available
+    && metadata.version > 0
+    && metadata.audioUrl.length() > 0) {
+    sourceLabel = "Audio Test Upload";
+    return true;
+  }
+
+  sourceLabel = "";
+  return false;
+}
+
+void restoreAudioDiagnosticState(
+  bool previousRunning,
+  int previousPreset,
+  bool previousOverrideActive,
+  bool previousSwap,
+  int previousDivisor,
+  uint32_t previousExtraSkipMs
+) {
+  audioDiagnosticRunning = previousRunning;
+  audioStartupPresetIndex = previousPreset;
+  audioDiagnosticDecodeOverrideActive = previousOverrideActive;
+  audioDiagnosticSwapWavBytes = previousSwap;
+  audioDiagnosticVolumeDivisor = previousDivisor;
+  audioDiagnosticExtraSkipMs = previousExtraSkipMs;
+  lastAudioPollAt = millis();
+}
+
+void runCleanAudioDiagnostic() {
+  struct CleanAudioCase {
+    const char *name;
+    int volumeDivisor;
+    uint32_t extraSkipMs;
+  };
+
+  static const CleanAudioCase cases[] = {
+    { "normal", 6, 0 },
+    { "etwas leiser", 7, 0 },
+    { "sehr leise", 8, 0 },
+    { "intro ueberspringen", 7, 1000 },
+  };
+
+  const int caseCount = sizeof(cases) / sizeof(cases[0]);
+  bool previousRunning = audioDiagnosticRunning;
+  int previousPreset = audioStartupPresetIndex;
+  bool previousOverrideActive = audioDiagnosticDecodeOverrideActive;
+  bool previousSwap = audioDiagnosticSwapWavBytes;
+  int previousDivisor = audioDiagnosticVolumeDivisor;
+  uint32_t previousExtraSkipMs = audioDiagnosticExtraSkipMs;
+
+  audioDiagnosticRunning = true;
+  audioStartupPresetIndex = 1;
+  audioDiagnosticDecodeOverrideActive = true;
+  audioDiagnosticSwapWavBytes = true;
+  audioDiagnosticExtraSkipMs = 0;
+
+  Serial.println();
+  Serial.println("=== AUDIO TEST START ===");
+  Serial.println("Nur diese Zeilen beachten.");
+  Serial.println("SILENCE START: sollte komplett still sein");
+  bool silenceOk = playAudioDiagnosticSilence(900);
+  Serial.println(silenceOk ? "SILENCE DONE" : "SILENCE FAILED");
+  delay(1000);
+
+  AudioTestMetadata metadata;
+  String sourceLabel;
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WLAN ist nicht verbunden.");
+    Serial.println("=== AUDIO TEST ENDE ===");
+    restoreAudioDiagnosticState(
+      previousRunning,
+      previousPreset,
+      previousOverrideActive,
+      previousSwap,
+      previousDivisor,
+      previousExtraSkipMs
+    );
+    return;
+  }
+
+  if (deviceId.length() == 0 || deviceKey.length() == 0) {
+    Serial.println("Device-ID oder Device-Key fehlt.");
+    Serial.println("=== AUDIO TEST ENDE ===");
+    restoreAudioDiagnosticState(
+      previousRunning,
+      previousPreset,
+      previousOverrideActive,
+      previousSwap,
+      previousDivisor,
+      previousExtraSkipMs
+    );
+    return;
+  }
+
+  if (!loadLatestAudioDiagnosticMetadata(metadata, sourceLabel)) {
+    Serial.println("Keine Backend-Audio gefunden.");
+    Serial.println("Bitte zuerst im Admin eine Audio Test Datei hochladen oder einen Game Sound ausloesen.");
+    Serial.println("=== AUDIO TEST ENDE ===");
+    restoreAudioDiagnosticState(
+      previousRunning,
+      previousPreset,
+      previousOverrideActive,
+      previousSwap,
+      previousDivisor,
+      previousExtraSkipMs
+    );
+    return;
+  }
+
+  Serial.println("Quelle: " + sourceLabel);
+  Serial.println("Hoere auf Start-Rauschen und Rauschen waehrend der Audio.");
+  if (sourceLabel == "Game Sound") {
+    lastKnownGameSoundVersion = max(lastKnownGameSoundVersion, metadata.version);
+  } else if (sourceLabel == "Audio Test Upload") {
+    lastKnownAudioTestVersion = max(lastKnownAudioTestVersion, metadata.version);
+  }
+
+  for (int i = 0; i < caseCount; i++) {
+    audioDiagnosticVolumeDivisor = cases[i].volumeDivisor;
+    audioDiagnosticExtraSkipMs = cases[i].extraSkipMs;
+
+    Serial.printf(
+      "TEST %d/%d START: %s, gainDivisor=%d, startSkip=%lums\n",
+      i + 1,
+      caseCount,
+      cases[i].name,
+      cases[i].volumeDivisor,
+      AUDIO_SKIP_INITIAL_MS + cases[i].extraSkipMs
+    );
+    bool ok = playLatestAudioWav(metadata);
+    Serial.printf("TEST %d/%d %s\n", i + 1, caseCount, ok ? "DONE" : "FAILED");
+    delay(1400);
+  }
+
+  Serial.println("=== AUDIO TEST ENDE ===");
+  Serial.println("Bitte antworte nur mit: silence=still/rauscht, bester Test=1-4, Problem=start/waehrend/beides.");
+
+  restoreAudioDiagnosticState(
+    previousRunning,
+    previousPreset,
+    previousOverrideActive,
+    previousSwap,
+    previousDivisor,
+    previousExtraSkipMs
+  );
 }
 
 void sweepAudioDiagnosticSkips() {
@@ -2227,14 +2399,20 @@ void processAudioDiagnosticCommand(String command) {
     return;
   }
 
-  if (command == "audio test" || command == "audio latest") {
-    audioDiagnosticExtraSkipMs = 0;
-    playLatestAudioDiagnostic();
+  if (command == "audio test"
+    || command == "audio latest"
+    || command == "audio clean"
+    || command == "audio volume"
+    || command == "audio gain"
+    || command == "audio levels") {
+    runCleanAudioDiagnostic();
     return;
   }
 
   if (command == "audio silence") {
-    playAudioDiagnosticSilence();
+    Serial.println("SILENCE START: sollte komplett still sein");
+    bool ok = playAudioDiagnosticSilence();
+    Serial.println(ok ? "SILENCE DONE" : "SILENCE FAILED");
     return;
   }
 
@@ -2248,7 +2426,7 @@ void processAudioDiagnosticCommand(String command) {
     return;
   }
 
-  if (command == "audio volume" || command == "audio gain" || command == "audio levels") {
+  if (command == "audio debug volume" || command == "audio debug gain" || command == "audio debug levels") {
     sweepAudioDiagnosticVolume();
     return;
   }
@@ -3142,17 +3320,23 @@ bool loadCurrentScreen() {
 
 bool fetchAudioMetadata(const String &path, long knownVersion, AudioTestMetadata &metadata) {
   if (WiFi.status() != WL_CONNECTED || deviceId.length() == 0 || deviceKey.length() == 0) {
-    Serial.println("Audio metadata skipped: wifi/device credentials missing");
+    if (shouldLogAudioDetails()) {
+      Serial.println("Audio metadata skipped: wifi/device credentials missing");
+    }
     return false;
   }
 
   HTTPClient http;
   String url = apiUrl(path + "?knownVersion=" + String(knownVersion));
-  Serial.print("Audio metadata GET ");
-  Serial.println(url);
+  if (shouldLogAudioDetails()) {
+    Serial.print("Audio metadata GET ");
+    Serial.println(url);
+  }
 
   if (!beginHttpClient(http, url)) {
-    Serial.println("Audio metadata HTTP init failed");
+    if (shouldLogAudioDetails()) {
+      Serial.println("Audio metadata HTTP init failed");
+    }
     return false;
   }
 
@@ -3163,9 +3347,11 @@ bool fetchAudioMetadata(const String &path, long knownVersion, AudioTestMetadata
   String response = http.getString();
   http.end();
 
-  Serial.printf("Audio metadata HTTP %d\n", code);
-  if (response.length() > 0) {
-    Serial.println(response);
+  if (shouldLogAudioDetails()) {
+    Serial.printf("Audio metadata HTTP %d\n", code);
+    if (response.length() > 0) {
+      Serial.println(response);
+    }
   }
 
   if (code < 200 || code >= 300) {
@@ -3176,7 +3362,9 @@ bool fetchAudioMetadata(const String &path, long knownVersion, AudioTestMetadata
   DeserializationError error = deserializeJson(doc, response);
 
   if (error) {
-    Serial.println("Audio metadata JSON Fehler");
+    if (shouldLogAudioDetails()) {
+      Serial.println("Audio metadata JSON Fehler");
+    }
     return false;
   }
 
@@ -3184,13 +3372,15 @@ bool fetchAudioMetadata(const String &path, long knownVersion, AudioTestMetadata
   metadata.hasNewAudio = doc["hasNewAudio"] | false;
   metadata.version = doc["version"] | 0L;
   setStringLimited(metadata.audioUrl, doc["audioUrl"] | "", CAP_AUDIO_URL - 1);
-  Serial.printf(
-    "Audio metadata parsed: available=%s hasNewAudio=%s version=%ld knownVersion=%ld\n",
-    metadata.available ? "true" : "false",
-    metadata.hasNewAudio ? "true" : "false",
-    metadata.version,
-    knownVersion
-  );
+  if (shouldLogAudioDetails()) {
+    Serial.printf(
+      "Audio metadata parsed: available=%s hasNewAudio=%s version=%ld knownVersion=%ld\n",
+      metadata.available ? "true" : "false",
+      metadata.hasNewAudio ? "true" : "false",
+      metadata.version,
+      knownVersion
+    );
+  }
   return true;
 }
 
@@ -3221,9 +3411,11 @@ bool acknowledgeAudioPlayback(const String &path, long version) {
   http.end();
 
   if (code < 200 || code >= 300) {
-    Serial.printf("Audio ack HTTP %d\n", code);
-    if (response.length() > 0) {
-      Serial.println(response);
+    if (shouldLogAudioDetails()) {
+      Serial.printf("Audio ack HTTP %d\n", code);
+      if (response.length() > 0) {
+        Serial.println(response);
+      }
     }
     return false;
   }
@@ -3253,7 +3445,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
   int code = http.GET();
   if (code < 200 || code >= 300) {
     setLastErrorLimited("Audio HTTP " + String(code));
-    Serial.printf("Audio download HTTP %d\n", code);
+    if (shouldLogAudioDetails()) {
+      Serial.printf("Audio download HTTP %d\n", code);
+    }
     http.end();
     return false;
   }
@@ -3270,7 +3464,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
     return false;
   }
 
-  Serial.printf("WAV format: channels=%u sampleRate=%lu bits=%u dataSize=%lu\n", channels, sampleRate, bitsPerSample, dataSize);
+  if (shouldLogAudioDetails()) {
+    Serial.printf("WAV format: channels=%u sampleRate=%lu bits=%u dataSize=%lu\n", channels, sampleRate, bitsPerSample, dataSize);
+  }
 
   if (channels != 1 || bitsPerSample != 16 || sampleRate < 8000 || sampleRate > 48000) {
     setLastErrorLimited("WAV braucht Mono 16bit");
@@ -3290,7 +3486,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
       return false;
     }
     dataSize -= initialSkipBytes;
-    Serial.printf("WAV initial skip: %lu ms, %lu bytes\n", initialSkipMs, initialSkipBytes);
+    if (shouldLogAudioDetails()) {
+      Serial.printf("WAV initial skip: %lu ms, %lu bytes\n", initialSkipMs, initialSkipBytes);
+    }
   }
 
   if (!initAudioOutput(sampleRate)) {
@@ -3307,7 +3505,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
   }
 
   setStatusTextLimited("Audio Test spielt");
-  Serial.printf("WAV playback start: %lu Hz, %u bytes\n", sampleRate, dataSize);
+  if (shouldLogAudioDetails()) {
+    Serial.printf("WAV playback start: %lu Hz, %u bytes\n", sampleRate, dataSize);
+  }
 
   uint8_t buffer[512];
   int16_t stereoBuffer[512];
@@ -3333,7 +3533,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
     if (bytesRead == 0) {
       emptyReadCount++;
       if (emptyReadCount > 20) {
-        Serial.println("WAV stream ended or timed out");
+        if (shouldLogAudioDetails()) {
+          Serial.println("WAV stream ended or timed out");
+        }
         break;
       }
       delay(25);
@@ -3388,7 +3590,9 @@ bool playLatestAudioWav(const AudioTestMetadata &metadata) {
   }
   deinitAudioOutput();
   http.end();
-  Serial.printf("WAV playback done: read %lu of %lu bytes\n", totalRead, dataSize);
+  if (shouldLogAudioDetails()) {
+    Serial.printf("WAV playback done: read %lu of %lu bytes\n", totalRead, dataSize);
+  }
   return totalRead > 0;
 }
 
@@ -3400,12 +3604,16 @@ bool tryPlayAudioSource(
 ) {
   AudioTestMetadata metadata;
   if (!fetchAudioMetadata(metadataPath, knownVersion, metadata)) {
-    Serial.println(label + " polling: metadata fetch failed");
+    if (shouldLogAudioDetails()) {
+      Serial.println(label + " polling: metadata fetch failed");
+    }
     return false;
   }
 
   if (!metadata.hasNewAudio) {
-    Serial.println(label + " polling: no new audio");
+    if (shouldLogAudioDetails()) {
+      Serial.println(label + " polling: no new audio");
+    }
     return false;
   }
 
@@ -3416,14 +3624,20 @@ bool tryPlayAudioSource(
     return true;
   }
 
-  Serial.println(label + " polling: playback failed");
+  if (shouldLogAudioDetails()) {
+    Serial.println(label + " polling: playback failed");
+  }
   return false;
 }
 
 void handleAudioTestPlayback() {
+  if (audioDiagnosticRunning) {
+    return;
+  }
+
   if (!deviceRegistered) {
     static unsigned long lastUnregisteredLogAt = 0;
-    if (millis() - lastUnregisteredLogAt > 5000) {
+    if (shouldLogAudioDetails() && millis() - lastUnregisteredLogAt > 5000) {
       lastUnregisteredLogAt = millis();
       Serial.println("Audio polling skipped: device not registered");
     }
@@ -4299,7 +4513,7 @@ void setup() {
   Serial.println("NFC Game Device started");
   Serial.println("Empty MIFARE Classic card -> UUID is written to block 4");
   Serial.println("Existing card -> UUID is read from block 4");
-  printAudioPresets();
+  Serial.println("Audio Diagnose: audio:test");
 }
 
 void loop() {
