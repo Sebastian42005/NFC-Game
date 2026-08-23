@@ -284,8 +284,9 @@ class NfcSoundLibraryService(
             "-i", input.absolutePath,
             "-vn",
             "-ac", "1",
-            "-ar", "16000",
+            "-ar", "48000",
             "-c:a", "pcm_s16le",
+            "-f", "wav",
             output.absolutePath,
         )
         val process = ProcessBuilder(command).redirectErrorStream(true).start()
@@ -298,7 +299,7 @@ class NfcSoundLibraryService(
 
     private fun durationMs(wav: ByteArray): Long {
         val dataBytes = maxOf(0, wav.size - 44)
-        return (dataBytes * 1000L) / (16000L * 2L)
+        return (dataBytes * 1000L) / (48000L * 2L)
     }
 
     private fun guessExt(originalName: String, contentType: String): String {

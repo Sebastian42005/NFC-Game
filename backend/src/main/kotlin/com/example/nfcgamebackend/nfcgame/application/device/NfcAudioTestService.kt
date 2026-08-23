@@ -174,8 +174,9 @@ class NfcAudioTestService(
             "-i", input.absolutePath,
             "-vn",
             "-ac", "1",
-            "-ar", "16000",
+            "-ar", "48000",
             "-c:a", "pcm_s16le",
+            "-f", "wav",
             output.absolutePath,
         )
 
