@@ -1825,6 +1825,8 @@ bool readWavHeader(WiFiClient *stream, uint16_t &channels, uint32_t &sampleRate,
 }
 
 bool writeAudioSilence(uint32_t sampleRate, uint32_t durationMs);
+bool fetchAudioMetadata(const String &path, long knownVersion, AudioTestMetadata &metadata);
+bool playLatestAudioWav(const AudioTestMetadata &metadata);
 
 const AudioStartupPreset &currentAudioStartupPreset() {
   int index = constrain(audioStartupPresetIndex, 0, AUDIO_STARTUP_PRESET_COUNT - 1);
@@ -1977,10 +1979,10 @@ void printAudioPresets() {
   for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
     printAudioPreset(i);
   }
-  Serial.println("Commands: audio:test, audio:sweep, audio:preset N, audio:presets");
+  Serial.println("Commands: audio:test, audio:sweep, audio:preset N, audio:presets, audio:tone");
 }
 
-bool playAudioDiagnosticTone(uint32_t durationMs = 900) {
+bool playAudioDiagnosticTone(uint32_t durationMs = 450) {
   const AudioStartupPreset &preset = currentAudioStartupPreset();
   const uint32_t sampleRate = 16000;
   const float frequency = 880.0f;
@@ -1989,7 +1991,7 @@ bool playAudioDiagnosticTone(uint32_t durationMs = 900) {
   const uint32_t totalSamples = (sampleRate * durationMs) / 1000;
   const uint32_t fadeSamples = max(static_cast<uint32_t>(1), (sampleRate * preset.fadeInMs) / 1000);
   const uint32_t fadeOutSamples = max(static_cast<uint32_t>(1), sampleRate / 20);
-  const int16_t amplitude = 7000;
+  const int16_t amplitude = 1800;
 
   Serial.printf("Audio diagnostic preset %d (%s)\n", audioStartupPresetIndex, preset.name);
 
@@ -2051,6 +2053,35 @@ bool playAudioDiagnosticTone(uint32_t durationMs = 900) {
   return true;
 }
 
+bool playLatestAudioDiagnosticSource(const String &label, const String &metadataPath) {
+  AudioTestMetadata metadata;
+  if (!fetchAudioMetadata(metadataPath, -1, metadata)) {
+    Serial.println(label + ": metadata not available");
+    return false;
+  }
+
+  if (!metadata.available || metadata.version <= 0 || metadata.audioUrl.length() == 0) {
+    Serial.println(label + ": no audio available");
+    return false;
+  }
+
+  Serial.println("Diagnostic source: " + label);
+  return playLatestAudioWav(metadata);
+}
+
+bool playLatestAudioDiagnostic() {
+  if (playLatestAudioDiagnosticSource("Game Sound", "/api/device/sounds/latest/metadata")) {
+    return true;
+  }
+
+  if (playLatestAudioDiagnosticSource("Audio Test Upload", "/api/device/audio-test/latest/metadata")) {
+    return true;
+  }
+
+  Serial.println("No backend audio found. Upload an Audio Test or queue a Game Sound first.");
+  return false;
+}
+
 void processAudioDiagnosticCommand(String command) {
   command.trim();
   if (command.length() == 0) {
@@ -2085,7 +2116,12 @@ void processAudioDiagnosticCommand(String command) {
     return;
   }
 
-  if (command == "audio test") {
+  if (command == "audio test" || command == "audio latest") {
+    playLatestAudioDiagnostic();
+    return;
+  }
+
+  if (command == "audio tone") {
     playAudioDiagnosticTone();
     return;
   }
@@ -2096,7 +2132,7 @@ void processAudioDiagnosticCommand(String command) {
     for (int i = 0; i < AUDIO_STARTUP_PRESET_COUNT; i++) {
       audioStartupPresetIndex = i;
       printAudioPreset(i);
-      playAudioDiagnosticTone();
+      playLatestAudioDiagnostic();
       delay(1200);
     }
 
