@@ -104,6 +104,7 @@ static const i2s_port_t AUDIO_I2S_PORT = I2S_NUM_1;
 static const int AUDIO_DMA_BUFFER_COUNT = 8;
 static const int AUDIO_DMA_BUFFER_LEN = 512;
 static const int AUDIO_WAV_VOLUME_DIVISOR = 2;
+static const size_t AUDIO_STREAM_BUFFER_BYTES = 2048;
 static const uint32_t AUDIO_PREROLL_SILENCE_MS = 20;
 static const uint32_t AUDIO_FADE_IN_MS = 20;
 static const uint32_t AUDIO_SHUTDOWN_SILENCE_MS = 40;
@@ -1963,12 +1964,20 @@ return url.startsWith("https://");
 }
 
 bool beginHttpClient(HTTPClient &http, const String &url) {
+bool started = false;
+
 if (isHttpsUrl(url)) {
 wifiClientSecure.setInsecure();
-return http.begin(wifiClientSecure, url);
+started = http.begin(wifiClientSecure, url);
+} else {
+started = http.begin(wifiClient, url);
 }
 
-return http.begin(wifiClient, url);
+if (started) {
+http.setTimeout(10000);
+}
+
+return started;
 }
 
 String urlEncodeComponent(const String &value) {
@@ -2977,8 +2986,8 @@ return false;
 setStatusTextLimited("Audio Test spielt");
 Serial.printf("WAV playback start: %lu Hz, %u bytes\n", sampleRate, dataSize);
 
-uint8_t buffer[512];
-int16_t stereoBuffer[512];
+static uint8_t buffer[AUDIO_STREAM_BUFFER_BYTES];
+static int16_t stereoBuffer[AUDIO_STREAM_BUFFER_BYTES];
 uint32_t totalRead = 0;
 const uint32_t fadeInSamples = (sampleRate * AUDIO_FADE_IN_MS) / 1000;
 
