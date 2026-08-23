@@ -2054,11 +2054,11 @@ Serial.println(updateUrl);
 drawOtaMessage("Firmware Update", "Installiere " + latestVersion);
 
 httpUpdate.rebootOnUpdate(false);
-httpUpdate.onStart( {
+httpUpdate.onStart([]() {
 drawOtaMessage("Firmware Update", "Download startet");
 });
 httpUpdate.onProgress(handleOtaProgress);
-httpUpdate.onEnd( {
+httpUpdate.onEnd([]() {
 drawOtaMessage("Firmware Update", "Neustart...");
 });
 httpUpdate.onError([](int error) {
@@ -3476,11 +3476,11 @@ sendDeviceEvent("CARD_SCANNED", uuid, payloadPtr);
 // WiFi / Setup / Loop
 // =====================================================
 String htmlEscape(String value) {
-value.replace("&", "&");
-value.replace("<", "<");
-value.replace(">", ">");
-value.replace(""", """);
-value.replace("'", "'");
+value.replace("&", "&amp;");
+value.replace("<", "&lt;");
+value.replace(">", "&gt;");
+value.replace("\"", "&quot;");
+value.replace("'", "&#39;");
 return value;
 }
 
@@ -3626,17 +3626,17 @@ return html;
 }
 
 if (scannedWifiCount == 0) {
-html += "<p class="warn">Keine WLANs gefunden. Du kannst die SSID manuell eingeben.</p>";
+html += "<p class=\"warn\">Keine WLANs gefunden. Du kannst die SSID manuell eingeben.</p>";
 return html;
 }
 
-html += "<label for="ssid_select">Gefundenes WLAN</label>";
-html += "<select id="ssid_select" name="ssid_select">";
-html += "<option value="">Bitte auswählen</option>";
+html += "<label for=\"ssid_select\">Gefundenes WLAN</label>";
+html += "<select id=\"ssid_select\" name=\"ssid_select\">";
+html += "<option value=\"\">Bitte auswählen</option>";
 
 for (int i = 0; i < scannedWifiCount; i++) {
 String escapedSsid = htmlEscape(scannedWifiSsids[i]);
-html += "<option value="" + escapedSsid + """;
+html += "<option value=\"" + escapedSsid + "\"";
 
 if (scannedWifiSsids[i] == savedWifiSsid) {
   html += " selected";
@@ -3654,9 +3654,9 @@ String setupPageHtml(bool showForm) {
 String escapedSsid = htmlEscape(savedWifiSsid);
 String html = "";
 
-html += "<!doctype html><html lang="de"><head>";
-html += "<meta charset="utf-8">";
-html += "<meta name="viewport" content="width=device-width,initial-scale=1">";
+html += "<!doctype html><html lang=\"de\"><head>";
+html += "<meta charset=\"utf-8\">";
+html += "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">";
 html += "<title>NFC Game Device Setup</title>";
 html += "<style>";
 html += "body{font-family,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:0;background:#071012;color:#f4ffff}";
@@ -3673,7 +3673,7 @@ html += "</style></head><body><main><section>";
 html += "<h1>NFC Game Device</h1>";
 
 if (wifiConnectionFailed && wifiCredentialsAvailable) {
-html += "<p class="warn">Verbindung mit dem gespeicherten WLAN fehlgeschlagen.</p>";
+html += "<p class=\"warn\">Verbindung mit dem gespeicherten WLAN fehlgeschlagen.</p>";
 html += "<p>Gespeichertes WLAN: <strong>" + escapedSsid + "</strong></p>";
 } else if (!wifiCredentialsAvailable) {
 html += "<p>Es sind noch keine WLAN-Daten gespeichert.</p>";
@@ -3686,24 +3686,24 @@ html += SETUP_AP_SSID;
 html += "</strong><br>Adresse: <strong>http://192.168.4.1</strong></p>";
 
 if (wifiCredentialsAvailable && !showForm) {
-html += "<form method="post" action="/retry"><button type="submit">Nochmal versuchen</button></form>";
-html += "<a class="button secondary" href="/new">Neues WLAN eingeben</a>";
+html += "<form method=\"post\" action=\"/retry\"><button type=\"submit\">Nochmal versuchen</button></form>";
+html += "<a class=\"button secondary\" href=\"/new\">Neues WLAN eingeben</a>";
 }
 
 if (showForm || !wifiCredentialsAvailable) {
-html += "<a class="button secondary" href="/scan">WLANs neu suchen</a>";
-html += "<form method="post" action="/save">";
+html += "<a class=\"button secondary\" href=\"/scan\">WLANs neu suchen</a>";
+html += "<form method=\"post\" action=\"/save\">";
 html += wifiNetworkOptionsHtml();
-html += "<label for="ssid_manual">SSID manuell eingeben</label>";
-html += "<input id="ssid_manual" name="ssid_manual" maxlength="63" value="" placeholder="Nur ausfüllen, wenn nötig" autocomplete="off">";
-html += "<label for="password">Passwort</label>";
-html += "<input id="password" name="password" type="password" maxlength="127" autocomplete="current-password">";
-html += "<button type="submit">Speichern und verbinden</button>";
+html += "<label for=\"ssid_manual\">SSID manuell eingeben</label>";
+html += "<input id=\"ssid_manual\" name=\"ssid_manual\" maxlength=\"63\" value=\"\" placeholder=\"Nur ausfüllen, wenn nötig\" autocomplete=\"off\">";
+html += "<label for=\"password\">Passwort</label>";
+html += "<input id=\"password\" name=\"password\" type=\"password\" maxlength=\"127\" autocomplete=\"current-password\">";
+html += "<button type=\"submit\">Speichern und verbinden</button>";
 html += "</form>";
 }
 
 if (wifiCredentialsAvailable) {
-html += "<form method="post" action="/reset-wifi"><button class="secondary" type="submit">WLAN-Daten löschen</button></form>";
+html += "<form method=\"post\" action=\"/reset-wifi\"><button class=\"secondary\" type=\"submit\">WLAN-Daten löschen</button></form>";
 }
 
 html += "</section></main></body></html>";
@@ -3735,50 +3735,50 @@ return;
 
 setupRoutesConfigured = true;
 
-setupServer.on("/", HTTP_GET,  {
+setupServer.on("/", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/generate_204", HTTP_GET,  {
+setupServer.on("/generate_204", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/fwlink", HTTP_GET,  {
+setupServer.on("/fwlink", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/hotspot-detect.html", HTTP_GET,  {
+setupServer.on("/hotspot-detect.html", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/connecttest.txt", HTTP_GET,  {
+setupServer.on("/connecttest.txt", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/ncsi.txt", HTTP_GET,  {
+setupServer.on("/ncsi.txt", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/redirect", HTTP_GET,  {
+setupServer.on("/redirect", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/gen_204", HTTP_GET,  {
+setupServer.on("/gen_204", HTTP_GET, []() {
 sendCurrentSetupPage();
 });
 
-setupServer.on("/new", HTTP_GET,  {
+setupServer.on("/new", HTTP_GET, []() {
 wifiShowNewForm = true;
 sendSetupPage(true);
 });
 
-setupServer.on("/scan", HTTP_GET,  {
+setupServer.on("/scan", HTTP_GET, []() {
 wifiShowNewForm = true;
 scanAvailableWifiNetworks();
 sendSetupPage(true);
 });
 
-setupServer.on("/save", HTTP_POST,  {
+setupServer.on("/save", HTTP_POST, []() {
 String manualSsid = setupServer.arg("ssid_manual");
 String selectedSsid = setupServer.arg("ssid_select");
 String password = setupServer.arg("password");
@@ -3801,7 +3801,7 @@ restartAfterResponse();
 
 });
 
-setupServer.on("/retry", HTTP_POST,  {
+setupServer.on("/retry", HTTP_POST, []() {
 if (!wifiCredentialsAvailable) {
 redirectToRoot();
 return;
@@ -3814,15 +3814,15 @@ restartAfterResponse();
 
 });
 
-setupServer.on("/reset-wifi", HTTP_POST,  {
+setupServer.on("/reset-wifi", HTTP_POST, []() {
 clearWifiCredentials();
 setupServer.send(200, "text/html; charset=utf-8",
-"<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><p>WLAN-Daten gelöscht. Das Gerät startet neu.</p></body></html>");
+"<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body><p>WLAN-Daten gelöscht. Das Gerät startet neu.</p></body></html>");
 Serial.println("Neustart nach WLAN-Reset");
 restartAfterResponse();
 });
 
-setupServer.onNotFound( {
+setupServer.onNotFound([]() {
 sendCurrentSetupPage();
 });
 }
