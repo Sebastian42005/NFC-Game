@@ -6,7 +6,7 @@
   <aside class="fixed inset-y-0 left-0 hidden w-64 border-r ui-border-subtle ui-surface-muted p-5 lg:block">
     <a routerLink="/nfc-game" class="block text-lg font-semibold">NFC Game Admin</a>
     <nav class="mt-8 grid gap-2 text-sm">
-      @for (link of links; track link.href) {
+      @for (link of visibleLinks(); track link.href) {
         <a
           [routerLink]="link.href"
           routerLinkActive="ui-surface ui-text-strong"
@@ -17,13 +17,6 @@
         </a>
       }
       @if (auth.canManageAccounts()) {
-        <a
-          routerLink="/nfc-game/admin/publication-requests"
-          routerLinkActive="ui-surface ui-text-strong"
-          class="rounded-md px-3 py-2 ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
-        >
-          Spiele moderieren
-        </a>
         <a
           routerLink="/nfc-game/admin/accounts"
           routerLinkActive="ui-surface ui-text-strong"
@@ -62,11 +55,10 @@
     @if (!fullScreen()) {
       <div class="border-b ui-border-subtle px-4 py-4 lg:hidden">
         <div class="flex flex-wrap gap-2">
-          @for (link of links; track link.href) {
+          @for (link of visibleLinks(); track link.href) {
             <a [routerLink]="link.href" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">{{ link.label }}</a>
           }
           @if (auth.canManageAccounts()) {
-            <a routerLink="/nfc-game/admin/publication-requests" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">Spiele moderieren</a>
             <a routerLink="/nfc-game/admin/accounts" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">Accounts</a>
           }
           <button type="button" class="rounded-md border ui-border-subtle px-3 py-2 text-sm" (click)="toggleTheme()">

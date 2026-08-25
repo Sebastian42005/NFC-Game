@@ -47,6 +47,7 @@ static const bool DISPLAY_INVERT_COLORS = true;
 static const char *FIRMWARE_VERSION = "1.0.1";
 static const unsigned long OTA_CHECK_INTERVAL_MS = 24UL * 60UL * 60UL * 1000UL;
 static const unsigned long DEVICE_LINK_CHECK_INTERVAL_MS = 5000;
+static const unsigned long DEVICE_SETTINGS_POLL_INTERVAL_MS = 2000;
 
 // =====================================================
 // Device identity
@@ -151,19 +152,19 @@ bool invertY = true;
 // =====================================================
 // Dark Mode Theme: nur Schwarz, Tuerkis, Weiss/Grau.
 // Keine Rot-, Magenta-, Orange- oder Gruentoene.
-static const uint16_t COLOR_BG = 0x0000;               // Schwarz
-static const uint16_t COLOR_PANEL = 0x0106;            // Sehr dunkles Tuerkis
-static const uint16_t COLOR_PANEL_INNER = 0x0188;      // Dunkles Tuerkis
-static const uint16_t COLOR_LINE = 0x03EF;             // Gedimmtes Tuerkis
-static const uint16_t COLOR_TEXT = 0xFFFF;             // Weiss
-static const uint16_t COLOR_MUTED = 0xBDF7;            // Helles Grau / weiches Weiss
-static const uint16_t COLOR_ACCENT = 0x07FF;           // Helles Tuerkis / Cyan
-static const uint16_t COLOR_SELECTED = 0x032C;         // Auswahl in dunklem Tuerkis
+uint16_t COLOR_BG = 0x0000;               // Schwarz
+uint16_t COLOR_PANEL = 0x0106;            // Sehr dunkles Tuerkis
+uint16_t COLOR_PANEL_INNER = 0x0188;      // Dunkles Tuerkis
+uint16_t COLOR_LINE = 0x03EF;             // Gedimmtes Tuerkis
+uint16_t COLOR_TEXT = 0xFFFF;             // Weiss
+uint16_t COLOR_MUTED = 0xBDF7;            // Helles Grau / weiches Weiss
+uint16_t COLOR_ACCENT = 0x07FF;           // Helles Tuerkis / Cyan
+uint16_t COLOR_SELECTED = 0x032C;         // Auswahl in dunklem Tuerkis
 
 // Statusfarben bleiben ebenfalls im Theme.
-static const uint16_t COLOR_WARN = COLOR_ACCENT;
-static const uint16_t COLOR_ERROR = COLOR_TEXT;
-static const uint16_t COLOR_OK = COLOR_ACCENT;
+uint16_t COLOR_WARN = COLOR_ACCENT;
+uint16_t COLOR_ERROR = COLOR_TEXT;
+uint16_t COLOR_OK = COLOR_ACCENT;
 
 static const int MAX_MENU_ITEMS = 24;
 static const int MAX_LINES = 7;
@@ -226,8 +227,13 @@ unsigned long lastDeviceLinkCheckAt = 0;
 unsigned long lastOtaCheckAt = 0;
 int lastOtaProgressPercent = -1;
 unsigned long lastAudioPollAt = 0;
+unsigned long lastSettingsPollAt = 0;
+unsigned long lastDisplayActivityAt = 0;
 long lastKnownGameSoundVersion = 0;
 long lastKnownAudioTestVersion = 0;
+long lastKnownTestSoundVersion = 0;
+bool startupAudioPlaybackAttempted = false;
+bool displayAwake = true;
 
 enum WifiRecoveryChoice {
 WIFI_RECOVERY_RETRY,
@@ -276,6 +282,18 @@ long version = 0;
 String audioUrl = "";
 };
 
+struct DeviceSettings {
+String accentColor = "#00B8FF";
+String themeMode = "SYSTEM";
+String effectiveTheme = "DARK";
+int displayBrightness = 80;
+unsigned long displayTimeoutMs = 5UL * 60UL * 1000UL;
+int deviceVolume = 80;
+bool soundsEnabled = true;
+long settingsVersion = 0;
+long testSoundVersion = 0;
+};
+
 ScreenState screen;
 UiPrediction uiPredictions[MAX_UI_PREDICTIONS];
 int uiPredictionCount = 0;
@@ -283,6 +301,7 @@ String allowedPlayerCardUids[MAX_ALLOWED_CARD_UIDS];
 int allowedPlayerCardUidCount = 0;
 String allowedGameCardUids[MAX_ALLOWED_CARD_UIDS];
 int allowedGameCardUidCount = 0;
+DeviceSettings deviceSettings;
 
 static const size_t CAP_SESSION_ID = 96;
 static const size_t CAP_STATE_KEY = 96;
@@ -310,6 +329,7 @@ static const size_t CAP_DEVICE_KEY = 40;
 static const size_t CAP_PAIRING_CODE = 12;
 static const size_t CAP_ACCOUNT_USERNAME = 48;
 static const size_t CAP_AUDIO_URL = 256;
+static const size_t CAP_COLOR_HEX = 8;
 
 void reserveStringCapacity(String &value, size_t capacity) {
 if (capacity == 0) return;
@@ -371,6 +391,9 @@ reserveStringCapacity(deviceId, CAP_DEVICE_ID);
 reserveStringCapacity(deviceKey, CAP_DEVICE_KEY);
 reserveStringCapacity(pairingCode, CAP_PAIRING_CODE);
 reserveStringCapacity(linkedAccountUsername, CAP_ACCOUNT_USERNAME);
+reserveStringCapacity(deviceSettings.accentColor, CAP_COLOR_HEX);
+reserveStringCapacity(deviceSettings.themeMode, CAP_SCREEN_TYPE);
+reserveStringCapacity(deviceSettings.effectiveTheme, CAP_SCREEN_TYPE);
 
 reserveStringCapacity(screen.screenType, CAP_SCREEN_TYPE);
 reserveStringCapacity(screen.title, CAP_SCREEN_TITLE);
@@ -2025,6 +2048,177 @@ return apiUrl(pathOrUrl);
 return apiUrl("/" + pathOrUrl);
 }
 
+uint8_t hexNibble(char c) {
+if (c >= '0' && c <= '9') return c - '0';
+if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+return 0;
+}
+
+uint8_t hexByte(const String &value, int offset) {
+return (hexNibble(value.charAt(offset)) << 4) | hexNibble(value.charAt(offset + 1));
+}
+
+uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
+return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+
+uint16_t rgb565FromHex(const String &value, uint16_t fallback) {
+if (value.length() != 7 || value.charAt(0) != '#') {
+return fallback;
+}
+
+for (int i = 1; i < 7; i++) {
+char c = value.charAt(i);
+bool valid = (c >= '0' && c <= '9')
+|| (c >= 'a' && c <= 'f')
+|| (c >= 'A' && c <= 'F');
+if (!valid) return fallback;
+}
+
+return rgb565(hexByte(value, 1), hexByte(value, 3), hexByte(value, 5));
+}
+
+bool isHexColor(const String &value) {
+if (value.length() != 7 || value.charAt(0) != '#') return false;
+
+for (int i = 1; i < 7; i++) {
+char c = value.charAt(i);
+bool valid = (c >= '0' && c <= '9')
+|| (c >= 'a' && c <= 'f')
+|| (c >= 'A' && c <= 'F');
+if (!valid) return false;
+}
+
+return true;
+}
+
+uint8_t scaleChannel(uint8_t value, uint8_t numerator, uint8_t add = 0) {
+return min(255, add + ((static_cast<uint16_t>(value) * numerator) / 100));
+}
+
+void applyThemeColors() {
+String accentHex = isHexColor(deviceSettings.accentColor) ? deviceSettings.accentColor : "#00B8FF";
+uint8_t r = hexByte(accentHex, 1);
+uint8_t g = hexByte(accentHex, 3);
+uint8_t b = hexByte(accentHex, 5);
+uint16_t accent = rgb565FromHex(accentHex, 0x07FF);
+
+if (deviceSettings.effectiveTheme == "LIGHT") {
+COLOR_BG = 0xFFFF;
+COLOR_PANEL = rgb565(239, 247, 250);
+COLOR_PANEL_INNER = rgb565(228, 240, 244);
+COLOR_LINE = rgb565(scaleChannel(r, 60, 30), scaleChannel(g, 60, 30), scaleChannel(b, 60, 30));
+COLOR_TEXT = 0x0841;
+COLOR_MUTED = 0x5AEB;
+COLOR_ACCENT = accent;
+COLOR_SELECTED = rgb565(scaleChannel(r, 22, 18), scaleChannel(g, 22, 18), scaleChannel(b, 22, 18));
+} else {
+COLOR_BG = 0x0000;
+COLOR_PANEL = rgb565(1, 18, 22);
+COLOR_PANEL_INNER = rgb565(4, 34, 40);
+COLOR_LINE = rgb565(scaleChannel(r, 48), scaleChannel(g, 48), scaleChannel(b, 48));
+COLOR_TEXT = 0xFFFF;
+COLOR_MUTED = 0xBDF7;
+COLOR_ACCENT = accent;
+COLOR_SELECTED = rgb565(scaleChannel(r, 24), scaleChannel(g, 24), scaleChannel(b, 24));
+}
+
+COLOR_WARN = COLOR_ACCENT;
+COLOR_ERROR = COLOR_TEXT;
+COLOR_OK = COLOR_ACCENT;
+}
+
+void applyDisplayBrightness() {
+#if defined(TFT_BL)
+pinMode(TFT_BL, OUTPUT);
+int brightness = displayAwake ? constrain(deviceSettings.displayBrightness, 0, 100) : 0;
+int pwm = map(brightness, 0, 100, 0, 255);
+analogWrite(TFT_BL, pwm);
+#endif
+}
+
+void markDisplayActivity(bool redrawOnWake = true) {
+lastDisplayActivityAt = millis();
+
+if (!displayAwake) {
+displayAwake = true;
+applyDisplayBrightness();
+if (redrawOnWake) {
+  drawScreen();
+}
+}
+}
+
+void handleDisplayTimeout() {
+if (!displayAwake || deviceSettings.displayTimeoutMs == 0) {
+return;
+}
+
+if (millis() - lastDisplayActivityAt >= deviceSettings.displayTimeoutMs) {
+displayAwake = false;
+applyDisplayBrightness();
+}
+}
+
+bool writeTone(uint32_t sampleRate, uint32_t durationMs, uint32_t frequencyHz) {
+if (!initI2S(sampleRate)) {
+return false;
+}
+
+if (!writeSilence(sampleRate, AUDIO_PREROLL_SILENCE_MS)) {
+abortI2S();
+return false;
+}
+
+int volume = deviceSettings.soundsEnabled ? constrain(deviceSettings.deviceVolume, 0, 100) : 0;
+uint32_t totalFrames = (sampleRate * durationMs) / 1000;
+uint32_t phase = 0;
+uint32_t phaseStep = (frequencyHz * 65536UL) / sampleRate;
+int16_t stereoBuffer[256];
+uint32_t sentFrames = 0;
+
+while (sentFrames < totalFrames) {
+size_t frames = min(static_cast<size_t>(128), static_cast<size_t>(totalFrames - sentFrames));
+
+for (size_t i = 0; i < frames; i++) {
+  int32_t sample = phase < 32768UL ? 12000 : -12000;
+  sample = (sample * volume) / 100;
+  stereoBuffer[i * 2] = static_cast<int16_t>(sample);
+  stereoBuffer[i * 2 + 1] = static_cast<int16_t>(sample);
+  phase += phaseStep;
+}
+
+size_t bytesWritten = 0;
+size_t requestedBytes = frames * 4;
+esp_err_t result = i2s_write(AUDIO_I2S_PORT, stereoBuffer, requestedBytes, &bytesWritten, portMAX_DELAY);
+if (result != ESP_OK || bytesWritten != requestedBytes) {
+  abortI2S();
+  return false;
+}
+
+sentFrames += frames;
+}
+
+stopI2S(sampleRate);
+return true;
+}
+
+void playSettingsTestSound() {
+if (!deviceSettings.soundsEnabled || deviceSettings.deviceVolume <= 0) {
+Serial.println("Settings testsound skipped: sounds disabled or volume zero");
+return;
+}
+
+setStatusTextLimited("Testsound spielt");
+drawFooter();
+writeTone(16000, 180, 880);
+delay(60);
+writeTone(16000, 180, 1320);
+setStatusTextLimited("Testsound abgespielt");
+drawFooter();
+}
+
 void drawOtaMessage(const String &title, const String &subtitle) {
 screen.screenType = "MESSAGE";
 setStringLimited(screen.title, title.c_str(), CAP_SCREEN_TITLE - 1);
@@ -2876,6 +3070,94 @@ knownVersion
 return true;
 }
 
+bool fetchDeviceSettings(bool force = false) {
+if (!force && millis() - lastSettingsPollAt < DEVICE_SETTINGS_POLL_INTERVAL_MS) {
+return false;
+}
+
+lastSettingsPollAt = millis();
+
+if (WiFi.status() != WL_CONNECTED || deviceId.length() == 0 || deviceKey.length() == 0) {
+return false;
+}
+
+HTTPClient http;
+String url = apiUrl("/api/device/settings");
+
+if (!beginHttpClient(http, url)) {
+Serial.println("Settings HTTP init failed");
+return false;
+}
+
+http.addHeader("X-Device-Id", deviceId);
+http.addHeader("X-Device-Key", deviceKey);
+
+int code = http.GET();
+String response = http.getString();
+http.end();
+
+Serial.printf("Settings HTTP %d\n", code);
+
+if (code < 200 || code >= 300) {
+return false;
+}
+
+StaticJsonDocument<768> doc;
+DeserializationError error = deserializeJson(doc, response);
+
+if (error) {
+Serial.println("Settings JSON Fehler");
+return false;
+}
+
+long previousSettingsVersion = deviceSettings.settingsVersion;
+long previousTestSoundVersion = deviceSettings.testSoundVersion;
+String previousAccent = deviceSettings.accentColor;
+String previousTheme = deviceSettings.effectiveTheme;
+int previousBrightness = deviceSettings.displayBrightness;
+
+setStringLimited(deviceSettings.accentColor, doc["accentColor"] | "#00B8FF", CAP_COLOR_HEX - 1);
+setStringLimited(deviceSettings.themeMode, doc["themeMode"] | "SYSTEM", CAP_SCREEN_TYPE - 1);
+setStringLimited(deviceSettings.effectiveTheme, doc["effectiveTheme"] | "DARK", CAP_SCREEN_TYPE - 1);
+deviceSettings.displayBrightness = constrain(doc["displayBrightness"] | 80, 0, 100);
+deviceSettings.deviceVolume = constrain(doc["deviceVolume"] | 80, 0, 100);
+deviceSettings.soundsEnabled = doc["soundsEnabled"] | true;
+deviceSettings.settingsVersion = doc["settingsVersion"] | 0L;
+deviceSettings.testSoundVersion = doc["testSoundVersion"] | 0L;
+
+if (doc["displayTimeoutSeconds"].isNull()) {
+deviceSettings.displayTimeoutMs = 0;
+} else {
+int timeoutSeconds = doc["displayTimeoutSeconds"] | 300;
+deviceSettings.displayTimeoutMs = max(0, timeoutSeconds) * 1000UL;
+}
+
+bool visualChanged = previousAccent != deviceSettings.accentColor || previousTheme != deviceSettings.effectiveTheme;
+bool brightnessChanged = previousBrightness != deviceSettings.displayBrightness;
+
+if (visualChanged) {
+applyThemeColors();
+drawScreen();
+}
+
+if (brightnessChanged) {
+applyDisplayBrightness();
+}
+
+if (lastKnownTestSoundVersion == 0) {
+lastKnownTestSoundVersion = deviceSettings.testSoundVersion;
+} else if (deviceSettings.testSoundVersion > previousTestSoundVersion && deviceSettings.testSoundVersion > lastKnownTestSoundVersion) {
+lastKnownTestSoundVersion = deviceSettings.testSoundVersion;
+playSettingsTestSound();
+}
+
+if (deviceSettings.settingsVersion != previousSettingsVersion) {
+Serial.printf("Settings applied version=%ld\n", deviceSettings.settingsVersion);
+}
+
+return true;
+}
+
 bool acknowledgeAudioPlayback(const String &path, long version) {
 if (version <= 0 || WiFi.status() != WL_CONNECTED || deviceId.length() == 0 || deviceKey.length() == 0) {
 return false;
@@ -3065,7 +3347,8 @@ for (size_t i = 0; i < sampleCount; i++) {
   // WICHTIG: RIFF WAV PCM16 ist Little Endian -> KEIN Byte-Swap.
   int16_t sample = static_cast<int16_t>(readLe16(inputBuffer, i * 2));
 
-  int32_t value = static_cast<int32_t>(sample) / AUDIO_VOLUME_DIVISOR;
+  int volume = deviceSettings.soundsEnabled ? constrain(deviceSettings.deviceVolume, 0, 100) : 0;
+  int32_t value = (static_cast<int32_t>(sample) * volume) / (100 * AUDIO_VOLUME_DIVISOR);
   uint32_t absoluteSampleIndex = (totalRead / 2) + i;
 
   if (fadeInSamples > 0 && absoluteSampleIndex < fadeInSamples) {
@@ -3138,6 +3421,13 @@ Serial.println(label + " polling: no new audio");
 return false;
 }
 
+if (!deviceSettings.soundsEnabled || deviceSettings.deviceVolume <= 0) {
+knownVersion = metadata.version;
+acknowledgeAudioPlayback(ackPath, metadata.version);
+Serial.println(label + " polling: sounds disabled");
+return false;
+}
+
 if (playLatestAudioWav(metadata)) {
 knownVersion = metadata.version;
 acknowledgeAudioPlayback(ackPath, metadata.version);
@@ -3180,6 +3470,37 @@ tryPlayAudioSource(
 "/api/device/audio-test/latest/ack",
 lastKnownAudioTestVersion
 );
+}
+
+void playStartupAudioOnce() {
+if (startupAudioPlaybackAttempted || !deviceRegistered || !deviceLinked) {
+return;
+}
+
+startupAudioPlaybackAttempted = true;
+Serial.println("Startup Audio: spiele aktuelles Audio direkt beim Start");
+
+lastKnownGameSoundVersion = 0;
+lastKnownAudioTestVersion = 0;
+
+if (tryPlayAudioSource(
+"Startup Game Sound",
+"/api/device/sounds/latest/metadata",
+"/api/device/sounds/latest/ack",
+lastKnownGameSoundVersion
+)) {
+lastAudioPollAt = millis();
+return;
+}
+
+tryPlayAudioSource(
+"Startup Audio Test",
+"/api/device/audio-test/latest/metadata",
+"/api/device/audio-test/latest/ack",
+lastKnownAudioTestVersion
+);
+
+lastAudioPollAt = millis();
 }
 
 void sendMenuSelection(int index) {
@@ -3239,6 +3560,14 @@ digitalWrite(TFT_CS_PIN, HIGH);
 if (!ts.touched()) {
 return;
 }
+
+if (!displayAwake) {
+markDisplayActivity(true);
+waitTouchRelease();
+return;
+}
+
+markDisplayActivity(false);
 
 TS_Point p = ts.getPoint();
 
@@ -3489,6 +3818,8 @@ return;
 if (!mfrc522.PICC_ReadCardSerial()) {
 return;
 }
+
+markDisplayActivity(true);
 
 String uuid = readOrCreateCardUuid();
 
@@ -3995,6 +4326,9 @@ tft.init();
 tft.setRotation(3);
 
 tft.invertDisplay(DISPLAY_INVERT_COLORS);
+lastDisplayActivityAt = millis();
+applyThemeColors();
+applyDisplayBrightness();
 
 // Kein Rot/Gruen/Blau-Testscreen mehr.
 tft.fillScreen(COLOR_BG);
@@ -4028,8 +4362,14 @@ registerDeviceWithBackend();
 }
 
 if (!wifiSetupMode && deviceRegistered) {
+fetchDeviceSettings(true);
+}
+
+if (!wifiSetupMode && deviceRegistered) {
 checkForFirmwareUpdate(true);
 }
+
+playStartupAudioOnce();
 
 if (deviceRegistered && !deviceLinked && pairingCode.length() > 0) {
 drawPairingCodeScreen();
@@ -4063,6 +4403,7 @@ if (millis() - lastDeviceLinkCheckAt > DEVICE_LINK_CHECK_INTERVAL_MS) {
 if (registerDeviceWithBackend() && lastOtaCheckAt == 0) {
 checkForFirmwareUpdate(false);
 }
+playStartupAudioOnce();
 }
 } else if (millis() - lastOtaCheckAt > OTA_CHECK_INTERVAL_MS) {
 checkForFirmwareUpdate(false);
@@ -4079,7 +4420,9 @@ registerDeviceWithBackend();
 
   if (!wasLinked && deviceLinked) {
     setStartScreen("Account verbunden");
+    fetchDeviceSettings(true);
     drawScreen();
+    playStartupAudioOnce();
   } else {
     drawPairingCodeScreen();
   }
@@ -4089,9 +4432,11 @@ return;
 
 }
 
+fetchDeviceSettings();
 handleAudioTestPlayback();
 handleTouch();
 handleNfc();
+handleDisplayTimeout();
 
 if (autoReturnToStartPending && millis() - finishedScreenAt >= 5000) {
 setStartScreen("Startscreen aktiv");

@@ -8,6 +8,7 @@ import com.example.nfcgamebackend.nfcgame.api.dto.CardAssignRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.CardResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceActiveRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceClaimRequest
+import com.example.nfcgamebackend.nfcgame.api.dto.DeviceNameRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.FlowDefinitionRequest
@@ -21,6 +22,8 @@ import com.example.nfcgamebackend.nfcgame.api.dto.GameTemplateResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.PlayerActiveRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.PlayerRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.PlayerResponse
+import com.example.nfcgamebackend.nfcgame.api.dto.SoundRatingRequest
+import com.example.nfcgamebackend.nfcgame.api.dto.SoundUpdateRequest
 import com.example.nfcgamebackend.nfcgame.application.admin.NfcAccountManagementService
 import com.example.nfcgamebackend.nfcgame.application.admin.NfcGameBuilderService
 import com.example.nfcgamebackend.nfcgame.application.admin.NfcAdminService
@@ -33,6 +36,7 @@ import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.ResponseCookie
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -158,6 +162,13 @@ class NfcAdminController(
     fun updateDeviceActive(@PathVariable id: UUID, @RequestBody request: DeviceActiveRequest): DeviceResponse =
         adminService.updateDeviceActive(id, request.active)
 
+    @PatchMapping("/devices/{id}/name")
+    fun updateDeviceName(@PathVariable id: UUID, @Valid @RequestBody request: DeviceNameRequest): DeviceResponse =
+        adminService.updateDeviceName(id, request.name)
+
+    @DeleteMapping("/devices/{id}")
+    fun deleteDevice(@PathVariable id: UUID) = adminService.deleteDevice(id)
+
     @GetMapping("/game-templates")
     fun listGameTemplates(): List<GameTemplateResponse> = adminService.listGameTemplates()
 
@@ -238,6 +249,46 @@ class NfcAdminController(
     @PostMapping("/games/{id}/validate")
     fun validateGameFlow(@PathVariable id: UUID): FlowValidationResponse = gameBuilderService.validateFlow(id)
 
+    @GetMapping("/sounds")
+    fun sounds() = soundLibraryService.listMySounds()
+
     @GetMapping("/sounds/options")
     fun soundOptions() = soundLibraryService.listMySoundOptions()
+
+    @GetMapping("/sounds/public")
+    fun publicSounds(
+        @RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?,
+    ) = soundLibraryService.listPublicSounds(user?.id)
+
+    @PostMapping("/sounds/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadSound(
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam("name", required = false) name: String?,
+    ) = soundLibraryService.upload(file, name)
+
+    @PutMapping("/sounds/{soundId}")
+    fun updateSound(
+        @PathVariable soundId: UUID,
+        @Valid @RequestBody request: SoundUpdateRequest,
+    ) = soundLibraryService.update(soundId, request)
+
+    @DeleteMapping("/sounds/{soundId}")
+    fun deleteSound(@PathVariable soundId: UUID) = soundLibraryService.delete(soundId)
+
+    @PostMapping("/sounds/{soundId}/publish")
+    fun publishSound(@PathVariable soundId: UUID) = soundLibraryService.publish(soundId)
+
+    @PostMapping("/sounds/{soundId}/unpublish")
+    fun unpublishSound(@PathVariable soundId: UUID) = soundLibraryService.unpublish(soundId)
+
+    @PostMapping("/sounds/{soundId}/library")
+    fun addPublicSoundToLibrary(@PathVariable soundId: UUID) =
+        soundLibraryService.addPublicSoundToLibrary(soundId)
+
+    @PostMapping("/sounds/{soundId}/rating")
+    fun ratePublicSound(
+        @PathVariable soundId: UUID,
+        @Valid @RequestBody request: SoundRatingRequest,
+        @RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?,
+    ) = soundLibraryService.ratePublicSound(soundId, request, user?.id)
 }

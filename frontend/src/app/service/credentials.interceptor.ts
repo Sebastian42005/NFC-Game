@@ -32,6 +32,7 @@ function isNfcProtectedRequest(url: string): boolean {
   return (
     path.startsWith('/api/admin/') ||
     path.startsWith('/api/public/account/') ||
+    path.startsWith('/api/public/settings') ||
     path.startsWith('/api/auth/tv-login/')
   ) && !path.startsWith('/api/admin/auth/login');
 }

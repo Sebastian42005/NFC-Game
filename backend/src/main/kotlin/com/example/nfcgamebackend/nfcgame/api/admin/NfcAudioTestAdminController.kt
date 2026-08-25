@@ -1,4 +1,4 @@
-package com.example.nfcgamebackend.nfcgame.api.publicapi
+package com.example.nfcgamebackend.nfcgame.api.admin
 
 import com.example.nfcgamebackend.nfcgame.application.device.NfcAudioTestService
 import org.springframework.core.io.ByteArrayResource
@@ -13,15 +13,15 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/api/public/nfc-game/audio-test")
-class NfcAudioTestController(
+@RequestMapping("/api/admin/nfc-game/audio-test")
+class NfcAudioTestAdminController(
     private val audioTestService: NfcAudioTestService,
 ) {
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun upload(@RequestParam("file") file: MultipartFile) = audioTestService.upload(file)
 
     @GetMapping("/status")
-    fun status() = audioTestService.publicStatus()
+    fun status() = audioTestService.adminStatus()
 
     @GetMapping("/latest.wav", produces = ["audio/wav"])
     fun latestWav(): ResponseEntity<ByteArrayResource> {

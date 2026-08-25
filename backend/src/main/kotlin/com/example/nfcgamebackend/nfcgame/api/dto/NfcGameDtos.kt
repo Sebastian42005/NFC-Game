@@ -4,6 +4,8 @@ import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
 import com.example.nfcgamebackend.nfcgame.domain.EventType
 import com.example.nfcgamebackend.nfcgame.domain.GamePublicationStatus
+import com.example.nfcgamebackend.nfcgame.domain.NfcDisplayTimeout
+import com.example.nfcgamebackend.nfcgame.domain.NfcThemeMode
 import com.example.nfcgamebackend.nfcgame.domain.RoundLimitType
 import com.example.nfcgamebackend.nfcgame.domain.ScreenType
 import com.example.nfcgamebackend.nfcgame.domain.SessionStatus
@@ -11,6 +13,7 @@ import com.example.nfcgamebackend.nfcgame.domain.WinRuleType
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 import java.math.BigDecimal
 import java.time.Instant
@@ -51,6 +54,10 @@ data class DeviceClaimRequest(
 
 data class DeviceActiveRequest(
     val active: Boolean,
+)
+
+data class DeviceNameRequest(
+    @field:NotBlank val name: String,
 )
 
 data class PlayerRequest(
@@ -100,6 +107,32 @@ data class DeviceProvisioningResponse(
     val pairingCode: String,
     val lastSeenAt: Instant?,
     val createdAt: Instant,
+)
+
+data class NfcSettingsRequest(
+    @field:Pattern(regexp = "^#[0-9A-Fa-f]{6}$")
+    val accentColor: String = "#00B8FF",
+    val themeMode: NfcThemeMode = NfcThemeMode.SYSTEM,
+    @field:Min(0) @field:Max(100)
+    val displayBrightness: Int = 80,
+    val displayTimeout: NfcDisplayTimeout = NfcDisplayTimeout.FIVE_MINUTES,
+    @field:Min(0) @field:Max(100)
+    val deviceVolume: Int = 80,
+    val soundsEnabled: Boolean = true,
+)
+
+data class NfcSettingsResponse(
+    val accentColor: String,
+    val themeMode: NfcThemeMode,
+    val effectiveTheme: NfcThemeMode,
+    val displayBrightness: Int,
+    val displayTimeout: NfcDisplayTimeout,
+    val displayTimeoutSeconds: Int?,
+    val deviceVolume: Int,
+    val soundsEnabled: Boolean,
+    val settingsVersion: Long,
+    val testSoundVersion: Long,
+    val updatedAt: Instant,
 )
 
 data class DeviceFirmwareManifestResponse(

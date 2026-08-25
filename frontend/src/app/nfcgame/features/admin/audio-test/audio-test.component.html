@@ -1,4 +1,4 @@
-<nfc-public-shell title="Audio Test" eyebrow="Browser -> Server -> Geraet">
+<nfc-admin-shell title="Audio-Test">
   <section class="audio-test-grid">
     <article class="audio-test-card">
       <p class="audio-test-kicker">Testseite</p>
@@ -54,7 +54,7 @@
         @if (serverPreviewUrl()) {
           <div class="audio-test-player">
             <p>Server-WAV</p>
-            <audio controls [src]="serverPreviewUrl()"></audio>
+            <audio controls crossorigin="use-credentials" [src]="serverPreviewUrl()"></audio>
           </div>
         }
 
@@ -80,4 +80,4 @@
       </div>
     </article>
   </section>
-</nfc-public-shell>
+</nfc-admin-shell>

@@ -6,6 +6,7 @@ import com.example.nfcgamebackend.nfcgame.domain.GamePublicationStatus
 import com.example.nfcgamebackend.nfcgame.domain.OwnerType
 import com.example.nfcgamebackend.nfcgame.domain.SessionStatus
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcAdminUser
+import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcAccountSettings
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcCard
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcDevice
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcDeviceSoundCommand
@@ -44,6 +45,10 @@ interface NfcDeviceRepository : JpaRepository<NfcDevice, UUID> {
     fun findByPairingCode(pairingCode: String): NfcDevice?
     fun findAllByAccountIdOrderByCreatedAtDesc(accountId: Long): List<NfcDevice>
     fun deleteAllByAccountId(accountId: Long)
+}
+
+interface NfcAccountSettingsRepository : JpaRepository<NfcAccountSettings, UUID> {
+    fun findByAccountId(accountId: Long): NfcAccountSettings?
 }
 
 interface NfcPlayerRepository : JpaRepository<NfcPlayer, UUID> {
@@ -101,6 +106,7 @@ interface NfcSoundRatingRepository : JpaRepository<NfcSoundRating, UUID> {
 
 interface NfcDeviceSoundCommandRepository : JpaRepository<NfcDeviceSoundCommand, UUID> {
     fun findFirstByDeviceIdOrderByVersionDesc(deviceId: UUID): NfcDeviceSoundCommand?
+    fun deleteAllByDeviceId(deviceId: UUID)
 }
 
 interface NfcFlowNodeRepository : JpaRepository<NfcFlowNode, UUID> {

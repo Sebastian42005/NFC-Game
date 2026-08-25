@@ -8,6 +8,7 @@ import com.example.nfcgamebackend.nfcgame.api.dto.DeviceSoundAckRequest
 import com.example.nfcgamebackend.nfcgame.application.device.NfcAudioTestService
 import com.example.nfcgamebackend.nfcgame.application.device.NfcDeviceEventService
 import com.example.nfcgamebackend.nfcgame.application.device.NfcFirmwareUpdateService
+import com.example.nfcgamebackend.nfcgame.application.settings.NfcSettingsService
 import com.example.nfcgamebackend.nfcgame.application.sound.NfcSoundLibraryService
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.CacheControl
@@ -34,6 +35,7 @@ class NfcDeviceController(
     private val firmwareUpdateService: NfcFirmwareUpdateService,
     private val audioTestService: NfcAudioTestService,
     private val soundLibraryService: NfcSoundLibraryService,
+    private val settingsService: NfcSettingsService,
 ) {
     data class AudioAckRequest(val version: Long)
 
@@ -97,6 +99,19 @@ class NfcDeviceController(
         @RequestBody request: AudioAckRequest,
     ) = audioTestService.acknowledge(deviceId, deviceKey, request.version)
 
+    @GetMapping("/audio-test/latest.wav", produces = ["audio/wav"])
+    fun audioTestLatestWav(
+        @RequestHeader("X-Device-Id") deviceId: String,
+        @RequestHeader("X-Device-Key") deviceKey: String,
+    ): ResponseEntity<ByteArrayResource> {
+        val bytes = audioTestService.deviceLatestWavBytes(deviceId, deviceKey)
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.noStore())
+            .contentType(MediaType.valueOf("audio/wav"))
+            .contentLength(bytes.size.toLong())
+            .body(ByteArrayResource(bytes))
+    }
+
     @GetMapping("/sounds/latest/metadata")
     fun latestSoundMetadata(
         @RequestHeader("X-Device-Id") deviceId: String,
@@ -124,6 +139,12 @@ class NfcDeviceController(
         @RequestHeader("X-Device-Key") deviceKey: String,
         @RequestBody request: DeviceSoundAckRequest,
     ) = soundLibraryService.acknowledgeDeviceSound(deviceId, deviceKey, request.version)
+
+    @GetMapping("/settings")
+    fun settings(
+        @RequestHeader("X-Device-Id") deviceId: String,
+        @RequestHeader("X-Device-Key") deviceKey: String,
+    ) = settingsService.getDeviceSettings(deviceId, deviceKey)
 
     @GetMapping("/health")
     fun health() = deviceEventService.health()

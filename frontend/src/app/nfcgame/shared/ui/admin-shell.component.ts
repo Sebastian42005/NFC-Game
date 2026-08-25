@@ -21,8 +21,11 @@ export class NfcAdminShellComponent {
     { href: '/nfc-game/admin/players', label: 'Spieler' },
     { href: '/nfc-game/admin/cards', label: 'Karten' },
     { href: '/nfc-game/admin/devices', label: 'Devices' },
+    { href: '/nfc-game/admin/audio-test', label: 'Audio-Test', adminOnly: true },
     { href: '/nfc-game/admin/game-templates', label: 'Spielbibliothek' },
+    { href: '/nfc-game/admin/sounds', label: 'Soundbibliothek' },
   ];
+  protected readonly visibleLinks = computed(() => this.links.filter((link) => !link.adminOnly || this.auth.isAdmin()));
 
   protected toggleTheme() {
     this.themeService.toggle();

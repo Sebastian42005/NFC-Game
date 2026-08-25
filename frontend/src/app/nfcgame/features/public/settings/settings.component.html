@@ -1,0 +1,131 @@
+<nfc-public-shell title="Einstellungen" eyebrow="Design, Geraet & Audio">
+  <section class="settings-layout">
+    <form class="settings-panel" (ngSubmit)="saveNow()">
+      <div class="settings-panel-header">
+        <div>
+          <p class="settings-kicker">Design</p>
+          <h2>Website & Display</h2>
+        </div>
+        @if (statusLabel()) {
+          <span class="settings-status" [class.is-error]="saveState() === 'error'">{{ statusLabel() }}</span>
+        }
+      </div>
+
+      <label class="settings-color-field">
+        <span>Akzentfarbe</span>
+        <span class="settings-color-control">
+          <input
+            type="color"
+            [ngModel]="settings().accentColor"
+            (ngModelChange)="setAccentColor($event)"
+            name="accentColor"
+            [disabled]="isBusy() && saveState() === 'loading'"
+          />
+          <input
+            type="text"
+            [ngModel]="settings().accentColor"
+            (ngModelChange)="setAccentColor($event)"
+            name="accentColorText"
+            maxlength="7"
+            spellcheck="false"
+            [disabled]="isBusy() && saveState() === 'loading'"
+          />
+        </span>
+      </label>
+
+      <div class="settings-field">
+        <span>Theme</span>
+        <div class="settings-segments" role="radiogroup" aria-label="Theme">
+          @for (mode of themeModes; track mode.value) {
+            <button
+              type="button"
+              [class.active]="settings().themeMode === mode.value"
+              (click)="setThemeMode(mode.value)"
+              [disabled]="isBusy() && saveState() === 'loading'"
+            >
+              {{ mode.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <section class="settings-group">
+          <p class="settings-kicker">Geraet</p>
+
+          <label class="settings-range">
+            <span>Display-Helligkeit</span>
+            <strong>{{ settings().displayBrightness }}%</strong>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              [ngModel]="settings().displayBrightness"
+              (ngModelChange)="setDisplayBrightness($event)"
+              name="displayBrightness"
+              [disabled]="isBusy() && saveState() === 'loading'"
+            />
+          </label>
+
+          <label class="settings-field">
+            <span>Display-Timeout</span>
+            <select
+              [ngModel]="settings().displayTimeout"
+              (ngModelChange)="setDisplayTimeout($event)"
+              name="displayTimeout"
+              [disabled]="isBusy() && saveState() === 'loading'"
+            >
+              @for (option of timeoutOptions; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+        </section>
+
+        <section class="settings-group">
+          <p class="settings-kicker">Audio</p>
+
+          <label class="settings-range">
+            <span>Geraetelautstaerke</span>
+            <strong>{{ settings().deviceVolume }}%</strong>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              [ngModel]="settings().deviceVolume"
+              (ngModelChange)="setDeviceVolume($event)"
+              name="deviceVolume"
+              [disabled]="isBusy() && saveState() === 'loading'"
+            />
+          </label>
+
+          <label class="settings-switch">
+            <input
+              type="checkbox"
+              [ngModel]="settings().soundsEnabled"
+              (ngModelChange)="setSoundsEnabled($event)"
+              name="soundsEnabled"
+              [disabled]="isBusy() && saveState() === 'loading'"
+            />
+            <span>Sounds aktiv</span>
+          </label>
+
+          <button
+            type="button"
+            class="settings-primary"
+            [disabled]="isBusy() || !settings().soundsEnabled"
+            (click)="playTestSound()"
+          >
+            Testsound abspielen
+          </button>
+        </section>
+      </div>
+
+      @if (error()) {
+        <p class="settings-alert">{{ error() }}</p>
+      }
+
+      <button type="submit" class="settings-save" [disabled]="isBusy()">Speichern</button>
+    </form>
+  </section>
+</nfc-public-shell>

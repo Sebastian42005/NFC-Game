@@ -26,6 +26,7 @@ import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcGameTemplate
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcPlayer
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcCardRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcDeviceRepository
+import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcDeviceSoundCommandRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcFlowDefinitionRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcFlowStateRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcFlowTransitionRepository
@@ -60,6 +61,7 @@ class NfcAdminService(
     private val statsRepository: NfcPlayerStatsProjectionRepository,
     private val cardRepository: NfcCardRepository,
     private val deviceRepository: NfcDeviceRepository,
+    private val deviceSoundCommandRepository: NfcDeviceSoundCommandRepository,
     private val gameTemplateRepository: NfcGameTemplateRepository,
     private val flowDefinitionRepository: NfcFlowDefinitionRepository,
     private val flowStateRepository: NfcFlowStateRepository,
@@ -212,6 +214,27 @@ class NfcAdminService(
         val device = ownedDevice(id)
         device.active = active
         return mapper.toDeviceResponse(deviceRepository.save(device))
+    }
+
+    fun updateDeviceName(id: UUID, name: String): DeviceResponse {
+        val device = ownedDevice(id)
+        val trimmedName = name.trim()
+        if (trimmedName.isBlank()) {
+            throw badRequest("Device name is required")
+        }
+        val existingDevice = deviceRepository.findByName(trimmedName)
+        if (existingDevice != null && existingDevice.id != device.id) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Device name already exists")
+        }
+        device.name = trimmedName
+        return mapper.toDeviceResponse(deviceRepository.save(device))
+    }
+
+    @Transactional
+    fun deleteDevice(id: UUID) {
+        val device = ownedDevice(id)
+        deviceSoundCommandRepository.deleteAllByDeviceId(id)
+        deviceRepository.delete(device)
     }
 
     fun listGameTemplates(): List<GameTemplateResponse> =

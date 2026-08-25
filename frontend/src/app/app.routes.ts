@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { nfcAdminGuard } from './nfcgame/core/auth/nfc-admin.guard';
+import { nfcAdminGuard, nfcAdminRoleGuard } from './nfcgame/core/auth/nfc-admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'nfc-game', pathMatch: 'full' },
@@ -66,6 +66,11 @@ export const routes: Routes = [
       import('./nfcgame/features/public/sounds/sound-library.component').then((m) => m.NfcSoundLibraryComponent),
   },
   {
+    path: 'nfc-game/settings',
+    loadComponent: () =>
+      import('./nfcgame/features/public/settings/settings.component').then((m) => m.NfcSettingsComponent),
+  },
+  {
     path: 'nfc-game/simulation',
     loadComponent: () =>
       import('./nfcgame/features/public/simulation/simulation.component').then((m) => m.NfcSimulationComponent),
@@ -74,11 +79,6 @@ export const routes: Routes = [
     path: 'nfc-game/history',
     loadComponent: () =>
       import('./nfcgame/features/public/history/history.component').then((m) => m.NfcHistoryComponent),
-  },
-  {
-    path: 'nfc-game/audio-test',
-    loadComponent: () =>
-      import('./nfcgame/features/public/audio-test/audio-test.component').then((m) => m.NfcAudioTestComponent),
   },
   {
     path: 'nfc-game/account',
@@ -137,18 +137,16 @@ export const routes: Routes = [
       import('./nfcgame/features/admin/devices/admin-devices.component').then((m) => m.NfcAdminDevicesComponent),
   },
   {
+    path: 'nfc-game/admin/audio-test',
+    canActivate: [nfcAdminRoleGuard],
+    loadComponent: () =>
+      import('./nfcgame/features/admin/audio-test/audio-test.component').then((m) => m.NfcAudioTestComponent),
+  },
+  {
     path: 'nfc-game/admin/accounts',
     canActivate: [nfcAdminGuard],
     loadComponent: () =>
       import('./nfcgame/features/admin/accounts/admin-accounts.component').then((m) => m.NfcAdminAccountsComponent),
-  },
-  {
-    path: 'nfc-game/admin/publication-requests',
-    canActivate: [nfcAdminGuard],
-    loadComponent: () =>
-      import('./nfcgame/features/admin/publication-requests/admin-publication-requests.component').then(
-        (m) => m.NfcAdminPublicationRequestsComponent,
-      ),
   },
   {
     path: 'nfc-game/admin/game-templates',
@@ -156,6 +154,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./nfcgame/features/admin/game-templates/admin-game-templates.component').then(
         (m) => m.NfcAdminGameTemplatesComponent,
+      ),
+  },
+  {
+    path: 'nfc-game/admin/sounds',
+    canActivate: [nfcAdminGuard],
+    loadComponent: () =>
+      import('./nfcgame/features/admin/sounds/admin-sound-library.component').then(
+        (m) => m.NfcAdminSoundLibraryComponent,
       ),
   },
   {

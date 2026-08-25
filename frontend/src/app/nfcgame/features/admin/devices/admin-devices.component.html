@@ -1,39 +1,75 @@
 <nfc-admin-shell title="Devices">
   <section class="grid gap-5 xl:grid-cols-[1fr_420px]">
     <div class="overflow-hidden rounded-lg border ui-border-subtle ui-surface-muted">
-      <table class="w-full min-w-[720px] text-left text-sm">
-        <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
-          <tr><th class="px-4 py-3">Reader</th><th class="px-4 py-3">Aktiv</th><th class="px-4 py-3">Last Seen</th></tr>
-        </thead>
-        <tbody>
-          @for (device of devices(); track device.id) {
-            <tr class="border-t ui-border-subtle">
-              <td class="px-4 py-3">{{ device.name }}</td>
-              <td class="px-4 py-3">
-                <label class="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    [ngModel]="device.active"
-                    (ngModelChange)="updateActive(device, $event)"
-                    [disabled]="loading()"
-                  />
-                  <span>{{ device.active ? 'Ja' : 'Nein' }}</span>
-                </label>
-              </td>
-              <td class="px-4 py-3">{{ device.lastSeenAt ? (device.lastSeenAt | date:'short') : '-' }}</td>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[920px] text-left text-sm">
+          <thead class="ui-surface-muted text-xs uppercase tracking-wide ui-text-muted">
+            <tr>
+              <th class="px-4 py-3">Reader</th>
+              <th class="px-4 py-3">Aktiv</th>
+              <th class="px-4 py-3">Last Seen</th>
+              <th class="px-4 py-3"></th>
             </tr>
-          } @empty {
-            <tr><td colspan="3" class="px-4 py-8 text-center ui-text-muted">Keine Devices.</td></tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (device of devices(); track device.id) {
+              <tr class="border-t ui-border-subtle">
+                <td class="px-4 py-3">
+                  <div class="flex min-w-[320px] items-center gap-2">
+                    <input
+                      class="min-w-0 flex-1"
+                      [ngModel]="deviceNameDraft(device)"
+                      (ngModelChange)="setDeviceNameDraft(device.id, $event)"
+                      [disabled]="savingNameId() === device.id || deletingDeviceId() === device.id"
+                      maxlength="255"
+                      aria-label="Device-Name"
+                    />
+                    <button
+                      class="rounded-md border ui-border-subtle px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                      type="button"
+                      [disabled]="!hasDeviceNameChange(device) || savingNameId() === device.id || deletingDeviceId() === device.id"
+                      (click)="saveDeviceName(device)"
+                    >
+                      {{ savingNameId() === device.id ? 'Speichere...' : 'Speichern' }}
+                    </button>
+                  </div>
+                </td>
+                <td class="px-4 py-3">
+                  <label class="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      [ngModel]="device.active"
+                      (ngModelChange)="updateActive(device, $event)"
+                      [disabled]="loading() || deletingDeviceId() === device.id"
+                    />
+                    <span>{{ device.active ? 'Ja' : 'Nein' }}</span>
+                  </label>
+                </td>
+                <td class="px-4 py-3">{{ device.lastSeenAt ? (device.lastSeenAt | date:'short') : '-' }}</td>
+                <td class="px-4 py-3 text-right">
+                  <button
+                    class="rounded-md border ui-border-danger px-3 py-2 text-sm ui-text-danger disabled:cursor-not-allowed disabled:opacity-40"
+                    type="button"
+                    [disabled]="deletingDeviceId() === device.id"
+                    (click)="confirmDelete(device)"
+                  >
+                    {{ deletingDeviceId() === device.id ? 'Lösche...' : 'Löschen' }}
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="px-4 py-8 text-center ui-text-muted">Keine Devices.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <form class="grid content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="claimDevice()">
       <div class="grid gap-1">
         <h2 class="text-xl font-semibold">Reader verbinden</h2>
         <p class="text-sm ui-text-muted">
-          Gib den 6-stelligen Code ein, der auf dem Reader-Display steht. Name und technischer Key werden automatisch vom Reader verwaltet.
+          Gib den 6-stelligen Code ein, der auf dem Reader-Display steht.
         </p>
       </div>
 

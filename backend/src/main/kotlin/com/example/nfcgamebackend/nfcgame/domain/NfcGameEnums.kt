@@ -79,3 +79,16 @@ enum class GamePublicationStatus {
     REJECTED,
     BLOCKED,
 }
+
+enum class NfcThemeMode {
+    DARK,
+    LIGHT,
+    SYSTEM,
+}
+
+enum class NfcDisplayTimeout {
+    NEVER,
+    ONE_MINUTE,
+    FIVE_MINUTES,
+    TEN_MINUTES,
+}

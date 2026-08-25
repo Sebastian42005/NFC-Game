@@ -78,7 +78,11 @@ class NfcAudioTestService(
                 lastPlayedDeviceId = null,
             )
             writeMetadata(metadata)
-            return toStatus(metadata, null)
+            return toStatus(
+                metadata = metadata,
+                knownVersion = null,
+                audioUrlPath = ADMIN_AUDIO_URL_PATH,
+            )
         } finally {
             inputFile.delete()
             outputFile.delete()
@@ -87,12 +91,20 @@ class NfcAudioTestService(
     }
 
     @Synchronized
-    fun publicStatus(): AudioTestStatus = toStatus(readMetadata(), null)
+    fun adminStatus(): AudioTestStatus = toStatus(
+        metadata = readMetadata(),
+        knownVersion = null,
+        audioUrlPath = ADMIN_AUDIO_URL_PATH,
+    )
 
     @Synchronized
     fun deviceStatus(deviceId: String, deviceKey: String, knownVersion: Long?): AudioTestStatus {
         deviceAuthenticator.authenticate(deviceId, deviceKey)
-        return toStatus(readMetadata(), knownVersion)
+        return toStatus(
+            metadata = readMetadata(),
+            knownVersion = knownVersion,
+            audioUrlPath = DEVICE_AUDIO_URL_PATH,
+        )
     }
 
     @Synchronized
@@ -105,6 +117,12 @@ class NfcAudioTestService(
     }
 
     @Synchronized
+    fun deviceLatestWavBytes(deviceId: String, deviceKey: String): ByteArray {
+        deviceAuthenticator.authenticate(deviceId, deviceKey)
+        return latestWavBytes()
+    }
+
+    @Synchronized
     fun acknowledge(deviceId: String, deviceKey: String, version: Long): AudioTestStatus {
         val device = deviceAuthenticator.authenticate(deviceId, deviceKey)
         val metadata = readMetadata()
@@ -112,7 +130,11 @@ class NfcAudioTestService(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "No audio test file uploaded yet")
         }
         if (version != metadata.version) {
-            return toStatus(metadata, version)
+            return toStatus(
+                metadata = metadata,
+                knownVersion = version,
+                audioUrlPath = DEVICE_AUDIO_URL_PATH,
+            )
         }
 
         val updated = metadata.copy(
@@ -120,7 +142,11 @@ class NfcAudioTestService(
             lastPlayedDeviceId = device.name,
         )
         writeMetadata(updated)
-        return toStatus(updated, version)
+        return toStatus(
+            metadata = updated,
+            knownVersion = version,
+            audioUrlPath = DEVICE_AUDIO_URL_PATH,
+        )
     }
 
     private fun ensureStorageDirectory() {
@@ -149,13 +175,17 @@ class NfcAudioTestService(
         Files.move(tempPath, metadataPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
     }
 
-    private fun toStatus(metadata: StoredAudioTestMetadata, knownVersion: Long?): AudioTestStatus {
+    private fun toStatus(
+        metadata: StoredAudioTestMetadata,
+        knownVersion: Long?,
+        audioUrlPath: String,
+    ): AudioTestStatus {
         val available = metadata.available()
         return AudioTestStatus(
             available = available,
             version = metadata.version,
             hasNewAudio = knownVersion?.let { available && metadata.version > it } ?: false,
-            audioUrl = if (available) "/api/public/nfc-game/audio-test/latest.wav?v=${metadata.version}" else null,
+            audioUrl = if (available) "$audioUrlPath?v=${metadata.version}" else null,
             uploadedAt = metadata.uploadedAt,
             originalFilename = metadata.originalFilename,
             sizeBytes = metadata.sizeBytes,
@@ -203,5 +233,10 @@ class NfcAudioTestService(
             lower.endsWith(".mp3") || contentType.contains("mpeg") -> "mp3"
             else -> "bin"
         }
+    }
+
+    private companion object {
+        const val ADMIN_AUDIO_URL_PATH = "/api/admin/nfc-game/audio-test/latest.wav"
+        const val DEVICE_AUDIO_URL_PATH = "/api/device/audio-test/latest.wav"
     }
 }

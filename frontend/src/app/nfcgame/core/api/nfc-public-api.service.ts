@@ -3,7 +3,6 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import {
   ActiveSessionDto,
-  AudioTestStatusDto,
   DeviceClaimRequest,
   DeviceEventRequest,
   DeviceEventResponse,
@@ -13,6 +12,8 @@ import {
   GameStatsDto,
   GameTemplateDto,
   LeaderboardEntryDto,
+  NfcSettingsDto,
+  NfcSettingsRequest,
   PlayerDto,
   PlayerStatsDto,
   SessionDetailDto,
@@ -92,22 +93,20 @@ export class NfcPublicApiService {
     return this.http.post<DeviceDto>(`${apiBase}/account/devices/claim`, request);
   }
 
+  settings() {
+    return this.http.get<NfcSettingsDto>(`${apiBase}/settings`);
+  }
+
+  updateSettings(request: NfcSettingsRequest) {
+    return this.http.put<NfcSettingsDto>(`${apiBase}/settings`, request);
+  }
+
+  playSettingsTestSound() {
+    return this.http.post<NfcSettingsDto>(`${apiBase}/settings/test-sound`, {});
+  }
+
   registerDevice(request: DeviceRequest) {
     return this.http.post<DeviceProvisioningDto>(`${deviceApiBase}/register`, request);
-  }
-
-  uploadAudioTest(blob: Blob, filename = 'audio-test.webm') {
-    const formData = new FormData();
-    formData.append('file', blob, filename);
-    return this.http
-      .post<AudioTestStatusDto>(`${apiBase}/nfc-game/audio-test/upload`, formData)
-      .pipe(map(resolveAudioTestStatus));
-  }
-
-  audioTestStatus() {
-    return this.http
-      .get<AudioTestStatusDto>(`${apiBase}/nfc-game/audio-test/status`)
-      .pipe(map(resolveAudioTestStatus));
   }
 
   sounds() {
@@ -199,13 +198,6 @@ function resolveSessionImageUrls(session: ActiveSessionDto): ActiveSessionDto {
         imageUrl: resolveBackendAssetUrl(member.imageUrl),
       })),
     })),
-  };
-}
-
-function resolveAudioTestStatus(status: AudioTestStatusDto): AudioTestStatusDto {
-  return {
-    ...status,
-    audioUrl: resolveBackendAssetUrl(status.audioUrl),
   };
 }
 

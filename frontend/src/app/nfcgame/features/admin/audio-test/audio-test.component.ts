@@ -1,20 +1,20 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { NfcPublicApiService } from '../../../core/api/nfc-public-api.service';
+import { NfcAdminApiService } from '../../../core/api/nfc-admin-api.service';
 import { AudioTestStatusDto } from '../../../shared/models/nfc-game.models';
-import { NfcPublicShellComponent } from '../../../shared/ui/public-shell.component';
+import { NfcAdminShellComponent } from '../../../shared/ui/admin-shell.component';
 
 type RecorderState = 'idle' | 'recording' | 'ready' | 'uploading' | 'error';
 
 @Component({
   selector: 'nfc-audio-test',
-  imports: [DatePipe, NfcPublicShellComponent],
+  imports: [DatePipe, NfcAdminShellComponent],
   templateUrl: './audio-test.component.html',
   styleUrl: './audio-test.component.scss',
 })
 export class NfcAudioTestComponent implements OnDestroy {
-  private readonly api = inject(NfcPublicApiService);
+  private readonly api = inject(NfcAdminApiService);
 
   protected readonly state = signal<RecorderState>('idle');
   protected readonly error = signal<string | null>(null);

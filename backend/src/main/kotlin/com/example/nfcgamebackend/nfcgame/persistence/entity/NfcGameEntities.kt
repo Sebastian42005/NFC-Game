@@ -5,6 +5,8 @@ import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
 import com.example.nfcgamebackend.nfcgame.domain.EventType
 import com.example.nfcgamebackend.nfcgame.domain.GamePublicationStatus
+import com.example.nfcgamebackend.nfcgame.domain.NfcDisplayTimeout
+import com.example.nfcgamebackend.nfcgame.domain.NfcThemeMode
 import com.example.nfcgamebackend.nfcgame.domain.OwnerType
 import com.example.nfcgamebackend.nfcgame.domain.RoundLimitType
 import com.example.nfcgamebackend.nfcgame.domain.SessionStatus
@@ -85,6 +87,62 @@ class NfcDevice : NfcUuidEntity() {
 
     @Column(nullable = false, updatable = false)
     var createdAt: Instant = Instant.now()
+}
+
+@Entity
+@Table(
+    name = "nfc_account_settings",
+    indexes = [Index(name = "idx_nfc_account_settings_account", columnList = "account_id")],
+    uniqueConstraints = [UniqueConstraint(name = "uk_nfc_account_settings_account", columnNames = ["account_id"])],
+)
+class NfcAccountSettings : NfcUuidEntity() {
+    @Column(name = "account_id", nullable = false)
+    var accountId: Long? = null
+
+    @Column(name = "accent_color", nullable = false, length = 7)
+    var accentColor: String = "#00B8FF"
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "theme_mode", nullable = false, length = 24)
+    var themeMode: NfcThemeMode = NfcThemeMode.SYSTEM
+
+    @Column(name = "display_brightness", nullable = false)
+    var displayBrightness: Int = 80
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "display_timeout", nullable = false, length = 24)
+    var displayTimeout: NfcDisplayTimeout = NfcDisplayTimeout.FIVE_MINUTES
+
+    @Column(name = "device_volume", nullable = false)
+    var deviceVolume: Int = 80
+
+    @Column(name = "sounds_enabled", nullable = false)
+    var soundsEnabled: Boolean = true
+
+    @Column(name = "settings_version", nullable = false)
+    var settingsVersion: Long = Instant.now().toEpochMilli()
+
+    @Column(name = "test_sound_version", nullable = false)
+    var testSoundVersion: Long = 0
+
+    @Column(nullable = false, updatable = false)
+    var createdAt: Instant = Instant.now()
+
+    @Column(nullable = false)
+    var updatedAt: Instant = Instant.now()
+
+    @PrePersist
+    fun settingsCreated() {
+        val now = Instant.now()
+        createdAt = now
+        updatedAt = now
+        if (settingsVersion <= 0) settingsVersion = now.toEpochMilli()
+    }
+
+    @PreUpdate
+    fun settingsUpdated() {
+        updatedAt = Instant.now()
+    }
 }
 
 @Entity

@@ -21,6 +21,8 @@ export type ScreenType =
 export type WinRuleType = 'FIRST_TO_WIN' | 'MOST_POINTS_AFTER_ROUNDS' | 'ROUND_WIN' | 'MANUAL';
 export type RoundLimitType = 'NONE' | 'ROUNDS' | 'POINTS';
 export type GamePublicationStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'BLOCKED';
+export type NfcThemeMode = 'DARK' | 'LIGHT' | 'SYSTEM';
+export type NfcDisplayTimeout = 'NEVER' | 'ONE_MINUTE' | 'FIVE_MINUTES' | 'TEN_MINUTES';
 export type DashboardMetricDisplayType = 'RACE_BAR' | 'COMPACT_LIST' | 'PODIUM' | 'TILE_GRID';
 export type DashboardStatusDisplayType = 'PROGRESS_BAR' | 'KPI' | 'RING' | 'PILL';
 export type DeviceEventType =
@@ -210,6 +212,10 @@ export interface DeviceRequest {
   active: boolean;
 }
 
+export interface DeviceNameRequest {
+  name: string;
+}
+
 export interface DeviceProvisioningDto extends DeviceDto {
   pairingCode: string;
   linked: boolean;
@@ -219,6 +225,29 @@ export interface DeviceProvisioningDto extends DeviceDto {
 
 export interface DeviceClaimRequest {
   pairingCode: string;
+}
+
+export interface NfcSettingsDto {
+  accentColor: string;
+  themeMode: NfcThemeMode;
+  effectiveTheme: NfcThemeMode;
+  displayBrightness: number;
+  displayTimeout: NfcDisplayTimeout;
+  displayTimeoutSeconds?: number | null;
+  deviceVolume: number;
+  soundsEnabled: boolean;
+  settingsVersion: number;
+  testSoundVersion: number;
+  updatedAt: string;
+}
+
+export interface NfcSettingsRequest {
+  accentColor: string;
+  themeMode: NfcThemeMode;
+  displayBrightness: number;
+  displayTimeout: NfcDisplayTimeout;
+  deviceVolume: number;
+  soundsEnabled: boolean;
 }
 
 export interface AudioTestStatusDto {

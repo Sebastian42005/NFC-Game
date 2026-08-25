@@ -57,6 +57,7 @@ class SecurityConfig(
                 it.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/me").permitAll()
                 it.requestMatchers("/api/admin/auth/login").permitAll()
                 it.requestMatchers("/ws/nfc/**").permitAll()
+                it.requestMatchers("/api/admin/nfc-game/audio-test/**").hasRole("ADMIN")
                 it.requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "USER")
                 it.requestMatchers("/api/**").permitAll()
                 it.anyRequest().permitAll()

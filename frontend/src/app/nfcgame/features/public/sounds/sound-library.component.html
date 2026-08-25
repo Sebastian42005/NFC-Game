@@ -1,86 +1,42 @@
-<nfc-public-shell title="Sound Bibliothek" eyebrow="Eigene Sounds & Community">
-  <section class="sound-lab">
-    <article class="recorder-card">
-      <p class="kicker">Aufnehmen</p>
-      <h2>Neuen Sound erstellen</h2>
-      <p class="copy">Nimm kurz etwas auf. Der Server wandelt es automatisch in ESP32-WAV um.</p>
+<nfc-public-shell title="Sounds">
+  <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <input
+      class="max-w-120 flex-1"
+      placeholder="Sounds suchen"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+    />
+  </div>
 
-      <label class="sound-field">
-        Name
-        <input [ngModel]="recordingName()" (ngModelChange)="recordingName.set($event)" placeholder="z.B. Applaus, Fanfare, Fail" />
-      </label>
-
-      <div class="recorder-actions">
-        <button type="button" class="primary" [disabled]="recording()" (click)="startRecording()">Start</button>
-        <button type="button" class="secondary" [disabled]="!recording()" (click)="stopRecording()">Stop</button>
-        <button type="button" class="primary" [disabled]="!canUpload()" (click)="uploadRecording()">
-          {{ uploading() ? 'Speichert...' : 'In Bibliothek speichern' }}
-        </button>
-      </div>
-
-      @if (previewUrl()) {
-        <audio class="sound-player" [src]="previewUrl()" controls></audio>
-      }
-    </article>
-
-    <article class="library-card">
-      <div class="tabs">
-        <button type="button" [class.active]="activeTab() === 'mine'" (click)="activeTab.set('mine')">Meine Sounds</button>
-        <button type="button" [class.active]="activeTab() === 'public'" (click)="activeTab.set('public')">Veröffentlicht</button>
-      </div>
-
-      <label class="sound-field">
-        Suchen
-        <input [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Sound suchen..." />
-      </label>
-
-      @if (activeTab() === 'mine') {
-        <div class="sound-grid">
-          @for (sound of filteredMine(); track sound.id) {
-            <article class="sound-tile">
-              <div>
-                <p class="sound-name">{{ sound.name }}</p>
-                <p class="sound-meta">{{ statusLabel(sound) }} @if (duration(sound)) { · {{ duration(sound) }} }</p>
-              </div>
-              @if (sound.audioUrl) {
-                <audio [src]="sound.audioUrl" controls></audio>
-              }
-              <div class="tile-actions">
-                <button type="button" (click)="rename(sound)">Umbenennen</button>
-                @if (sound.publicationStatus === 'PUBLISHED') {
-                  <button type="button" (click)="unpublish(sound)">Privat machen</button>
-                } @else {
-                  <button type="button" (click)="publish(sound)">Veröffentlichen</button>
-                }
-                <button type="button" class="danger" (click)="deleteSound(sound)">Löschen</button>
-              </div>
-            </article>
-          } @empty {
-            <p class="empty">Noch keine eigenen Sounds. Nimm oben den ersten auf.</p>
+  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    @for (sound of filteredMine(); track sound.id) {
+      <article class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-semibold">{{ sound.name }}</h2>
+            <p class="mt-1 text-xs ui-text-muted">
+              {{ statusLabel(sound) }} @if (duration(sound)) { · {{ duration(sound) }} }
+            </p>
+          </div>
+          <span
+            class="rounded-md px-2 py-1 text-xs"
+            [class]="sound.publicationStatus === 'PUBLISHED' ? 'ui-bg-success-soft ui-text-success' : 'ui-surface ui-text-soft'"
+          >
+            {{ sound.publicationStatus === 'PUBLISHED' ? 'Öffentlich' : 'Privat' }}
+          </span>
+        </div>
+        @if (sound.audioUrl) {
+          <audio class="mt-5 w-full" [src]="sound.audioUrl" controls></audio>
+        }
+        <div class="mt-5 flex flex-wrap gap-2 text-xs ui-text-soft">
+          <span class="rounded-md ui-surface-muted px-2 py-1">Version {{ sound.version }}</span>
+          @if (sound.sizeBytes) {
+            <span class="rounded-md ui-surface-muted px-2 py-1">{{ sound.sizeBytes }} Bytes</span>
           }
         </div>
-      } @else {
-        <div class="sound-grid">
-          @for (sound of filteredPublic(); track sound.id) {
-            <article class="sound-tile">
-              <div>
-                <p class="sound-name">{{ sound.name }}</p>
-                <p class="sound-meta">Likes {{ sound.likeCount }} · Dislikes {{ sound.dislikeCount }}</p>
-              </div>
-              @if (sound.audioUrl) {
-                <audio [src]="sound.audioUrl" controls></audio>
-              }
-              <div class="tile-actions">
-                <button type="button" [class.selected]="sound.myRating === 1" [disabled]="sound.ownedByCurrentAccount" (click)="rate(sound, 1)">Like</button>
-                <button type="button" [class.selected]="sound.myRating === -1" [disabled]="sound.ownedByCurrentAccount" (click)="rate(sound, -1)">Dislike</button>
-                <button type="button" [disabled]="sound.ownedByCurrentAccount" (click)="addToLibrary(sound)">Speichern</button>
-              </div>
-            </article>
-          } @empty {
-            <p class="empty">Noch keine veröffentlichten Sounds.</p>
-          }
-        </div>
-      }
-    </article>
+      </article>
+    } @empty {
+      <p class="rounded-lg border border-dashed ui-border-subtle p-4 ui-text-muted">Noch keine Sounds.</p>
+    }
   </section>
 </nfc-public-shell>

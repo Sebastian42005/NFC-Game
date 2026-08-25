@@ -5,9 +5,11 @@ import {
   AdminAccountSummaryDto,
   AdminLoginRequest,
   AdminLoginResponse,
+  AudioTestStatusDto,
   CardAssignRequest,
   DeviceClaimRequest,
   DeviceDto,
+  DeviceNameRequest,
   DeviceRequest,
   FlowValidationDto,
   GameBasicRequest,
@@ -22,6 +24,7 @@ import {
 import { buildApiUrl, resolveBackendAssetUrl } from './nfc-api-url';
 
 const apiBase = buildApiUrl('/admin');
+const publicApiBase = buildApiUrl('/public');
 
 @Injectable({ providedIn: 'root' })
 export class NfcAdminApiService {
@@ -105,12 +108,30 @@ export class NfcAdminApiService {
     return this.http.patch<DeviceDto>(`${apiBase}/devices/${encodeURIComponent(id)}/active`, { active });
   }
 
-  gameTemplates() {
-    return this.http.get<GameTemplateDto[]>(`${apiBase}/games`).pipe(map((games) => games.map(resolveGameImageUrl)));
+  updateDeviceName(id: string, request: DeviceNameRequest) {
+    return this.http.patch<DeviceDto>(`${apiBase}/devices/${encodeURIComponent(id)}/name`, request);
   }
 
-  publicationRequests() {
-    return this.http.get<GameTemplateDto[]>(`${apiBase}/games/publication-requests`).pipe(map((games) => games.map(resolveGameImageUrl)));
+  deleteDevice(id: string) {
+    return this.http.delete<void>(`${apiBase}/devices/${encodeURIComponent(id)}`);
+  }
+
+  uploadAudioTest(blob: Blob, filename = 'audio-test.webm') {
+    const formData = new FormData();
+    formData.append('file', blob, filename);
+    return this.http
+      .post<AudioTestStatusDto>(`${apiBase}/nfc-game/audio-test/upload`, formData)
+      .pipe(map(resolveAudioTestStatus));
+  }
+
+  audioTestStatus() {
+    return this.http
+      .get<AudioTestStatusDto>(`${apiBase}/nfc-game/audio-test/status`)
+      .pipe(map(resolveAudioTestStatus));
+  }
+
+  gameTemplates() {
+    return this.http.get<GameTemplateDto[]>(`${apiBase}/games`).pipe(map((games) => games.map(resolveGameImageUrl)));
   }
 
   getGame(id: string) {
@@ -143,22 +164,6 @@ export class NfcAdminApiService {
     return this.http.post<GameTemplateDto>(`${apiBase}/games/${encodeURIComponent(id)}/publication-request`, {}).pipe(map(resolveGameImageUrl));
   }
 
-  approvePublication(id: string) {
-    return this.http.post<GameTemplateDto>(`${apiBase}/games/${encodeURIComponent(id)}/approve-publication`, {}).pipe(map(resolveGameImageUrl));
-  }
-
-  rejectPublication(id: string) {
-    return this.http.post<GameTemplateDto>(`${apiBase}/games/${encodeURIComponent(id)}/reject-publication`, {}).pipe(map(resolveGameImageUrl));
-  }
-
-  blockPublication(id: string, reason: string) {
-    return this.http.post<GameTemplateDto>(`${apiBase}/games/${encodeURIComponent(id)}/block-publication`, { reason }).pipe(map(resolveGameImageUrl));
-  }
-
-  unblockPublication(id: string) {
-    return this.http.post<GameTemplateDto>(`${apiBase}/games/${encodeURIComponent(id)}/unblock-publication`, {}).pipe(map(resolveGameImageUrl));
-  }
-
   createGameTemplate(request: GameTemplateRequest) {
     return this.http.post<GameTemplateDto>(`${apiBase}/game-templates`, request);
   }
@@ -179,8 +184,47 @@ export class NfcAdminApiService {
     return this.http.post<FlowValidationDto>(`${apiBase}/games/${encodeURIComponent(gameTemplateId)}/validate`, {});
   }
 
+  sounds() {
+    return this.http.get<SoundDto[]>(`${publicApiBase}/sounds`).pipe(map((sounds) => sounds.map(resolveSoundUrl)));
+  }
+
   soundOptions() {
     return this.http.get<SoundDto[]>(`${apiBase}/sounds/options`).pipe(map((sounds) => sounds.map(resolveSoundUrl)));
+  }
+
+  publicSounds() {
+    return this.http.get<SoundDto[]>(`${publicApiBase}/sounds/public`).pipe(map((sounds) => sounds.map(resolveSoundUrl)));
+  }
+
+  uploadSound(blob: Blob, filename = 'sound.webm', name?: string) {
+    const formData = new FormData();
+    formData.append('file', blob, filename);
+    if (name?.trim()) formData.append('name', name.trim());
+    return this.http.post<SoundDto>(`${publicApiBase}/sounds/upload`, formData).pipe(map(resolveSoundUrl));
+  }
+
+  updateSound(soundId: string, name: string) {
+    return this.http.put<SoundDto>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}`, { name }).pipe(map(resolveSoundUrl));
+  }
+
+  deleteSound(soundId: string) {
+    return this.http.delete<void>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}`);
+  }
+
+  publishSound(soundId: string) {
+    return this.http.post<SoundDto>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}/publish`, {}).pipe(map(resolveSoundUrl));
+  }
+
+  unpublishSound(soundId: string) {
+    return this.http.post<SoundDto>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}/unpublish`, {}).pipe(map(resolveSoundUrl));
+  }
+
+  addPublicSoundToLibrary(soundId: string) {
+    return this.http.post<SoundDto>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}/library`, {}).pipe(map(resolveSoundUrl));
+  }
+
+  ratePublicSound(soundId: string, rating: -1 | 0 | 1) {
+    return this.http.post<SoundDto>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}/rating`, { rating }).pipe(map(resolveSoundUrl));
   }
 }
 
@@ -202,5 +246,12 @@ function resolveSoundUrl(sound: SoundDto): SoundDto {
   return {
     ...sound,
     audioUrl: resolveBackendAssetUrl(sound.audioUrl),
+  };
+}
+
+function resolveAudioTestStatus(status: AudioTestStatusDto): AudioTestStatusDto {
+  return {
+    ...status,
+    audioUrl: resolveBackendAssetUrl(status.audioUrl),
   };
 }
