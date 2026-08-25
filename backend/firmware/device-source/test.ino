@@ -79,13 +79,47 @@ uint32_t readLe32(const uint8_t *buffer, size_t offset) {
 
 bool readExact(WiFiClient *stream, uint8_t *buffer, size_t length) {
   size_t total = 0;
+  unsigned long lastDataAt = millis();
+  const unsigned long STREAM_TIMEOUT_MS = 15000;
 
   while (total < length) {
-    size_t got = stream->readBytes(buffer + total, length - total);
-    if (got == 0) {
+    int availableBytes = stream->available();
+
+    if (availableBytes > 0) {
+      size_t wanted = min(
+        length - total,
+        static_cast<size_t>(availableBytes)
+      );
+
+      int got = stream->read(buffer + total, wanted);
+
+      if (got > 0) {
+        total += static_cast<size_t>(got);
+        lastDataAt = millis();
+        continue;
+      }
+    }
+
+    if (!stream->connected() && stream->available() == 0) {
+      Serial.printf(
+        "HTTP Stream geschlossen bei %u/%u Bytes\n",
+        static_cast<unsigned>(total),
+        static_cast<unsigned>(length)
+      );
       return false;
     }
-    total += got;
+
+    if (millis() - lastDataAt >= STREAM_TIMEOUT_MS) {
+      Serial.printf(
+        "HTTP Stream Timeout bei %u/%u Bytes nach %lu ms\n",
+        static_cast<unsigned>(total),
+        static_cast<unsigned>(length),
+        STREAM_TIMEOUT_MS
+      );
+      return false;
+    }
+
+    delay(1);
   }
 
   return true;
@@ -346,6 +380,10 @@ bool playWavFromUrl(const String &audioUrl) {
 
   HTTPClient http;
   secureClient.setInsecure();
+  secureClient.setTimeout(15000);
+  http.setConnectTimeout(10000);
+  http.setTimeout(15000);
+  http.useHTTP10(true);
 
   if (!http.begin(secureClient, url)) {
     Serial.println("Audio HTTP init fehlgeschlagen");
@@ -358,6 +396,9 @@ bool playWavFromUrl(const String &audioUrl) {
   int code = http.GET();
   Serial.printf("Audio HTTP %d\n", code);
 
+  int contentLength = http.getSize();
+  Serial.printf("HTTP Content-Length: %d\n", contentLength);
+
   if (code < 200 || code >= 300) {
     Serial.println(http.getString());
     http.end();
@@ -365,6 +406,7 @@ bool playWavFromUrl(const String &audioUrl) {
   }
 
   WiFiClient *stream = http.getStreamPtr();
+  stream->setTimeout(15000);
 
   uint16_t channels = 0;
   uint32_t sampleRate = 0;
@@ -383,6 +425,13 @@ bool playWavFromUrl(const String &audioUrl) {
     bitsPerSample,
     static_cast<unsigned long>(dataSize)
   );
+
+  if (contentLength > 0 && dataSize > static_cast<uint32_t>(contentLength)) {
+    Serial.println(
+      "WARNUNG: WAV dataSize ist groesser als der gesamte HTTP Body. "
+      "Der WAV-Header enthaelt wahrscheinlich keine echte Dateilaenge."
+    );
+  }
 
   if (
     channels != 1 ||
@@ -430,7 +479,17 @@ bool playWavFromUrl(const String &audioUrl) {
     }
 
     if (!readExact(stream, inputBuffer, wanted)) {
-      Serial.println("Audio Stream unterbrochen");
+      Serial.printf(
+        "Audio Stream unterbrochen bei %lu/%lu PCM Bytes\n",
+        static_cast<unsigned long>(totalRead),
+        static_cast<unsigned long>(dataSize)
+      );
+      Serial.printf(
+        "HTTP connected=%s available=%d contentLength=%d\n",
+        stream->connected() ? "true" : "false",
+        stream->available(),
+        contentLength
+      );
       abortI2S();
       http.end();
       return false;
