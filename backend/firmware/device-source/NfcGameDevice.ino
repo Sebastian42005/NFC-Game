@@ -103,13 +103,12 @@ static const unsigned long AUDIO_POLL_INTERVAL_MS = 5000;
 static const i2s_port_t AUDIO_I2S_PORT = I2S_NUM_1;
 static const int AUDIO_DMA_BUFFER_COUNT = 8;
 static const int AUDIO_DMA_BUFFER_LEN = 512;
-static const int AUDIO_WAV_VOLUME_DIVISOR = 2;
-static const size_t AUDIO_STREAM_BUFFER_BYTES = 2048;
+static const int AUDIO_VOLUME_DIVISOR = 2;
 static const uint32_t AUDIO_PREROLL_SILENCE_MS = 20;
 static const uint32_t AUDIO_FADE_IN_MS = 20;
 static const uint32_t AUDIO_SHUTDOWN_SILENCE_MS = 40;
 
-static_assert(AUDIO_WAV_VOLUME_DIVISOR >= 1, "Audio volume divisor must be at least 1");
+static_assert(AUDIO_VOLUME_DIVISOR >= 1, "Audio volume divisor must be at least 1");
 
 // =====================================================
 // Objects
@@ -229,8 +228,6 @@ int lastOtaProgressPercent = -1;
 unsigned long lastAudioPollAt = 0;
 long lastKnownGameSoundVersion = 0;
 long lastKnownAudioTestVersion = 0;
-bool audioOutputInitialized = false;
-uint32_t audioOutputSampleRate = 0;
 
 enum WifiRecoveryChoice {
 WIFI_RECOVERY_RETRY,
@@ -1684,57 +1681,87 @@ base.remove(base.length() - 1);
 return base + path;
 }
 
-uint32_t readLe32(const uint8_t *buffer, int offset) {
+uint16_t readLe16(const uint8_t *buffer, size_t offset) {
+return static_cast<uint16_t>(buffer[offset])
+| (static_cast<uint16_t>(buffer[offset + 1]) << 8);
+}
+
+uint32_t readLe32(const uint8_t *buffer, size_t offset) {
 return static_cast<uint32_t>(buffer[offset])
 | (static_cast<uint32_t>(buffer[offset + 1]) << 8)
 | (static_cast<uint32_t>(buffer[offset + 2]) << 16)
 | (static_cast<uint32_t>(buffer[offset + 3]) << 24);
 }
 
-uint16_t readLe16(const uint8_t *buffer, size_t offset) {
-return static_cast<uint16_t>(buffer[offset])
-| (static_cast<uint16_t>(buffer[offset + 1]) << 8);
-}
-
-int16_t readAudioSample16(const uint8_t *buffer, size_t offset) {
-const uint16_t rawValue = readLe16(buffer, offset);
-const int16_t sample = static_cast<int16_t>(rawValue);
-return static_cast<int16_t>(
-static_cast<int32_t>(sample) / AUDIO_WAV_VOLUME_DIVISOR
-);
-}
-
-bool readStreamBytes(WiFiClient *stream, uint8_t *buffer, size_t length) {
+bool readExact(WiFiClient *stream, uint8_t *buffer, size_t length) {
 size_t total = 0;
+unsigned long lastDataAt = millis();
+const unsigned long STREAM_TIMEOUT_MS = 15000;
 
 while (total < length) {
-size_t bytesRead = stream->readBytes(buffer + total, length - total);
-if (bytesRead == 0) {
-return false;
+int availableBytes = stream->available();
+
+if (availableBytes > 0) {
+  size_t wanted = min(
+    length - total,
+    static_cast<size_t>(availableBytes)
+  );
+
+  int got = stream->read(buffer + total, wanted);
+
+  if (got > 0) {
+    total += static_cast<size_t>(got);
+    lastDataAt = millis();
+    continue;
+  }
 }
-total += bytesRead;
+
+if (!stream->connected() && stream->available() == 0) {
+  Serial.printf(
+    "HTTP Stream geschlossen bei %u/%u Bytes\n",
+    static_cast<unsigned>(total),
+    static_cast<unsigned>(length)
+  );
+  return false;
+}
+
+if (millis() - lastDataAt >= STREAM_TIMEOUT_MS) {
+  Serial.printf(
+    "HTTP Stream Timeout bei %u/%u Bytes nach %lu ms\n",
+    static_cast<unsigned>(total),
+    static_cast<unsigned>(length),
+    STREAM_TIMEOUT_MS
+  );
+  return false;
+}
+
+delay(1);
 }
 
 return true;
 }
 
-bool skipStreamBytes(WiFiClient *stream, uint32_t length) {
-uint8_t discard[96];
+bool skipExact(WiFiClient *stream, uint32_t length) {
+uint8_t discard[128];
 uint32_t skipped = 0;
 
 while (skipped < length) {
-size_t wanted = min(static_cast<size_t>(sizeof(discard)), static_cast<size_t>(length - skipped));
-size_t bytesRead = stream->readBytes(discard, wanted);
-if (bytesRead == 0) {
-return false;
+size_t wanted = min(
+  static_cast<size_t>(sizeof(discard)),
+  static_cast<size_t>(length - skipped)
+);
+
+if (!readExact(stream, discard, wanted)) {
+  return false;
 }
-skipped += bytesRead;
+
+skipped += wanted;
 }
 
 return true;
 }
 
-bool isSupportedMax98357SampleRate(uint32_t sampleRate) {
+bool supportedSampleRate(uint32_t sampleRate) {
 return sampleRate == 8000
 || sampleRate == 16000
 || sampleRate == 32000
@@ -1745,13 +1772,13 @@ return sampleRate == 8000
 bool readWavHeader(WiFiClient *stream, uint16_t &channels, uint32_t &sampleRate, uint16_t &bitsPerSample, uint32_t &dataSize) {
 uint8_t riffHeader[12];
 
-if (!readStreamBytes(stream, riffHeader, sizeof(riffHeader))) {
-Serial.println("WAV RIFF Header unvollstaendig");
+if (!readExact(stream, riffHeader, sizeof(riffHeader))) {
+Serial.println("WAV: RIFF Header unvollstaendig");
 return false;
 }
 
 if (memcmp(riffHeader, "RIFF", 4) != 0 || memcmp(riffHeader + 8, "WAVE", 4) != 0) {
-Serial.println("WAV RIFF/WAVE Marker fehlt");
+Serial.println("WAV: Kein RIFF/WAVE");
 return false;
 }
 
@@ -1759,87 +1786,68 @@ bool foundFmt = false;
 
 while (true) {
 uint8_t chunkHeader[8];
-if (!readStreamBytes(stream, chunkHeader, sizeof(chunkHeader))) {
-Serial.println("WAV Chunk Header unvollstaendig");
+if (!readExact(stream, chunkHeader, sizeof(chunkHeader))) {
+Serial.println("WAV: Chunk Header unvollstaendig");
 return false;
 }
 
 uint32_t chunkSize = readLe32(chunkHeader, 4);
-bool padded = (chunkSize % 2) == 1;
+bool padded = (chunkSize % 2) != 0;
 
 if (memcmp(chunkHeader, "fmt ", 4) == 0) {
   if (chunkSize < 16) {
-    Serial.println("WAV fmt Chunk zu klein");
+    Serial.println("WAV: fmt Chunk zu klein");
     return false;
   }
 
-  uint8_t fmtBuffer[32];
-  size_t fmtReadSize = min(static_cast<size_t>(sizeof(fmtBuffer)), static_cast<size_t>(chunkSize));
-  if (!readStreamBytes(stream, fmtBuffer, fmtReadSize)) {
-    Serial.println("WAV fmt Chunk unvollstaendig");
+  uint8_t fmt[16];
+  if (!readExact(stream, fmt, sizeof(fmt))) {
+    Serial.println("WAV: fmt Chunk unvollstaendig");
     return false;
   }
 
-  uint16_t audioFormat = readLe16(fmtBuffer, 0);
-  channels = readLe16(fmtBuffer, 2);
-  sampleRate = readLe32(fmtBuffer, 4);
-  bitsPerSample = readLe16(fmtBuffer, 14);
-  foundFmt = audioFormat == 1;
+  uint16_t audioFormat = readLe16(fmt, 0);
+  channels = readLe16(fmt, 2);
+  sampleRate = readLe32(fmt, 4);
+  bitsPerSample = readLe16(fmt, 14);
 
-  if (chunkSize > fmtReadSize && !skipStreamBytes(stream, chunkSize - fmtReadSize)) {
-    Serial.println("WAV fmt Rest konnte nicht gelesen werden");
+  if (audioFormat != 1) {
+    Serial.printf("WAV: Kein PCM (format=%u)\n", audioFormat);
     return false;
   }
+
+  if (chunkSize > sizeof(fmt)) {
+    if (!skipExact(stream, chunkSize - sizeof(fmt))) {
+      return false;
+    }
+  }
+
+  foundFmt = true;
 } else if (memcmp(chunkHeader, "data", 4) == 0) {
   if (!foundFmt) {
-    Serial.println("WAV data vor fmt gefunden");
+    Serial.println("WAV: data vor fmt gefunden");
     return false;
   }
 
   dataSize = chunkSize;
-  Serial.printf("WAV data chunk gefunden: %u bytes\n", dataSize);
   return true;
 } else {
-  char chunkName[5] = {
-    static_cast<char>(chunkHeader[0]),
-    static_cast<char>(chunkHeader[1]),
-    static_cast<char>(chunkHeader[2]),
-    static_cast<char>(chunkHeader[3]),
-    '\0'
-  };
-  Serial.printf("WAV skip chunk %s: %u bytes\n", chunkName, chunkSize);
-  if (!skipStreamBytes(stream, chunkSize)) {
-    Serial.println("WAV Chunk konnte nicht uebersprungen werden");
+  if (!skipExact(stream, chunkSize)) {
     return false;
   }
 }
 
-if (padded && !skipStreamBytes(stream, 1)) {
-  Serial.println("WAV Padding konnte nicht gelesen werden");
-  return false;
+if (padded) {
+  if (!skipExact(stream, 1)) {
+    return false;
+  }
 }
 
 }
 }
 
-bool writeAudioSilence(uint32_t sampleRate, uint32_t durationMs);
-void abortAudioOutput();
-void finishAudioOutput(uint32_t sampleRate);
-
-bool initAudioOutput(uint32_t sampleRate) {
-if (audioOutputInitialized) {
-if (audioOutputSampleRate != sampleRate) {
-i2s_zero_dma_buffer(AUDIO_I2S_PORT);
-esp_err_t clockResult = i2s_set_clk(AUDIO_I2S_PORT, sampleRate, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
-if (clockResult != ESP_OK) {
-Serial.printf("i2s_set_clk failed: %d\n", clockResult);
-return false;
-}
-audioOutputSampleRate = sampleRate;
-writeAudioSilence(sampleRate, AUDIO_PREROLL_SILENCE_MS);
-}
-return true;
-}
+bool initI2S(uint32_t sampleRate) {
+i2s_driver_uninstall(AUDIO_I2S_PORT);
 
 i2s_config_t config = {};
 config.mode = static_cast<i2s_mode_t>(I2S_MODE_MASTER | I2S_MODE_TX);
@@ -1854,109 +1862,103 @@ config.use_apll = false;
 config.tx_desc_auto_clear = true;
 config.fixed_mclk = 0;
 
-i2s_pin_config_t pinConfig = {};
-pinConfig.mck_io_num = I2S_PIN_NO_CHANGE;
-pinConfig.bck_io_num = AUDIO_I2S_BCLK_PIN;
-pinConfig.ws_io_num = AUDIO_I2S_LRC_PIN;
-pinConfig.data_out_num = AUDIO_I2S_DOUT_PIN;
-pinConfig.data_in_num = I2S_PIN_NO_CHANGE;
+i2s_pin_config_t pins = {};
+pins.bck_io_num = AUDIO_I2S_BCLK_PIN;
+pins.ws_io_num = AUDIO_I2S_LRC_PIN;
+pins.data_out_num = AUDIO_I2S_DOUT_PIN;
+pins.data_in_num = I2S_PIN_NO_CHANGE;
 
-i2s_driver_uninstall(AUDIO_I2S_PORT);
-
-esp_err_t installResult = i2s_driver_install(AUDIO_I2S_PORT, &config, 0, nullptr);
-if (installResult != ESP_OK) {
-Serial.printf("i2s_driver_install failed: %d\n", installResult);
+esp_err_t result = i2s_driver_install(AUDIO_I2S_PORT, &config, 0, nullptr);
+if (result != ESP_OK) {
+Serial.printf("I2S install failed: %d\n", result);
 return false;
 }
 
-esp_err_t pinResult = i2s_set_pin(AUDIO_I2S_PORT, &pinConfig);
-if (pinResult != ESP_OK) {
-Serial.printf("i2s_set_pin failed: %d\n", pinResult);
+result = i2s_set_pin(AUDIO_I2S_PORT, &pins);
+if (result != ESP_OK) {
+Serial.printf("I2S pin setup failed: %d\n", result);
 i2s_driver_uninstall(AUDIO_I2S_PORT);
 return false;
 }
 
-esp_err_t clockResult = i2s_set_clk(AUDIO_I2S_PORT, sampleRate, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
-if (clockResult != ESP_OK) {
-Serial.printf("i2s_set_clk failed: %d\n", clockResult);
+result = i2s_set_clk(
+AUDIO_I2S_PORT,
+sampleRate,
+I2S_BITS_PER_SAMPLE_16BIT,
+I2S_CHANNEL_STEREO
+);
+
+if (result != ESP_OK) {
+Serial.printf("I2S clock setup failed: %d\n", result);
 i2s_driver_uninstall(AUDIO_I2S_PORT);
 return false;
 }
 
 i2s_zero_dma_buffer(AUDIO_I2S_PORT);
-audioOutputInitialized = true;
-audioOutputSampleRate = sampleRate;
 return true;
 }
 
-void resetAudioOutputPins() {
+bool writeSilence(uint32_t sampleRate, uint32_t durationMs) {
+int16_t stereoBuffer[256] = {0};
+
+uint32_t totalFrames = (sampleRate * durationMs) / 1000;
+uint32_t sentFrames = 0;
+
+while (sentFrames < totalFrames) {
+size_t frames = min(
+  static_cast<size_t>(128),
+  static_cast<size_t>(totalFrames - sentFrames)
+);
+
+size_t requestedBytes = frames * 4;
+size_t bytesWritten = 0;
+
+esp_err_t result = i2s_write(
+  AUDIO_I2S_PORT,
+  stereoBuffer,
+  requestedBytes,
+  &bytesWritten,
+  portMAX_DELAY
+);
+
+if (result != ESP_OK || bytesWritten != requestedBytes) {
+  Serial.println("I2S silence write failed");
+  return false;
+}
+
+sentFrames += frames;
+}
+
+return true;
+}
+
+void stopI2S(uint32_t sampleRate) {
+writeSilence(sampleRate, AUDIO_SHUTDOWN_SILENCE_MS);
+
+uint32_t drainMs = static_cast<uint32_t>(
+(
+  static_cast<uint64_t>(AUDIO_DMA_BUFFER_COUNT)
+  * static_cast<uint64_t>(AUDIO_DMA_BUFFER_LEN)
+  * 1000ULL
+) / sampleRate
+) + 30;
+
+delay(drainMs);
+i2s_driver_uninstall(AUDIO_I2S_PORT);
+
 pinMode(AUDIO_I2S_BCLK_PIN, INPUT_PULLDOWN);
 pinMode(AUDIO_I2S_LRC_PIN, INPUT_PULLDOWN);
 pinMode(AUDIO_I2S_DOUT_PIN, INPUT_PULLDOWN);
 }
 
-void abortAudioOutput() {
-if (audioOutputInitialized) {
+void abortI2S() {
 i2s_zero_dma_buffer(AUDIO_I2S_PORT);
-delay(20);
+delay(10);
 i2s_driver_uninstall(AUDIO_I2S_PORT);
-audioOutputInitialized = false;
-audioOutputSampleRate = 0;
-}
 
-resetAudioOutputPins();
-}
-
-void finishAudioOutput(uint32_t sampleRate) {
-if (audioOutputInitialized) {
-writeAudioSilence(sampleRate, AUDIO_SHUTDOWN_SILENCE_MS);
-
-const uint32_t dmaDrainMs =
-static_cast<uint32_t>(
-(
-static_cast<uint64_t>(AUDIO_DMA_BUFFER_COUNT)
-* static_cast<uint64_t>(AUDIO_DMA_BUFFER_LEN)
-* 1000ULL
-) / sampleRate
-) + 20;
-
-delay(dmaDrainMs);
-i2s_driver_uninstall(AUDIO_I2S_PORT);
-audioOutputInitialized = false;
-audioOutputSampleRate = 0;
-}
-
-resetAudioOutputPins();
-}
-
-bool writeAudioSilence(uint32_t sampleRate, uint32_t durationMs) {
-int16_t stereoBuffer[256];
-uint32_t totalSamples = (sampleRate * durationMs) / 1000;
-uint32_t sampleIndex = 0;
-
-memset(stereoBuffer, 0, sizeof(stereoBuffer));
-
-while (sampleIndex < totalSamples) {
-size_t monoSamples = min(static_cast<size_t>(128), static_cast<size_t>(totalSamples - sampleIndex));
-
-size_t bytesWritten = 0;
-const size_t requestedBytes = monoSamples * 4;
-esp_err_t writeResult = i2s_write(AUDIO_I2S_PORT, stereoBuffer, requestedBytes, &bytesWritten, portMAX_DELAY);
-if (writeResult != ESP_OK || bytesWritten != requestedBytes) {
-  Serial.printf(
-    "I2S silence write failed: result=%d requested=%u written=%u\n",
-    writeResult,
-    static_cast<unsigned>(requestedBytes),
-    static_cast<unsigned>(bytesWritten)
-  );
-  return false;
-}
-
-sampleIndex += monoSamples;
-
-}
-
-return true;
+pinMode(AUDIO_I2S_BCLK_PIN, INPUT_PULLDOWN);
+pinMode(AUDIO_I2S_LRC_PIN, INPUT_PULLDOWN);
+pinMode(AUDIO_I2S_DOUT_PIN, INPUT_PULLDOWN);
 }
 
 bool isHttpsUrl(const String &url) {
@@ -2917,27 +2919,53 @@ return false;
 }
 
 String streamUrl = resolvedBackendUrl(metadata.audioUrl);
-HTTPClient http;
 
-if (!beginHttpClient(http, streamUrl)) {
+Serial.println();
+Serial.println("========================================");
+Serial.print("Audio GET: ");
+Serial.println(streamUrl);
+
+HTTPClient http;
+WiFiClient *httpClient = nullptr;
+
+if (isHttpsUrl(streamUrl)) {
+wifiClientSecure.setInsecure();
+wifiClientSecure.setTimeout(15000);
+httpClient = &wifiClientSecure;
+} else {
+wifiClient.setTimeout(15000);
+httpClient = &wifiClient;
+}
+
+http.setConnectTimeout(10000);
+http.setTimeout(15000);
+http.useHTTP10(true);
+
+if (!http.begin(*httpClient, streamUrl)) {
 setLastErrorLimited("Audio HTTP init fehlgeschlagen");
+Serial.println("Audio HTTP init fehlgeschlagen");
 return false;
 }
 
-if (metadata.audioUrl.startsWith("/api/device/") || streamUrl.indexOf("/api/device/") >= 0) {
 http.addHeader("X-Device-Id", deviceId);
 http.addHeader("X-Device-Key", deviceKey);
-}
 
 int code = http.GET();
+Serial.printf("Audio HTTP %d\n", code);
+
+int contentLength = http.getSize();
+Serial.printf("HTTP Content-Length: %d\n", contentLength);
+
 if (code < 200 || code >= 300) {
 setLastErrorLimited("Audio HTTP " + String(code));
-Serial.printf("Audio download HTTP %d\n", code);
+Serial.println(http.getString());
 http.end();
 return false;
 }
 
 WiFiClient *stream = http.getStreamPtr();
+stream->setTimeout(15000);
+
 uint16_t channels = 0;
 uint32_t sampleRate = 0;
 uint16_t bitsPerSample = 0;
@@ -2949,89 +2977,111 @@ http.end();
 return false;
 }
 
-Serial.printf("WAV format: channels=%u sampleRate=%lu bits=%u dataSize=%lu\n", channels, sampleRate, bitsPerSample, dataSize);
+Serial.printf(
+"WAV: channels=%u sampleRate=%lu bits=%u dataSize=%lu\n",
+channels,
+static_cast<unsigned long>(sampleRate),
+bitsPerSample,
+static_cast<unsigned long>(dataSize)
+);
+
+if (contentLength > 0 && dataSize > static_cast<uint32_t>(contentLength)) {
+Serial.println(
+  "WARNUNG: WAV dataSize ist groesser als der gesamte HTTP Body. "
+  "Der WAV-Header enthaelt wahrscheinlich keine echte Dateilaenge."
+);
+}
 
 if (
 channels != 1
 || bitsPerSample != 16
 || dataSize == 0
 || (dataSize % 2) != 0
-|| !isSupportedMax98357SampleRate(sampleRate)
+|| !supportedSampleRate(sampleRate)
 ) {
 setLastErrorLimited("WAV Format nicht unterstuetzt");
-Serial.printf(
-"Unsupported WAV: channels=%u sampleRate=%lu bits=%u dataSize=%lu\n",
-channels,
-sampleRate,
-bitsPerSample,
-dataSize
-);
+Serial.println("WAV nicht unterstuetzt.");
+Serial.println("Erwartet: PCM, Mono, 16 Bit Little Endian, 8/16/32/44.1/48 kHz");
 http.end();
 return false;
 }
 
-if (!initAudioOutput(sampleRate)) {
+if (!initI2S(sampleRate)) {
 setLastErrorLimited("I2S Init fehlgeschlagen");
 http.end();
 return false;
 }
 
-if (!writeAudioSilence(sampleRate, AUDIO_PREROLL_SILENCE_MS)) {
+if (!writeSilence(sampleRate, AUDIO_PREROLL_SILENCE_MS)) {
 setLastErrorLimited("I2S Stille fehlgeschlagen");
-abortAudioOutput();
+abortI2S();
 http.end();
 return false;
 }
 
 setStatusTextLimited("Audio Test spielt");
-Serial.printf("WAV playback start: %lu Hz, %u bytes\n", sampleRate, dataSize);
+Serial.println("Playback startet...");
 
-static uint8_t buffer[AUDIO_STREAM_BUFFER_BYTES];
-static int16_t stereoBuffer[AUDIO_STREAM_BUFFER_BYTES];
+uint8_t inputBuffer[512];
+int16_t stereoBuffer[512];
 uint32_t totalRead = 0;
-const uint32_t fadeInSamples = (sampleRate * AUDIO_FADE_IN_MS) / 1000;
+uint32_t fadeInSamples = (sampleRate * AUDIO_FADE_IN_MS) / 1000;
 
 while (totalRead < dataSize) {
-size_t wanted = min(static_cast<size_t>(sizeof(buffer)), static_cast<size_t>(dataSize - totalRead));
-if ((wanted % 2) == 1) {
-setLastErrorLimited("WAV Block ungerade");
-abortAudioOutput();
-http.end();
-return false;
-}
-
-if (!readStreamBytes(stream, buffer, wanted)) {
-setLastErrorLimited("WAV Stream unterbrochen");
-Serial.printf(
-"WAV stream failed after %lu of %lu bytes\n",
-totalRead,
-dataSize
+size_t wanted = min(
+  static_cast<size_t>(sizeof(inputBuffer)),
+  static_cast<size_t>(dataSize - totalRead)
 );
 
-abortAudioOutput();
+if ((wanted % 2) != 0) {
+setLastErrorLimited("WAV Block ungerade");
+Serial.println("PCM Block hat ungerade Byteanzahl");
+abortI2S();
 http.end();
 return false;
 }
 
-const size_t bytesRead = wanted;
+if (!readExact(stream, inputBuffer, wanted)) {
+setLastErrorLimited("WAV Stream unterbrochen");
+Serial.printf(
+"Audio Stream unterbrochen bei %lu/%lu PCM Bytes\n",
+static_cast<unsigned long>(totalRead),
+static_cast<unsigned long>(dataSize)
+);
+Serial.printf(
+"HTTP connected=%s available=%d contentLength=%d\n",
+stream->connected() ? "true" : "false",
+stream->available(),
+contentLength
+);
 
-size_t sampleCount = bytesRead / 2;
+abortI2S();
+http.end();
+return false;
+}
+
+size_t sampleCount = wanted / 2;
 for (size_t i = 0; i < sampleCount; i++) {
-  int16_t sample = readAudioSample16(buffer, i * 2);
+  // WICHTIG: RIFF WAV PCM16 ist Little Endian -> KEIN Byte-Swap.
+  int16_t sample = static_cast<int16_t>(readLe16(inputBuffer, i * 2));
+
+  int32_t value = static_cast<int32_t>(sample) / AUDIO_VOLUME_DIVISOR;
   uint32_t absoluteSampleIndex = (totalRead / 2) + i;
 
   if (fadeInSamples > 0 && absoluteSampleIndex < fadeInSamples) {
-    sample = static_cast<int16_t>(
-      (static_cast<int32_t>(sample)
-        * static_cast<int32_t>(absoluteSampleIndex))
-      / static_cast<int32_t>(fadeInSamples)
-    );
+    value = (
+      value * static_cast<int32_t>(absoluteSampleIndex)
+    ) / static_cast<int32_t>(fadeInSamples);
   }
+
+  sample = static_cast<int16_t>(value);
+
+  // Mono auf linken + rechten I2S Kanal kopieren.
   stereoBuffer[i * 2] = sample;
   stereoBuffer[i * 2 + 1] = sample;
 }
 
-const size_t requestedBytes = sampleCount * 4;
+size_t requestedBytes = sampleCount * 4;
 size_t bytesWritten = 0;
 esp_err_t writeResult = i2s_write(
   AUDIO_I2S_PORT,
@@ -3050,28 +3100,25 @@ if (writeResult != ESP_OK || bytesWritten != requestedBytes) {
     static_cast<unsigned>(bytesWritten)
   );
 
-  abortAudioOutput();
+  abortI2S();
   http.end();
   return false;
 }
 
-totalRead += bytesRead;
+totalRead += wanted;
 
 }
 
-const bool playbackComplete = totalRead == dataSize;
-
-if (!playbackComplete) {
-setLastErrorLimited("WAV nicht vollstaendig");
-abortAudioOutput();
+stopI2S(sampleRate);
 http.end();
-return false;
-}
 
-finishAudioOutput(sampleRate);
-http.end();
-Serial.printf("WAV playback done: read %lu of %lu bytes\n", totalRead, dataSize);
-return true;
+Serial.printf(
+"Playback fertig: %lu / %lu Bytes\n",
+static_cast<unsigned long>(totalRead),
+static_cast<unsigned long>(dataSize)
+);
+
+return totalRead == dataSize;
 }
 
 bool tryPlayAudioSource(
@@ -3962,7 +4009,9 @@ nfcSPI.begin(NFC_SCK_PIN, NFC_MISO_PIN, NFC_MOSI_PIN, NFC_SS_PIN);
 mfrc522.PCD_Init();
 initMifareDefaultKey();
 
-abortAudioOutput();
+pinMode(AUDIO_I2S_BCLK_PIN, INPUT_PULLDOWN);
+pinMode(AUDIO_I2S_LRC_PIN, INPUT_PULLDOWN);
+pinMode(AUDIO_I2S_DOUT_PIN, INPUT_PULLDOWN);
 Serial.println("Audio output muted");
 
 initStringCapacities();
