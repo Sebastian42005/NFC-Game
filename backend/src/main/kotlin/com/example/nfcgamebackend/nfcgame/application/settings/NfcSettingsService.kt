@@ -36,26 +36,6 @@ class NfcSettingsService(
     }
 
     @Transactional
-    fun requestTestSound(accountId: Long): NfcSettingsResponse {
-        val settings = settingsForAccount(accountId)
-        settings.testSoundVersion = nextVersion(settings.testSoundVersion)
-        return toResponse(settingsRepository.save(settings))
-    }
-
-    @Transactional
-    fun acknowledgeTestSound(deviceId: String, deviceKey: String, version: Long): NfcSettingsResponse {
-        val device = deviceAuthenticator.authenticate(deviceId, deviceKey)
-        val accountId = device.accountId ?: return toResponse(defaultSettings())
-        val settings = settingsForAccount(accountId)
-
-        if (version > 0 && settings.testSoundVersion <= version) {
-            settings.testSoundVersion = 0
-        }
-
-        return toResponse(settingsRepository.save(settings))
-    }
-
-    @Transactional
     fun getDeviceSettings(deviceId: String, deviceKey: String): NfcSettingsResponse {
         val device = deviceAuthenticator.authenticate(deviceId, deviceKey)
         val accountId = device.accountId ?: return toResponse(defaultSettings())

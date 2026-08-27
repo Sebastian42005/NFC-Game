@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { nfcAdminGuard, nfcAdminRoleGuard } from './nfcgame/core/auth/nfc-admin.guard';
+import { nfcAdminGuard } from './nfcgame/core/auth/nfc-admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'nfc-game', pathMatch: 'full' },
@@ -173,9 +173,8 @@ export const routes: Routes = [
   },
   {
     path: 'nfc-game/admin/audio-test',
-    canActivate: [nfcAdminRoleGuard],
-    loadComponent: () =>
-      import('./nfcgame/features/admin/audio-test/audio-test.component').then((m) => m.NfcAudioTestComponent),
+    redirectTo: 'nfc-game/admin/settings',
+    pathMatch: 'full',
   },
   {
     path: 'nfc-game/admin/accounts',

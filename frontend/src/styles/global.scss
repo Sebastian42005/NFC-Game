@@ -1161,6 +1161,196 @@ mat-checkbox {
   cursor: pointer;
 }
 
+.settings-sound-editor {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.settings-test-tone {
+  display: grid;
+  gap: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--nfc-border) 78%, transparent);
+  padding-top: 1rem;
+}
+
+.settings-test-tone-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.settings-test-tone-meta {
+  border: 1px solid var(--nfc-border);
+  border-radius: 999px;
+  background: var(--nfc-surface-muted);
+  color: var(--nfc-muted);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.settings-test-tone-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.settings-test-tone-copy {
+  margin: 0;
+  color: var(--nfc-muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.settings-primary,
+.settings-secondary,
+.settings-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  background: var(--nfc-accent);
+  color: var(--nfc-accent-contrast);
+  padding: 0.72rem 1rem;
+  font-weight: 900;
+}
+
+.settings-secondary {
+  border-color: var(--nfc-border);
+  background: color-mix(in srgb, var(--nfc-surface-strong) 84%, transparent);
+  color: var(--nfc-text);
+}
+
+.settings-sound-editor-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.settings-sound-icon-button {
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  place-items: center;
+  border: 1px solid var(--nfc-accent-border);
+  border-radius: 0.65rem;
+  background: var(--nfc-accent-surface-soft);
+  color: var(--nfc-accent-strong);
+  cursor: pointer;
+}
+
+.settings-sound-icon-button.is-playing {
+  background: var(--nfc-accent);
+  color: var(--nfc-accent-contrast);
+}
+
+.settings-sound-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.settings-sound-waveform-wrap {
+  position: relative;
+  min-height: 4.2rem;
+  overflow: hidden;
+  border: 1px solid var(--nfc-border);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--nfc-surface-strong) 88%, transparent);
+}
+
+.settings-sound-waveform {
+  display: block;
+  width: 100%;
+  height: 4.2rem;
+  cursor: pointer;
+}
+
+.settings-sound-trim-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.settings-sound-trim-dim,
+.settings-sound-trim-selection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.settings-sound-trim-dim {
+  left: 0;
+  background: color-mix(in srgb, var(--nfc-bg) 62%, transparent);
+}
+
+.settings-sound-trim-dim.is-right {
+  left: auto;
+  right: 0;
+}
+
+.settings-sound-trim-selection {
+  border-inline: 2px solid var(--nfc-accent);
+  background: color-mix(in srgb, var(--nfc-accent) 12%, transparent);
+}
+
+.settings-sound-trim-handle {
+  position: absolute;
+  top: 50%;
+  width: 1rem;
+  height: 2.85rem;
+  border: 1px solid var(--nfc-accent-border);
+  border-radius: 999px;
+  background: var(--nfc-accent);
+  box-shadow: 0 10px 24px var(--nfc-shadow);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+.settings-sound-trim-handle.is-start {
+  transform: translate(-50%, -50%);
+}
+
+.settings-sound-trim-handle.is-end {
+  transform: translate(-50%, -50%);
+}
+
+.settings-sound-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.settings-sound-editor-meta span,
+.settings-sound-placeholder {
+  border: 1px solid var(--nfc-border);
+  border-radius: 999px;
+  background: var(--nfc-surface-muted);
+  color: var(--nfc-muted);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.settings-sound-placeholder {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.7rem;
+}
+
+@media (max-width: 640px) {
+  .settings-sound-editor-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ui-dialog-backdrop {
   position: fixed;
   inset: 0;

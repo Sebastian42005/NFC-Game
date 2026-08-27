@@ -81,7 +81,7 @@
           </span>
           <div>
             <p class="settings-kicker">Audio</p>
-            <h3>Lautstärke & Sounds</h3>
+            <h3>Lautstärke, Sounds & Testton</h3>
           </div>
         </header>
 
@@ -117,15 +117,129 @@
           <span>Sounds aktiv</span>
         </label>
 
-        <button
-          type="button"
-          class="settings-primary"
-          [disabled]="isBusy() || !settings().soundsEnabled"
-          (click)="playTestSound()"
-        >
-          <mat-icon aria-hidden="true">play_arrow</mat-icon>
-          <span>Testton abspielen</span>
-        </button>
+        <section class="settings-test-tone">
+          <div class="settings-test-tone-header">
+            <div>
+              <p class="settings-kicker">Testton</p>
+              <h4>Eigenen Testton aufnehmen</h4>
+            </div>
+            @if (latestTestTone()?.available) {
+              <span class="settings-test-tone-meta">
+                Gesendet {{ latestTestTone()?.uploadedAt | date: 'short' }}
+              </span>
+            }
+          </div>
+
+          <div class="settings-test-tone-actions">
+            <button
+              type="button"
+              class="settings-secondary"
+              [disabled]="recording() || (isBusy() && saveState() === 'loading')"
+              (click)="startTestToneRecording()"
+            >
+              <mat-icon aria-hidden="true">mic</mat-icon>
+              <span>{{ recording() ? 'Aufnahme läuft...' : 'Aufnahme starten' }}</span>
+            </button>
+            <button
+              type="button"
+              class="settings-secondary"
+              [disabled]="!recording()"
+              (click)="stopTestToneRecording()"
+            >
+              <mat-icon aria-hidden="true">stop</mat-icon>
+              <span>Stop</span>
+            </button>
+            <button
+              type="button"
+              class="settings-secondary"
+              [disabled]="!recording() && !testTonePreviewUrl()"
+              (click)="resetTestToneRecording()"
+            >
+              <mat-icon aria-hidden="true">restart_alt</mat-icon>
+              <span>Zurücksetzen</span>
+            </button>
+          </div>
+
+          @if (recording()) {
+            <p class="settings-test-tone-copy">Aufnahmezeit: {{ formatTime(recordingSeconds()) }}</p>
+          }
+
+          @if (testTonePreviewUrl()) {
+            <div class="settings-sound-editor">
+              <div class="settings-sound-editor-row">
+                <button
+                  type="button"
+                  class="settings-sound-icon-button"
+                  [class.is-playing]="playingTestTone()"
+                  [disabled]="!hasValidTestToneSelection()"
+                  [attr.aria-label]="playingTestTone() ? 'Testton pausieren' : 'Testton abspielen'"
+                  [title]="playingTestTone() ? 'Pause' : 'Testton abspielen'"
+                  (click)="toggleTestTonePlayback()"
+                >
+                  <mat-icon aria-hidden="true">{{ playingTestTone() ? 'pause' : 'play_arrow' }}</mat-icon>
+                </button>
+
+                <div class="settings-sound-waveform-wrap">
+                  <canvas
+                    #testToneWaveformCanvas
+                    class="settings-sound-waveform"
+                    role="img"
+                    aria-label="Wellenform des aufgenommenen Testtons"
+                    (pointerdown)="seekTestTonePreview($event)"
+                  ></canvas>
+                  <div class="settings-sound-trim-layer">
+                    <div class="settings-sound-trim-dim" aria-hidden="true" [style.width.%]="testToneTrimStartPercent()"></div>
+                    <div
+                      class="settings-sound-trim-selection"
+                      [style.left.%]="testToneTrimStartPercent()"
+                      [style.width.%]="testToneTrimWidthPercent()"
+                    ></div>
+                    <button
+                      type="button"
+                      class="settings-sound-trim-handle is-start"
+                      [style.left.%]="testToneTrimStartPercent()"
+                      aria-label="Schnittanfang ziehen"
+                      (pointerdown)="startTestToneTrimDrag('start', $event)"
+                    ></button>
+                    <button
+                      type="button"
+                      class="settings-sound-trim-handle is-end"
+                      [style.left.%]="testToneTrimStartPercent() + testToneTrimWidthPercent()"
+                      aria-label="Schnittende ziehen"
+                      (pointerdown)="startTestToneTrimDrag('end', $event)"
+                    ></button>
+                    <div
+                      class="settings-sound-trim-dim is-right"
+                      aria-hidden="true"
+                      [style.left.%]="testToneTrimStartPercent() + testToneTrimWidthPercent()"
+                      [style.width.%]="100 - (testToneTrimStartPercent() + testToneTrimWidthPercent())"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-sound-editor-meta">
+                <span>{{ formatTime(selectedTestToneDurationSeconds()) }} Auswahl</span>
+                <span>{{ formatTime(testToneDurationSeconds()) }} Gesamt</span>
+              </div>
+            </div>
+          } @else {
+            <div class="settings-sound-placeholder">
+              <mat-icon aria-hidden="true">graphic_eq</mat-icon>
+              <span>Nach der Aufnahme erscheint hier die Wellenform.</span>
+            </div>
+          }
+
+          <button
+            type="button"
+            class="settings-primary"
+            [disabled]="isBusy() || !canSendTestTone()"
+            (click)="sendTestToneToDevice()"
+          >
+            <mat-icon aria-hidden="true">send</mat-icon>
+            <span>{{ uploadingTestTone() ? 'Wird gesendet...' : 'Testton ans Gerät senden' }}</span>
+          </button>
+        </section>
       </section>
     </div>
 

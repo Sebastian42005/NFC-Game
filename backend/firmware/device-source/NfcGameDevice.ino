@@ -229,10 +229,8 @@ int lastOtaProgressPercent = -1;
 unsigned long lastAudioPollAt = 0;
 unsigned long lastSettingsPollAt = 0;
 unsigned long lastDisplayActivityAt = 0;
-long lastKnownGameSoundVersion = 0;
-long lastKnownAudioTestVersion = 0;
-long lastKnownTestSoundVersion = -1;
-bool startupAudioPlaybackAttempted = false;
+long lastKnownGameSoundVersion = -1;
+long lastKnownAudioTestVersion = -1;
 bool displayAwake = true;
 
 enum WifiRecoveryChoice {
@@ -280,6 +278,7 @@ bool available = false;
 bool hasNewAudio = false;
 long version = 0;
 String audioUrl = "";
+String lastPlayedAt = "";
 };
 
 struct DeviceSettings {
@@ -2215,21 +2214,6 @@ stopI2S(sampleRate);
 return true;
 }
 
-void playSettingsTestSound() {
-if (!deviceSettings.soundsEnabled || deviceSettings.deviceVolume <= 0) {
-Serial.println("Settings testsound skipped: sounds disabled or volume zero");
-return;
-}
-
-setStatusTextLimited(localizedText("Testton spielt", "Test tone playing"));
-drawFooter();
-writeTone(16000, 180, 880);
-delay(60);
-writeTone(16000, 180, 1320);
-setStatusTextLimited(localizedText("Testton abgespielt", "Test tone played"));
-drawFooter();
-}
-
 void drawOtaMessage(const String &title, const String &subtitle) {
 screen.screenType = "MESSAGE";
 setStringLimited(screen.title, title.c_str(), CAP_SCREEN_TITLE - 1);
@@ -3063,7 +3047,7 @@ if (code < 200 || code >= 300) {
 return false;
 }
 
-StaticJsonDocument<768> doc;
+StaticJsonDocument<1024> doc;
 DeserializationError error = deserializeJson(doc, response);
 
 if (error) {
@@ -3075,12 +3059,14 @@ metadata.available = doc["available"] | false;
 metadata.hasNewAudio = doc["hasNewAudio"] | false;
 metadata.version = doc["version"] | 0L;
 setStringLimited(metadata.audioUrl, doc["audioUrl"] | "", CAP_AUDIO_URL - 1);
+metadata.lastPlayedAt = doc["lastPlayedAt"] | "";
 Serial.printf(
-"Audio metadata parsed: available=%s hasNewAudio=%s version=%ld knownVersion=%ld\n",
+"Audio metadata parsed: available=%s hasNewAudio=%s version=%ld knownVersion=%ld lastPlayed=%s\n",
 metadata.available ? "true" : "false",
 metadata.hasNewAudio ? "true" : "false",
 metadata.version,
-knownVersion
+knownVersion,
+metadata.lastPlayedAt.length() > 0 ? "true" : "false"
 );
 return true;
 }
@@ -3126,7 +3112,6 @@ return false;
 }
 
 long previousSettingsVersion = deviceSettings.settingsVersion;
-long previousTestSoundVersion = deviceSettings.testSoundVersion;
 String previousAccent = deviceSettings.accentColor;
 String previousTheme = deviceSettings.effectiveTheme;
 String previousLanguage = deviceSettings.language;
@@ -3171,14 +3156,6 @@ if (languageChanged) {
     setStartScreen(deviceLinked ? localizedText("Account verbunden", "Account linked") : localizedText("Bereit", "Ready"));
     drawScreen();
   }
-}
-
-if (deviceSettings.testSoundVersion > previousTestSoundVersion && deviceSettings.testSoundVersion > lastKnownTestSoundVersion) {
-lastKnownTestSoundVersion = deviceSettings.testSoundVersion;
-playSettingsTestSound();
-acknowledgeAudioPlayback("/api/device/settings/test-sound/ack", deviceSettings.testSoundVersion);
-} else if (deviceSettings.testSoundVersion > lastKnownTestSoundVersion) {
-lastKnownTestSoundVersion = deviceSettings.testSoundVersion;
 }
 
 if (deviceSettings.settingsVersion != previousSettingsVersion) {
@@ -3438,11 +3415,18 @@ bool tryPlayAudioSource(
 const String &label,
 const String &metadataPath,
 const String &ackPath,
-long &knownVersion
+long &knownVersion,
+bool playInitialUnplayed
 ) {
 AudioTestMetadata metadata;
 if (!fetchAudioMetadata(metadataPath, knownVersion, metadata)) {
 Serial.println(label + " polling: metadata fetch failed");
+return false;
+}
+
+if (knownVersion < 0 && (!playInitialUnplayed || !metadata.hasNewAudio || metadata.lastPlayedAt.length() > 0)) {
+knownVersion = metadata.version;
+Serial.println(label + " polling: initial audio version stored without playback");
 return false;
 }
 
@@ -3489,48 +3473,19 @@ if (tryPlayAudioSource(
 "Game Sound",
 "/api/device/sounds/latest/metadata",
 "/api/device/sounds/latest/ack",
-lastKnownGameSoundVersion
+lastKnownGameSoundVersion,
+false
 )) {
 return;
 }
 
 tryPlayAudioSource(
-"Audio Test",
+"Testton",
 "/api/device/audio-test/latest/metadata",
 "/api/device/audio-test/latest/ack",
-lastKnownAudioTestVersion
+lastKnownAudioTestVersion,
+true
 );
-}
-
-void playStartupAudioOnce() {
-if (startupAudioPlaybackAttempted || !deviceRegistered || !deviceLinked) {
-return;
-}
-
-startupAudioPlaybackAttempted = true;
-Serial.println("Startup Audio: spiele aktuelles Audio direkt beim Start");
-
-lastKnownGameSoundVersion = 0;
-lastKnownAudioTestVersion = 0;
-
-if (tryPlayAudioSource(
-"Startup Game Sound",
-"/api/device/sounds/latest/metadata",
-"/api/device/sounds/latest/ack",
-lastKnownGameSoundVersion
-)) {
-lastAudioPollAt = millis();
-return;
-}
-
-tryPlayAudioSource(
-"Startup Audio Test",
-"/api/device/audio-test/latest/metadata",
-"/api/device/audio-test/latest/ack",
-lastKnownAudioTestVersion
-);
-
-lastAudioPollAt = millis();
 }
 
 void sendMenuSelection(int index) {
@@ -4407,8 +4362,6 @@ if (!wifiSetupMode && deviceRegistered) {
 checkForFirmwareUpdate(true);
 }
 
-playStartupAudioOnce();
-
 if (deviceRegistered && !deviceLinked && pairingCode.length() > 0) {
 drawPairingCodeScreen();
 } else {
@@ -4441,7 +4394,6 @@ if (millis() - lastDeviceLinkCheckAt > DEVICE_LINK_CHECK_INTERVAL_MS) {
 if (registerDeviceWithBackend() && lastOtaCheckAt == 0) {
 checkForFirmwareUpdate(false);
 }
-playStartupAudioOnce();
 }
 } else if (millis() - lastOtaCheckAt > OTA_CHECK_INTERVAL_MS) {
 checkForFirmwareUpdate(false);
@@ -4460,7 +4412,6 @@ registerDeviceWithBackend();
     setStartScreen(localizedText("Account verbunden", "Account linked"));
     fetchDeviceSettings(true);
     drawScreen();
-    playStartupAudioOnce();
   } else {
     drawPairingCodeScreen();
   }

@@ -113,10 +113,6 @@ export class NfcPublicApiService {
     return this.http.put<NfcSettingsDto>(`${apiBase}/settings`, request);
   }
 
-  playSettingsTestSound() {
-    return this.http.post<NfcSettingsDto>(`${apiBase}/settings/test-sound`, {});
-  }
-
   registerDevice(request: DeviceRequest) {
     return this.http.post<DeviceProvisioningDto>(`${deviceApiBase}/register`, request);
   }

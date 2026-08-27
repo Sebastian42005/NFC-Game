@@ -116,7 +116,7 @@ export class NfcAdminApiService {
     return this.http.delete<void>(`${apiBase}/devices/${encodeURIComponent(id)}`);
   }
 
-  uploadAudioTest(blob: Blob, filename = 'audio-test.webm') {
+  uploadSettingsTestTone(blob: Blob, filename = 'settings-test-tone.webm') {
     const formData = new FormData();
     formData.append('file', blob, filename);
     return this.http
@@ -124,7 +124,7 @@ export class NfcAdminApiService {
       .pipe(map(resolveAudioTestStatus));
   }
 
-  audioTestStatus() {
+  settingsTestToneStatus() {
     return this.http
       .get<AudioTestStatusDto>(`${apiBase}/nfc-game/audio-test/status`)
       .pipe(map(resolveAudioTestStatus));

@@ -55,7 +55,6 @@ export class NfcAdminShellComponent {
     {
       label: 'Admin',
       links: [
-        { href: '/nfc-game/admin/audio-test', label: 'Audio-Test', icon: 'volume_up', adminOnly: true },
         { href: '/nfc-game/admin/accounts', label: 'Accounts', icon: 'manage_accounts', adminOnly: true },
       ],
     },
@@ -85,8 +84,8 @@ export class NfcAdminShellComponent {
 
   protected readonly desktopSidebarClass = computed(() =>
     this.sidebarCollapsed()
-      ? 'nfc-admin-sidebar fixed inset-y-0 left-0 hidden w-20 border-r ui-border-subtle ui-surface-muted p-4 lg:block'
-      : 'nfc-admin-sidebar fixed inset-y-0 left-0 hidden w-64 border-r ui-border-subtle ui-surface-muted p-5 lg:block',
+      ? 'nfc-admin-sidebar fixed inset-y-0 left-0 hidden w-20 flex-col border-r ui-border-subtle ui-surface-muted p-4 lg:flex'
+      : 'nfc-admin-sidebar fixed inset-y-0 left-0 hidden w-64 flex-col border-r ui-border-subtle ui-surface-muted p-5 lg:flex',
   );
 
   protected readonly contentClass = computed(() => {

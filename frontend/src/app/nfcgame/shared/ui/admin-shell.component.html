@@ -23,7 +23,7 @@
         <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">{{ sidebarCollapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
       </button>
     </div>
-    <nav class="mt-8 grid gap-5 text-sm">
+    <nav class="mt-8 grid gap-5 overflow-y-auto pb-4 text-sm">
       @for (group of visibleLinkGroups(); track group.label) {
         <div class="grid gap-1">
           <p
@@ -53,7 +53,7 @@
         </div>
       }
     </nav>
-    <div class="absolute bottom-5 left-5 right-5 grid gap-2">
+    <div class="mt-auto grid gap-2 pt-4">
       <a
         [routerLink]="settingsLink.href"
         routerLinkActive="nfc-admin-nav-link-active"
