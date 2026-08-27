@@ -1,0 +1,154 @@
+:host {
+  display: contents;
+}
+
+.nfc-consent-backdrop {
+  position: fixed;
+  inset: auto 1rem 1rem 1rem;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.nfc-consent-card {
+  width: min(100%, 58rem);
+  border: 1px solid var(--nfc-border-strong);
+  border-radius: 1.3rem;
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--nfc-accent) 18%, transparent), transparent 18rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--nfc-panel-solid) 92%, transparent), var(--nfc-nav-bg));
+  box-shadow: 0 24px 80px var(--nfc-shadow);
+  color: var(--nfc-text);
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+  pointer-events: auto;
+}
+
+.nfc-consent-copy {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.nfc-consent-eyebrow {
+  margin: 0;
+  color: var(--nfc-accent-strong);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.nfc-consent-copy h2,
+.nfc-consent-copy p {
+  margin: 0;
+}
+
+.nfc-consent-copy h2 {
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.nfc-consent-copy p {
+  color: var(--nfc-muted);
+  font-size: 0.96rem;
+  line-height: 1.55;
+}
+
+.nfc-consent-links,
+.nfc-consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.nfc-consent-links a {
+  color: var(--nfc-accent-strong);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.nfc-consent-options {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.nfc-consent-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid var(--nfc-border);
+  border-radius: 0.9rem;
+  background: var(--nfc-surface);
+  padding: 0.78rem;
+}
+
+.nfc-consent-option input {
+  margin-top: 0.15rem;
+  accent-color: var(--nfc-accent);
+}
+
+.nfc-consent-option strong,
+.nfc-consent-option small {
+  display: block;
+}
+
+.nfc-consent-option strong {
+  color: var(--nfc-text);
+  font-size: 0.92rem;
+}
+
+.nfc-consent-option small {
+  color: var(--nfc-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.nfc-consent-actions {
+  justify-content: flex-end;
+}
+
+.nfc-consent-button {
+  border: 1px solid var(--nfc-border);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  color: var(--nfc-text);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.nfc-consent-button.primary {
+  border-color: var(--nfc-accent-border);
+  background: linear-gradient(135deg, var(--nfc-accent), var(--nfc-accent-2));
+  color: var(--nfc-accent-contrast);
+}
+
+.nfc-consent-button.secondary {
+  background: var(--nfc-surface-hover);
+}
+
+.nfc-consent-button.ghost {
+  background: transparent;
+  color: var(--nfc-accent-strong);
+}
+
+@media (max-width: 640px) {
+  .nfc-consent-backdrop {
+    inset: auto 0 0 0;
+  }
+
+  .nfc-consent-card {
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .nfc-consent-actions {
+    flex-direction: column;
+  }
+
+  .nfc-consent-button {
+    width: 100%;
+  }
+}

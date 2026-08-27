@@ -51,7 +51,7 @@
   </nav>
 
   <section
-    class="nfc-game-page mx-auto max-w-7xl px-4 py-8 sm:px-6"
+    class="nfc-game-page mx-auto min-h-[calc(100vh+14rem)] max-w-7xl px-4 py-8 sm:px-6"
     [class.nfc-game-page-immersive]="immersive()"
   >
     @if (!immersive()) {
@@ -62,6 +62,22 @@
     }
     <ng-content />
   </section>
+
+  @if (!immersive()) {
+    <footer class="relative z-[1] border-t ui-border-subtle">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 text-sm ui-text-muted sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <p>NFC Arena · Rechtliches & Datenschutz</p>
+        <nav class="flex flex-wrap items-center gap-3" aria-label="Rechtliche Links">
+          @for (link of legalLinks; track link.href) {
+            <a [routerLink]="link.href" class="font-bold hover:ui-text-accent">{{ link.label }}</a>
+          }
+          <button type="button" class="font-bold hover:ui-text-accent" (click)="openCookieSettings()">
+            Cookie-Einstellungen
+          </button>
+        </nav>
+      </div>
+    </footer>
+  }
 
   <nfc-toast-host />
 </main>

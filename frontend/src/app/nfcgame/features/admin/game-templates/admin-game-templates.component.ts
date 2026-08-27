@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { MatIcon } from '../../../../../shims/angular-material/icon';
 import { NfcAdminApiService } from '../../../core/api/nfc-admin-api.service';
 import { NfcPublicApiService } from '../../../core/api/nfc-public-api.service';
 import { GameTemplateDto } from '../../../shared/models/nfc-game.models';
@@ -10,8 +11,9 @@ import { NfcToastService } from '../../../shared/ui/nfc-toast.service';
 
 @Component({
   selector: 'nfc-admin-game-templates',
-  imports: [FormsModule, RouterLink, NfcAdminShellComponent],
+  imports: [FormsModule, RouterLink, MatIcon, NfcAdminShellComponent],
   templateUrl: './admin-game-templates.component.html',
+  styleUrl: './admin-game-templates.component.scss',
 })
 export class NfcAdminGameTemplatesComponent {
   private readonly api = inject(NfcAdminApiService);
@@ -21,7 +23,6 @@ export class NfcAdminGameTemplatesComponent {
   protected readonly publicGames = signal<GameTemplateDto[]>([]);
   protected readonly activeTab = signal<'library' | 'public'>('library');
   protected readonly query = signal('');
-  protected readonly ratings = [1, 2, 3, 4, 5];
   protected readonly filteredGames = computed(() => {
     const term = this.query().trim().toLowerCase();
     if (!term) return this.games();
@@ -81,7 +82,15 @@ export class NfcAdminGameTemplatesComponent {
 
   protected ratingLabel(game: GameTemplateDto) {
     if (!game.ratingCount) return 'Noch keine Bewertungen';
-    return `${game.ratingAverage.toFixed(1)} / 5 bei ${game.ratingCount} Bewertung${game.ratingCount === 1 ? '' : 'en'}`;
+    return `${game.ratingCount} Bewertung${game.ratingCount === 1 ? '' : 'en'}`;
+  }
+
+  protected isThumbUp(game: GameTemplateDto) {
+    return (game.myRating ?? 0) >= 4;
+  }
+
+  protected isThumbDown(game: GameTemplateDto) {
+    return (game.myRating ?? 0) > 0 && (game.myRating ?? 0) <= 2;
   }
 
   private async load() {

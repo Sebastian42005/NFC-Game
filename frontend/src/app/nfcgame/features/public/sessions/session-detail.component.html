@@ -1,4 +1,4 @@
-<nfc-public-shell title="Session-Detail" eyebrow="Archiv">
+<nfc-public-shell title="Session-Details" eyebrow="Archiv">
   @if (error()) {
     <p class="rounded-lg border ui-border-warm ui-bg-warm-soft p-4 ui-text-warm">{{ error() }}</p>
   } @else if (detail(); as detail) {
@@ -27,7 +27,7 @@
 
           <div class="grid gap-4 p-5 sm:grid-cols-4">
             <div>
-              <span class="block text-xs uppercase tracking-[0.14em] ui-text-muted">Dashboard</span>
+              <span class="block text-xs uppercase tracking-[0.14em] ui-text-muted">Anzeigewert</span>
               <strong class="mt-1 block ui-text-strong">{{ detail.metricLabel }}</strong>
             </div>
             <div>
@@ -49,7 +49,7 @@
           <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p class="text-xs font-black uppercase tracking-[0.18em] ui-text-accent">Endstand</p>
-              <h2 class="mt-1 text-2xl font-black ui-text-strong">Platzierung und Dashboard-Werte</h2>
+              <h2 class="mt-1 text-2xl font-black ui-text-strong">Platzierung und Werte</h2>
             </div>
             @if (detail.winner) {
               <p class="rounded-md border ui-border-warm ui-bg-warm-soft px-3 py-2 text-sm font-black ui-text-warm">

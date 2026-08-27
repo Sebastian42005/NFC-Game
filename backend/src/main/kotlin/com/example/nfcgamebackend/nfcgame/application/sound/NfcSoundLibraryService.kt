@@ -90,6 +90,26 @@ class NfcSoundLibraryService(
     }
 
     @Transactional
+    fun replaceAudio(soundId: UUID, file: MultipartFile, name: String?): SoundResponse {
+        if (file.isEmpty) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Sound file is empty")
+        }
+
+        val accountId = adminService.currentAccountId()
+        val sound = ownedSound(soundId, accountId)
+        val wav = convertToMonoWav(file)
+        name?.trim()?.takeIf { it.isNotBlank() }?.let {
+            sound.name = it.take(120)
+        }
+        sound.wavContent = wav
+        sound.sizeBytes = wav.size.toLong()
+        sound.durationMs = durationMs(wav)
+        sound.originalFilename = file.originalFilename
+        sound.version += 1
+        return toSoundResponse(soundRepository.save(sound), accountId)
+    }
+
+    @Transactional
     fun delete(soundId: UUID) {
         val sound = ownedSound(soundId, adminService.currentAccountId())
         sound.active = false

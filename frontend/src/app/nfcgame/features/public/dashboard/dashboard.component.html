@@ -1,4 +1,4 @@
-<nfc-public-shell title="Live Arena" eyebrow="TV Lobby Dashboard" [immersive]="true">
+<nfc-public-shell title="Live Arena" eyebrow="Arena TV" [immersive]="true">
   @if (error()) {
     <p class="nfc-dashboard-alert mb-4 rounded-lg border ui-border-accent ui-bg-accent-soft p-4 ui-text-accent">{{ error() }}</p>
   }
@@ -6,8 +6,8 @@
   @if (loading()) {
     <section class="nfc-standby-panel grid min-h-[58vh] place-items-center rounded-lg border ui-border-subtle ui-surface-muted">
       <div class="text-center">
-        <p class="text-xs font-semibold uppercase tracking-[0.22em] ui-text-accent">Live Sync</p>
-        <h2 class="mt-3 text-3xl font-semibold">Lade Arena...</h2>
+        <p class="text-xs font-semibold uppercase tracking-[0.22em] ui-text-accent">Live</p>
+        <h2 class="mt-3 text-3xl font-semibold">Arena wird geladen...</h2>
       </div>
     </section>
   } @else if (activeSession(); as session) {

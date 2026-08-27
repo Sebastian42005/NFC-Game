@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { DatePipe } from '@angular/common';
 import { NfcPublicApiService } from '../../../core/api/nfc-public-api.service';
 import { NfcLiveSocketService } from '../../../core/websocket/nfc-live-socket.service';
+import { NfcI18nService } from '../../../shared/i18n/nfc-i18n.service';
 import { SessionDetailDto, SessionTimelineEventDto, TeamDto } from '../../../shared/models/nfc-game.models';
 import { NfcPublicShellComponent } from '../../../shared/ui/public-shell.component';
 import { NfcStatusBadgeComponent } from '../../../shared/ui/status-badge.component';
@@ -46,6 +47,7 @@ export class NfcSessionDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly socket = inject(NfcLiveSocketService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly i18n = inject(NfcI18nService);
 
   protected readonly session = signal<SessionDetailDto | null>(null);
   protected readonly timeline = signal<SessionTimelineEventDto[]>([]);
@@ -79,7 +81,7 @@ export class NfcSessionDetailComponent {
       this.session.set(session);
       this.timeline.set(timeline);
     } catch {
-      this.error.set('Session konnte nicht geladen werden.');
+      this.error.set(this.text('Session konnte nicht geladen werden.', 'Session could not be loaded.'));
     }
   }
 
@@ -99,25 +101,28 @@ export class NfcSessionDetailComponent {
   }
 
   protected teamMemberNames(team: { members: { playerName?: string | null }[] }) {
-    return team.members.map((member) => member.playerName?.trim() || 'Spieler').join(' · ');
+    return team.members.map((member) => member.playerName?.trim() || this.text('Spieler', 'Player')).join(' · ');
   }
 
   protected accountPointsLabel(team: DetailTeamView) {
     const points = team.globalPointsAwarded;
-    const base = `${this.formatNumber(points)} Konto-${points === 1 ? 'Punkt' : 'Punkte'}`;
-    return team.members.length > 1 ? `${base} je Spieler` : base;
+    const base = this.text(
+      `${this.formatNumber(points)} Konto-${points === 1 ? 'Punkt' : 'Punkte'}`,
+      `${this.formatNumber(points)} account ${points === 1 ? 'point' : 'points'}`,
+    );
+    return team.members.length > 1 ? this.text(`${base} je Spieler`, `${base} per player`) : base;
   }
 
   protected accountPointsBreakdown(team: DetailTeamView) {
     const parts = [
-      team.roundGlobalPointsAwarded > 0 ? `${this.formatNumber(team.roundGlobalPointsAwarded)} aus Aktionen/Karten` : null,
-      team.placementGlobalPointsAwarded > 0 ? `${this.formatNumber(team.placementGlobalPointsAwarded)} fürs Ergebnis` : null,
+      team.roundGlobalPointsAwarded > 0 ? this.text(`${this.formatNumber(team.roundGlobalPointsAwarded)} aus Aktionen/Karten`, `${this.formatNumber(team.roundGlobalPointsAwarded)} from actions/cards`) : null,
+      team.placementGlobalPointsAwarded > 0 ? this.text(`${this.formatNumber(team.placementGlobalPointsAwarded)} fürs Ergebnis`, `${this.formatNumber(team.placementGlobalPointsAwarded)} for the result`) : null,
     ].filter(Boolean);
     return parts.length > 1 ? parts.join(' + ') : '';
   }
 
   protected formatNumber(value: number) {
-    return new Intl.NumberFormat('de-AT', { maximumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat(this.i18n.locale(), { maximumFractionDigits: 0 }).format(value);
   }
 
   private toSessionDetail(session: SessionDetailDto): SessionDetailView {
@@ -129,7 +134,7 @@ export class NfcSessionDetailComponent {
       teams,
       winner,
       resultLabel: this.resultLabel(session, winner),
-      metricLabel: session.dashboardMetricLabel?.trim() || (this.isMoneySession(session) ? 'Kontostand' : 'Punkte'),
+      metricLabel: session.dashboardMetricLabel?.trim() || (this.isMoneySession(session) ? this.text('Kontostand', 'Balance') : this.text('Punkte', 'Points')),
       statusValue: this.statusValue(session),
       playerCount: teams.reduce((sum, team) => sum + team.members.length, 0),
       awardedAccountPoints,
@@ -161,19 +166,19 @@ export class NfcSessionDetailComponent {
   }
 
   private resultLabel(session: SessionDetailDto, winner?: DetailTeamView) {
-    if (winner) return `${this.displayTeamName(winner)} gewinnt`;
-    if (session.status === 'FINISHED') return 'Unentschieden';
+    if (winner) return `${this.displayTeamName(winner)} ${this.text('gewinnt', 'wins')}`;
+    if (session.status === 'FINISHED') return this.text('Unentschieden', 'Draw');
     return this.statusLabel(session.status);
   }
 
   private statusValue(session: SessionDetailDto) {
     const source = session.dashboardStatusSource?.trim();
-    if (!source) return `Runde ${session.currentRoundNumber}`;
+    if (!source) return this.text(`Runde ${session.currentRoundNumber}`, `Round ${session.currentRoundNumber}`);
     const value = session.dashboardStatusValue ?? this.fallbackStatusValue(session, source);
     const limit = session.dashboardStatusLimit;
     const suffix = session.dashboardStatusSuffix?.trim() || '';
     const formatted = `${this.formatNumber(Number(value ?? 0))}${limit ? ` / ${this.formatNumber(Number(limit))}` : ''}`;
-    return `${session.dashboardStatusLabel?.trim() || 'Status'}: ${suffix ? `${formatted} ${suffix}` : formatted}`;
+    return `${session.dashboardStatusLabel?.trim() || this.text('Status', 'Status')}: ${suffix ? `${formatted} ${suffix}` : formatted}`;
   }
 
   private fallbackStatusValue(session: SessionDetailDto, source: string) {
@@ -198,13 +203,13 @@ export class NfcSessionDetailComponent {
   private statusLabel(status: string) {
     const labels: Record<string, string> = {
       LOBBY: 'Lobby',
-      CONFIGURING: 'Setup',
-      BUILDING_TEAMS: 'Teams',
-      READY: 'Bereit',
-      RUNNING: 'Live',
-      FINISHED: 'Beendet',
+      CONFIGURING: this.text('Setup', 'Setup'),
+      BUILDING_TEAMS: this.text('Teams', 'Teams'),
+      READY: this.text('Bereit', 'Ready'),
+      RUNNING: this.text('Live', 'Live'),
+      FINISHED: this.text('Beendet', 'Finished'),
       RESET: 'Reset',
-      CANCELLED: 'Abbruch',
+      CANCELLED: this.text('Abbruch', 'Cancelled'),
     };
     return labels[status] ?? status;
   }
@@ -227,13 +232,13 @@ export class NfcSessionDetailComponent {
     const explicit = this.stringValue(payload['timelineMessage']) || this.stringValue(payload['popupText']);
     if (explicit) return explicit;
     const labels: Record<string, string> = {
-      CARD_SCANNED: 'Karte gescannt',
-      GAME_CARD_SCANNED: 'Spielkarte gescannt',
-      PLAYER_CARD_SCANNED: 'Spielerkarte gescannt',
-      TOUCH_MENU_SELECT: 'Auswahl am Gerät',
-      TOUCH_NUMBER_SET: 'Zahl am Gerät gesetzt',
-      TOUCH_CONFIRM: 'Am Gerät bestätigt',
-      RESET_TRIGGERED: 'Reset ausgelöst',
+      CARD_SCANNED: this.text('Karte gescannt', 'Card scanned'),
+      GAME_CARD_SCANNED: this.text('Spielkarte gescannt', 'Game card scanned'),
+      PLAYER_CARD_SCANNED: this.text('Spielerkarte gescannt', 'Player card scanned'),
+      TOUCH_MENU_SELECT: this.text('Auswahl am Gerät', 'Selection on device'),
+      TOUCH_NUMBER_SET: this.text('Zahl am Gerät gesetzt', 'Number set on device'),
+      TOUCH_CONFIRM: this.text('Am Gerät bestätigt', 'Confirmed on device'),
+      RESET_TRIGGERED: this.text('Reset ausgelöst', 'Reset triggered'),
     };
     return labels[eventType] ?? eventType;
   }
@@ -266,5 +271,9 @@ export class NfcSessionDetailComponent {
 
   private stringValue(value: unknown) {
     return typeof value === 'string' && value.trim() ? value.trim() : '';
+  }
+
+  private text(de: string, en: string) {
+    return this.i18n.pick(de, en);
   }
 }

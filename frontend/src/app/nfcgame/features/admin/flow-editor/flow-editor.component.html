@@ -19,35 +19,13 @@
       <p class="shrink-0 border-b ui-border-accent ui-bg-accent-soft px-4 py-2 text-sm ui-text-accent">{{ error() }}</p>
     }
 
-    <div class="flex shrink-0 items-center justify-between border-b ui-border-subtle px-4 py-2">
-      <div class="inline-flex rounded-lg border ui-border-subtle ui-surface-muted p-1">
-        <button
-          class="rounded-md px-3 py-2 text-sm"
-          [class]="editorMode() === 'VISUAL' ? 'ui-bg-accent ui-text-on-accent font-semibold' : 'ui-text-soft'"
-          (click)="setVisualMode()"
-          type="button"
-        >
-          Visual
-        </button>
-        <button
-          class="rounded-md px-3 py-2 text-sm"
-          [class]="editorMode() === 'TUTORIAL' ? 'ui-bg-accent ui-text-on-accent font-semibold' : 'ui-text-soft'"
-          (click)="setTutorialMode()"
-          type="button"
-        >
-          Tutorial
-        </button>
-      </div>
-      @if (editorMode() === 'TUTORIAL') {
-        <p class="text-xs ui-text-muted">Alles Wichtige zu Nodes, Variablen, Kanten, UNO und Monopoly.</p>
-      }
-    </div>
-
-    @if (editorMode() === 'VISUAL') {
-      <div class="grid min-h-0 flex-1" [style.grid-template-columns]="visualGridColumns()">
+    <div class="grid min-h-0 flex-1" [style.grid-template-columns]="visualGridColumns()">
+      <div class="min-h-0">
         <nfc-node-palette (addNode)="addNode($event)" />
+      </div>
+      <div class="min-h-0 min-w-0">
         <nfc-flow-canvas
-          class="min-h-0 min-w-0"
+          class="block h-full min-h-0 min-w-0"
           [nodes]="nodes()"
           [edges]="edges()"
           [selectedNodeId]="selectedNodeId()"
@@ -65,63 +43,61 @@
           (connectTo)="connectTo($event)"
           (dropBuilderNode)="addDroppedNode($event)"
         />
-        <div class="relative min-h-0 overflow-hidden">
-          <button
-            type="button"
-            class="absolute left-0 top-0 z-20 h-full w-2 cursor-col-resize border-l border-transparent bg-transparent hover:ui-border-accent focus:ui-border-accent focus:outline-none"
-            aria-label="Eigenschaften-Breite ändern"
-            (pointerdown)="startSidebarResize($event)"
-          ></button>
-          @if (selectedEdge(); as edge) {
-            <aside class="flex h-full min-h-0 flex-col overflow-hidden border-l ui-border-subtle ui-surface-muted p-4">
-              <h3 class="shrink-0 text-sm font-semibold">Verbindung</h3>
-              <div class="mt-4 grid gap-4">
-                <section class="rounded-lg border ui-border-subtle ui-surface-muted p-3">
-                  <p class="mb-3 text-xs font-semibold uppercase tracking-wide ui-text-muted">Pfad</p>
-                  <div class="grid gap-2 text-sm ui-text-soft">
-                    <p><span class="ui-text-muted">Von:</span> {{ selectedEdgeSource()?.title || edge.sourceNodeId.slice(0, 8) }}</p>
-                    <p><span class="ui-text-muted">Zu:</span> {{ selectedEdgeTarget()?.title || edge.targetNodeId.slice(0, 8) }}</p>
-                    <p><span class="ui-text-muted">Event:</span> {{ edge.eventType }}</p>
-                  </div>
-                </section>
-                <button
-                  type="button"
-                  class="rounded border ui-border-accent ui-bg-accent-soft px-3 py-2 text-sm font-semibold ui-text-accent"
-                  (click)="deleteEdge(edge.id)"
-                >
-                  Verbindung löschen
-                </button>
-              </div>
-            </aside>
-          } @else {
-            <nfc-node-properties-panel
-              class="block h-full min-h-0 overflow-hidden"
-              [node]="selectedNode()"
-              [nodes]="nodes()"
-              [edges]="edges()"
-              [outgoingEdges]="outgoingEdges()"
-              [startNodeId]="startNodeId()"
-              [configJson]="selectedConfigJson()"
-              [uiConfigJson]="selectedUiConfigJson()"
-              [dashboardValueKey]="dashboardValueKey()"
-              [dashboardStatusValueKey]="dashboardStatusValueKey()"
-              [dashboardStatusMaxValueKey]="dashboardStatusMaxValueKey()"
-              [soundOptions]="soundOptions()"
-              (patchNode)="patchSelectedNode($event)"
-              (setStart)="startNodeId.set($event)"
-              (configJsonChange)="updateSelectedConfig($event)"
-              (uiConfigJsonChange)="updateSelectedUiConfig($event)"
-              (patchEdge)="patchEdge($event)"
-            >
-              @if (selectedNode()) {
-                <nfc-game-preview-panel [node]="selectedNode()" />
-              }
-            </nfc-node-properties-panel>
-          }
-        </div>
       </div>
-    } @else {
-      <nfc-editor-tutorial class="block min-h-0 flex-1 overflow-hidden" />
-    }
+      <div class="relative min-h-0 overflow-hidden">
+        <button
+          type="button"
+          class="absolute left-0 top-0 z-20 h-full w-2 cursor-col-resize border-l border-transparent bg-transparent hover:ui-border-accent focus:ui-border-accent focus:outline-none"
+          aria-label="Eigenschaften-Breite ändern"
+          (pointerdown)="startSidebarResize($event)"
+        ></button>
+        @if (selectedEdge(); as edge) {
+          <aside class="flex h-full min-h-0 flex-col overflow-hidden border-l ui-border-subtle ui-surface-muted p-4">
+            <h3 class="shrink-0 text-sm font-semibold">Verbindung</h3>
+            <div class="mt-4 grid gap-4">
+              <section class="rounded-lg border ui-border-subtle ui-surface-muted p-3">
+                <p class="mb-3 text-xs font-semibold uppercase tracking-wide ui-text-muted">Pfad</p>
+                <div class="grid gap-2 text-sm ui-text-soft">
+                  <p><span class="ui-text-muted">Von:</span> {{ selectedEdgeSource()?.title || edge.sourceNodeId.slice(0, 8) }}</p>
+                  <p><span class="ui-text-muted">Zu:</span> {{ selectedEdgeTarget()?.title || edge.targetNodeId.slice(0, 8) }}</p>
+                  <p><span class="ui-text-muted">Event:</span> {{ edge.eventType }}</p>
+                </div>
+              </section>
+              <button
+                type="button"
+                class="rounded border ui-border-accent ui-bg-accent-soft px-3 py-2 text-sm font-semibold ui-text-accent"
+                (click)="deleteEdge(edge.id)"
+              >
+                Verbindung löschen
+              </button>
+            </div>
+          </aside>
+        } @else {
+          <nfc-node-properties-panel
+            class="block h-full min-h-0 overflow-hidden"
+            [node]="selectedNode()"
+            [nodes]="nodes()"
+            [edges]="edges()"
+            [outgoingEdges]="outgoingEdges()"
+            [startNodeId]="startNodeId()"
+            [configJson]="selectedConfigJson()"
+            [uiConfigJson]="selectedUiConfigJson()"
+            [dashboardValueKey]="dashboardValueKey()"
+            [dashboardStatusValueKey]="dashboardStatusValueKey()"
+            [dashboardStatusMaxValueKey]="dashboardStatusMaxValueKey()"
+            [soundOptions]="soundOptions()"
+            (patchNode)="patchSelectedNode($event)"
+            (setStart)="startNodeId.set($event)"
+            (configJsonChange)="updateSelectedConfig($event)"
+            (uiConfigJsonChange)="updateSelectedUiConfig($event)"
+            (patchEdge)="patchEdge($event)"
+          >
+            @if (selectedNode()) {
+              <nfc-game-preview-panel [node]="selectedNode()" />
+            }
+          </nfc-node-properties-panel>
+        }
+      </div>
+    </div>
   </section>
 </nfc-admin-shell>

@@ -1,0 +1,42 @@
+.game-rating-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem;
+  border: 1px solid var(--nfc-border);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--nfc-warm) 14%, transparent), transparent 70%),
+    color-mix(in srgb, var(--nfc-surface-strong) 76%, transparent);
+}
+
+.game-rating-label {
+  margin: 0;
+  color: var(--nfc-accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.game-rating-score {
+  margin: 0.1rem 0 0;
+  color: var(--nfc-text);
+  font-size: 1.35rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.game-rating-copy {
+  margin: 0.12rem 0 0;
+  color: var(--nfc-muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 520px) {
+  .game-rating-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

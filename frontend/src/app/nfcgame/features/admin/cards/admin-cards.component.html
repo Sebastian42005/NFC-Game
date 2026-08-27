@@ -58,7 +58,15 @@
 
     <form class="grid content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="assign()">
       <h2 class="text-xl font-semibold">Karte zuweisen</h2>
-      <label class="grid gap-2 text-sm">Card UID <input name="cardUid" [ngModel]="form().cardUid" (ngModelChange)="patch({ cardUid: $event })" required /></label>
+      <label class="grid gap-2 text-sm">
+        NFC Karte
+        <mat-select class="nfc-select" panelClass="nfc-select-panel" name="cardUid" [ngModel]="form().cardUid" (ngModelChange)="patch({ cardUid: $event })" required>
+          <mat-option value="">Bitte wählen</mat-option>
+          @for (card of cards(); track card.id) {
+            <mat-option [value]="card.cardUid">{{ card.cardUid }} · {{ card.cardType }} · {{ card.status }}</mat-option>
+          }
+        </mat-select>
+      </label>
       <label class="grid gap-2 text-sm">
         Kartentyp
         <mat-select class="nfc-select" panelClass="nfc-select-panel" name="cardType" [ngModel]="form().cardType" (ngModelChange)="setCardType($event)">
@@ -88,7 +96,7 @@
           Neuen Spieler mit dieser Karte erstellen
         </a>
       } @else {
-        <label class="grid gap-2 text-sm">Game Template
+        <label class="grid gap-2 text-sm">Spielvorlage
           <mat-select
             class="nfc-select"
             panelClass="nfc-select-panel"

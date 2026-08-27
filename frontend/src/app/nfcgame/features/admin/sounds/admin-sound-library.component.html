@@ -29,7 +29,7 @@
   </div>
 
   @if (activeTab() === 'library') {
-    <section class="mb-5 rounded-lg border ui-border-subtle ui-surface-muted p-5">
+    <section class="sound-recorder-panel mb-5 rounded-lg border ui-border-subtle ui-surface-muted p-5">
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <label class="grid gap-2 text-sm ui-text-soft">
           Name
@@ -46,7 +46,7 @@
             [disabled]="recording()"
             (click)="startRecording()"
           >
-            Start
+            {{ recording() ? 'Aufnahme läuft...' : 'Aufnahme starten' }}
           </button>
           <button
             type="button"
@@ -62,12 +62,72 @@
             [disabled]="!canUpload()"
             (click)="uploadRecording()"
           >
-            {{ uploading() ? 'Speichert...' : 'Neuer Sound' }}
+            {{ uploading() ? 'Speichert...' : 'Sound speichern' }}
           </button>
         </div>
       </div>
+      @if (recording()) {
+        <p class="mt-3 text-sm ui-text-soft">Aufnahmezeit: {{ formatTime(recordingSeconds()) }}</p>
+      }
       @if (previewUrl()) {
-        <audio class="mt-4 w-full" [src]="previewUrl()" controls></audio>
+        <div class="sound-editor mt-5">
+          <div class="sound-editor-row">
+            <button
+              type="button"
+              class="sound-icon-button"
+              [class.is-playing]="playing()"
+              [disabled]="!hasValidSelection()"
+              [attr.aria-label]="playing() ? 'Wiedergabe pausieren' : 'Auswahl abspielen'"
+              [title]="playing() ? 'Pause' : 'Auswahl abspielen'"
+              (click)="togglePlayback()"
+            >
+              <mat-icon aria-hidden="true">{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
+            </button>
+
+            <div class="sound-waveform-wrap">
+              <canvas
+                #waveformCanvas
+                class="sound-waveform"
+                role="img"
+                aria-label="Wellenform des aufgenommenen Sounds"
+                (pointerdown)="seekPreview($event)"
+              ></canvas>
+              <div class="sound-trim-layer">
+                <div class="sound-trim-dim" aria-hidden="true" [style.width.%]="trimStartPercent()"></div>
+                <div
+                  class="sound-trim-selection"
+                  [style.left.%]="trimStartPercent()"
+                  [style.width.%]="trimWidthPercent()"
+                ></div>
+                <button
+                  type="button"
+                  class="sound-trim-handle is-start"
+                  [style.left.%]="trimStartPercent()"
+                  aria-label="Schnittanfang ziehen"
+                  (pointerdown)="startTrimDrag('start', $event)"
+                ></button>
+                <button
+                  type="button"
+                  class="sound-trim-handle is-end"
+                  [style.left.%]="trimStartPercent() + trimWidthPercent()"
+                  aria-label="Schnittende ziehen"
+                  (pointerdown)="startTrimDrag('end', $event)"
+                ></button>
+                <div
+                  class="sound-trim-dim is-right"
+                  aria-hidden="true"
+                  [style.left.%]="trimStartPercent() + trimWidthPercent()"
+                  [style.width.%]="100 - (trimStartPercent() + trimWidthPercent())"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sound-editor-meta">
+            <span>{{ formatTime(selectedDurationSeconds()) }} Auswahl</span>
+            <span>{{ formatTime(durationSeconds()) }} Gesamt</span>
+          </div>
+        </div>
       }
     </section>
 
@@ -89,10 +149,12 @@
             </span>
           </div>
           @if (sound.audioUrl) {
-            <audio class="mt-5 w-full" [src]="sound.audioUrl" controls></audio>
+            <nfc-sound-waveform-player [audioUrl]="sound.audioUrl" [label]="sound.name"></nfc-sound-waveform-player>
           }
           <div class="mt-5 flex flex-wrap gap-2">
-            <button class="rounded-md border ui-border-subtle px-3 py-2 text-sm" type="button" (click)="rename(sound)">Umbenennen</button>
+            <button class="rounded-md border ui-border-subtle px-3 py-2 text-sm" type="button" (click)="editSound(sound)">
+              Bearbeiten
+            </button>
             @if (sound.publicationStatus === 'PUBLISHED') {
               <button class="rounded-md border ui-border-subtle px-3 py-2 text-sm" type="button" (click)="unpublish(sound)">Privat machen</button>
             } @else {
@@ -112,33 +174,46 @@
           <div class="flex items-start justify-between gap-3">
             <div>
               <h2 class="text-xl font-semibold">{{ sound.name }}</h2>
-              <p class="mt-1 text-xs ui-text-muted">Likes {{ sound.likeCount }} · Dislikes {{ sound.dislikeCount }}</p>
+              <div class="nfc-reaction-row mt-2" aria-label="Sound Bewertungen">
+                <span class="nfc-reaction-summary" title="Daumen hoch">
+                  <mat-icon aria-hidden="true">thumb_up</mat-icon>
+                  {{ sound.likeCount }}
+                </span>
+                <span class="nfc-reaction-summary" title="Daumen runter">
+                  <mat-icon aria-hidden="true">thumb_down</mat-icon>
+                  {{ sound.dislikeCount }}
+                </span>
+              </div>
             </div>
             <span class="rounded-md ui-bg-success-soft px-2 py-1 text-xs ui-text-success">Öffentlich</span>
           </div>
           @if (sound.audioUrl) {
-            <audio class="mt-5 w-full" [src]="sound.audioUrl" controls></audio>
+            <nfc-sound-waveform-player [audioUrl]="sound.audioUrl" [label]="sound.name"></nfc-sound-waveform-player>
           }
           <div class="mt-5 flex flex-wrap gap-2">
             <button
               type="button"
-              class="rounded-md border ui-border-subtle px-3 py-2 text-sm"
-              [class.ui-bg-rating-active]="sound.myRating === 1"
-              [class.ui-text-on-accent]="sound.myRating === 1"
+              class="nfc-reaction-button is-up"
+              [class.is-active]="sound.myRating === 1"
               [disabled]="sound.ownedByCurrentAccount"
+              [attr.aria-label]="sound.myRating === 1 ? 'Daumen hoch entfernen' : 'Daumen hoch geben'"
+              [title]="sound.myRating === 1 ? 'Daumen hoch entfernen' : 'Daumen hoch geben'"
               (click)="rate(sound, 1)"
             >
-              Like
+              <mat-icon aria-hidden="true">thumb_up</mat-icon>
+              <span>{{ sound.likeCount }}</span>
             </button>
             <button
               type="button"
-              class="rounded-md border ui-border-subtle px-3 py-2 text-sm"
-              [class.ui-bg-rating-active]="sound.myRating === -1"
-              [class.ui-text-on-accent]="sound.myRating === -1"
+              class="nfc-reaction-button is-down"
+              [class.is-active]="sound.myRating === -1"
               [disabled]="sound.ownedByCurrentAccount"
+              [attr.aria-label]="sound.myRating === -1 ? 'Daumen runter entfernen' : 'Daumen runter geben'"
+              [title]="sound.myRating === -1 ? 'Daumen runter entfernen' : 'Daumen runter geben'"
               (click)="rate(sound, -1)"
             >
-              Dislike
+              <mat-icon aria-hidden="true">thumb_down</mat-icon>
+              <span>{{ sound.dislikeCount }}</span>
             </button>
             <button
               class="rounded-md ui-bg-accent px-3 py-2 text-sm font-semibold ui-text-on-accent"

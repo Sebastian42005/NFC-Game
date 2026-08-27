@@ -272,6 +272,13 @@ class NfcAdminController(
         @Valid @RequestBody request: SoundUpdateRequest,
     ) = soundLibraryService.update(soundId, request)
 
+    @PostMapping("/sounds/{soundId}/audio", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun replaceSoundAudio(
+        @PathVariable soundId: UUID,
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam("name", required = false) name: String?,
+    ) = soundLibraryService.replaceAudio(soundId, file, name)
+
     @DeleteMapping("/sounds/{soundId}")
     fun deleteSound(@PathVariable soundId: UUID) = soundLibraryService.delete(soundId)
 

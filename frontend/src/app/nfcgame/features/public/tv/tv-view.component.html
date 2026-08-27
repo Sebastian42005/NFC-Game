@@ -1,4 +1,4 @@
-<nfc-public-shell title="Fernseher View" eyebrow="NFC Game">
+<nfc-public-shell title="Fernseher" eyebrow="Arena TV">
   <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
     <article class="rounded-lg border ui-border-subtle ui-surface-muted p-6 lg:p-8">
       @if (auth.isAuthenticated()) {
@@ -47,7 +47,7 @@
                 Neuen QR-Code
               </button>
               <a
-                routerLink="/nfc-game/account"
+                routerLink="/nfc-game/admin/login"
                 class="rounded-md border ui-border-subtle px-5 py-4 text-center text-lg font-semibold ui-text-strong hover:ui-surface-hover"
               >
                 Normaler Login
@@ -87,7 +87,7 @@
     </article>
 
     <aside class="grid content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5">
-      <h2 class="text-xl font-semibold">TV-Steuerung</h2>
+      <h2 class="text-xl font-semibold">Fernseher-Steuerung</h2>
       <p class="text-sm leading-6 ui-text-soft">
         Diese Ansicht nutzt große Schaltflächen und den Handy-Login, damit du auf dem Fernseher keine langen Eingaben machen musst.
       </p>

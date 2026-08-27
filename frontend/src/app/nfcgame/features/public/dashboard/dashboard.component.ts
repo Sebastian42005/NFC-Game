@@ -12,6 +12,7 @@ import {
   LeaderboardEntryDto,
   SessionTimelineEventDto,
 } from '../../../shared/models/nfc-game.models';
+import { NfcI18nService } from '../../../shared/i18n/nfc-i18n.service';
 import { NfcPublicShellComponent } from '../../../shared/ui/public-shell.component';
 import { NfcConfirmDialogComponent, NfcConfirmDialogData } from '../../../shared/ui/nfc-confirm-dialog.component';
 
@@ -26,6 +27,7 @@ export class NfcDashboardComponent {
   private readonly socket = inject(NfcLiveSocketService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
+  private readonly i18n = inject(NfcI18nService);
 
   protected readonly activeSession = signal<ActiveSessionDto | null>(null);
   protected readonly leaderboard = signal<LeaderboardEntryDto[]>([]);
@@ -183,7 +185,7 @@ export class NfcDashboardComponent {
       this.leaderboard.set(leaderboard);
       await this.loadSessionExtras(session);
     } catch {
-      this.error.set('Live-Daten konnten nicht geladen werden.');
+      this.error.set(this.text('Live-Daten konnten nicht geladen werden.', 'Live data could not be loaded.'));
     } finally {
       this.loading.set(false);
     }
@@ -201,29 +203,29 @@ export class NfcDashboardComponent {
   protected statusLabel(status: string) {
     const labels: Record<string, string> = {
       LOBBY: 'Lobby',
-      CONFIGURING: 'Setup',
-      BUILDING_TEAMS: 'Teams',
-      READY: 'Bereit',
-      RUNNING: 'Live',
-      FINISHED: 'Beendet',
+      CONFIGURING: this.text('Setup', 'Setup'),
+      BUILDING_TEAMS: this.text('Teams', 'Teams'),
+      READY: this.text('Bereit', 'Ready'),
+      RUNNING: this.text('Live', 'Live'),
+      FINISHED: this.text('Beendet', 'Finished'),
       RESET: 'Reset',
-      CANCELLED: 'Abbruch',
+      CANCELLED: this.text('Abbruch', 'Cancelled'),
     };
     return labels[status] ?? status;
   }
 
   protected gamePhaseTitle(session: ActiveSessionDto) {
-    if (session.status === 'CONFIGURING') return 'Optionen werden gewählt';
-    if (session.status === 'BUILDING_TEAMS') return 'Lobby: Teams bauen';
-    if (session.status === 'RUNNING') return 'Runde läuft';
-    if (session.status === 'FINISHED') return 'Spiel beendet';
-    return 'Warte auf das nächste Signal';
+    if (session.status === 'CONFIGURING') return this.text('Optionen werden gewählt', 'Choosing options');
+    if (session.status === 'BUILDING_TEAMS') return this.text('Lobby: Teams bauen', 'Lobby: build teams');
+    if (session.status === 'RUNNING') return this.text('Runde läuft', 'Round in progress');
+    if (session.status === 'FINISHED') return this.text('Spiel beendet', 'Game finished');
+    return this.text('Warte auf das nächste Signal', 'Waiting for the next signal');
   }
 
   protected displayMetric(team: { score: number; balance?: number | null }) {
     const session = this.activeSession();
     const suffix = session?.dashboardMetricSuffix ?? (this.isMoneyGame() ? session?.moneyCurrency : null) ?? '';
-    const value = new Intl.NumberFormat('de-AT', { maximumFractionDigits: 0 }).format(team.score);
+    const value = new Intl.NumberFormat(this.i18n.locale(), { maximumFractionDigits: 0 }).format(team.score);
     return suffix ? `${value} ${suffix}` : value;
   }
 
@@ -252,16 +254,16 @@ export class NfcDashboardComponent {
   protected topStatusDisplayValue() {
     if (!this.hasTopStatus()) return '';
     const session = this.activeSession();
-    const value = new Intl.NumberFormat('de-AT', { maximumFractionDigits: 0 }).format(this.topStatusNumericValue());
+    const value = new Intl.NumberFormat(this.i18n.locale(), { maximumFractionDigits: 0 }).format(this.topStatusNumericValue());
     const limit = this.topStatusLimit();
     const suffix = session?.dashboardStatusSuffix?.trim() || '';
-    const withLimit = limit ? `${value} / ${new Intl.NumberFormat('de-AT', { maximumFractionDigits: 0 }).format(Number(limit))}` : value;
+    const withLimit = limit ? `${value} / ${new Intl.NumberFormat(this.i18n.locale(), { maximumFractionDigits: 0 }).format(Number(limit))}` : value;
     return suffix ? `${withLimit} ${suffix}` : withLimit;
   }
 
   protected money(value: number) {
     const currency = this.activeSession()?.moneyCurrency ?? '€';
-    return new Intl.NumberFormat('de-AT', { maximumFractionDigits: 0 }).format(value) + ` ${currency}`;
+    return new Intl.NumberFormat(this.i18n.locale(), { maximumFractionDigits: 0 }).format(value) + ` ${currency}`;
   }
 
   private raceBarPercent(score: number, metricMax: number, min: number, max: number, range: number, direction: string) {
@@ -303,7 +305,7 @@ export class NfcDashboardComponent {
   }
 
   protected teamMemberNames(team: { members: { playerName?: string | null }[] }) {
-    return team.members.map((member) => member.playerName?.trim() || 'Spieler').join(' · ');
+    return team.members.map((member) => member.playerName?.trim() || this.text('Spieler', 'Player')).join(' · ');
   }
 
   protected fallbackGameBackground(session: ActiveSessionDto) {
@@ -317,10 +319,10 @@ export class NfcDashboardComponent {
       this.dialog
         .open<NfcConfirmDialogComponent, NfcConfirmDialogData, boolean>(NfcConfirmDialogComponent, {
           data: {
-            title: 'Spiel beenden?',
-            message: 'Möchtest du die laufende Session wirklich sofort beenden?',
-            confirmText: 'Ja, beenden',
-            cancelText: 'Weiter spielen',
+            title: this.text('Spiel beenden?', 'Finish game?'),
+            message: this.text('Möchtest du die laufende Session wirklich sofort beenden?', 'Do you really want to end the current session right now?'),
+            confirmText: this.text('Ja, beenden', 'Yes, finish'),
+            cancelText: this.text('Weiter spielen', 'Keep playing'),
           },
           panelClass: 'nfc-dialog-panel',
           backdropClass: 'nfc-dialog-backdrop',
@@ -336,7 +338,7 @@ export class NfcDashboardComponent {
       this.applySessionUpdate(finishedSession);
       await this.loadSessionExtras(finishedSession);
     } catch {
-      this.error.set('Spiel konnte nicht beendet werden.');
+      this.error.set(this.text('Spiel konnte nicht beendet werden.', 'Game could not be finished.'));
     } finally {
       this.finishing.set(false);
     }
@@ -445,7 +447,7 @@ export class NfcDashboardComponent {
   }
 
   private timeLabel(value: string) {
-    return new Intl.DateTimeFormat('de-AT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(value));
+    return new Intl.DateTimeFormat(this.i18n.locale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(value));
   }
 
   private resolveSessionImageUrls(session: ActiveSessionDto): ActiveSessionDto {
@@ -468,5 +470,9 @@ export class NfcDashboardComponent {
       ...entry,
       imageUrl: resolveBackendAssetUrl(entry.imageUrl),
     };
+  }
+
+  private text(de: string, en: string) {
+    return this.i18n.pick(de, en);
   }
 }

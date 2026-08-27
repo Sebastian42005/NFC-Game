@@ -3,8 +3,11 @@ package com.example.nfcgamebackend.nfcgame.api.dto
 import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
 import com.example.nfcgamebackend.nfcgame.domain.EventType
+import com.example.nfcgamebackend.nfcgame.domain.GameNightScoringSystem
+import com.example.nfcgamebackend.nfcgame.domain.GameNightStatus
 import com.example.nfcgamebackend.nfcgame.domain.GamePublicationStatus
 import com.example.nfcgamebackend.nfcgame.domain.NfcDisplayTimeout
+import com.example.nfcgamebackend.nfcgame.domain.NfcLanguage
 import com.example.nfcgamebackend.nfcgame.domain.NfcThemeMode
 import com.example.nfcgamebackend.nfcgame.domain.RoundLimitType
 import com.example.nfcgamebackend.nfcgame.domain.ScreenType
@@ -15,6 +18,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -113,6 +117,7 @@ data class NfcSettingsRequest(
     @field:Pattern(regexp = "^#[0-9A-Fa-f]{6}$")
     val accentColor: String = "#00B8FF",
     val themeMode: NfcThemeMode = NfcThemeMode.SYSTEM,
+    val language: NfcLanguage = NfcLanguage.DE,
     @field:Min(0) @field:Max(100)
     val displayBrightness: Int = 80,
     val displayTimeout: NfcDisplayTimeout = NfcDisplayTimeout.FIVE_MINUTES,
@@ -125,6 +130,7 @@ data class NfcSettingsResponse(
     val accentColor: String,
     val themeMode: NfcThemeMode,
     val effectiveTheme: NfcThemeMode,
+    val language: NfcLanguage,
     val displayBrightness: Int,
     val displayTimeout: NfcDisplayTimeout,
     val displayTimeoutSeconds: Int?,
@@ -485,6 +491,7 @@ data class DeviceUiPrediction(
 data class SessionSummaryResponse(
     val id: UUID,
     val gameTemplateId: UUID,
+    val gameNightId: UUID? = null,
     val gameName: String?,
     val gameImageUrl: String? = null,
     val moneyCurrency: String? = null,
@@ -550,6 +557,28 @@ data class GameResultResponse(
     val winningTeamId: UUID?,
     val endReason: String,
     val createdAt: Instant,
+)
+
+data class GameNightStartRequest(
+    @field:Size(max = 120)
+    val name: String? = null,
+    val scoringSystem: GameNightScoringSystem = GameNightScoringSystem.POINTS,
+)
+
+data class GameNightResponse(
+    val id: UUID,
+    val name: String?,
+    val scoringSystem: GameNightScoringSystem,
+    val status: GameNightStatus,
+    val startedAt: Instant,
+    val endedAt: Instant?,
+    val durationMinutes: Long,
+    val sessionCount: Int,
+    val playerCount: Int,
+    val winnerPlayerId: UUID?,
+    val winnerPlayerName: String?,
+    val winnerScore: Long,
+    val sessions: List<SessionSummaryResponse> = emptyList(),
 )
 
 data class TimelineEventResponse(

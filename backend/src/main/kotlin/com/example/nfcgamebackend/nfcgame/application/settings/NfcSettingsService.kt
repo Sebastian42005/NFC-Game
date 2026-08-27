@@ -3,6 +3,7 @@ package com.example.nfcgamebackend.nfcgame.application.settings
 import com.example.nfcgamebackend.nfcgame.api.dto.NfcSettingsRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.NfcSettingsResponse
 import com.example.nfcgamebackend.nfcgame.domain.NfcDisplayTimeout
+import com.example.nfcgamebackend.nfcgame.domain.NfcLanguage
 import com.example.nfcgamebackend.nfcgame.domain.NfcThemeMode
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcAccountSettings
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcAccountSettingsRepository
@@ -25,6 +26,7 @@ class NfcSettingsService(
         val settings = settingsForAccount(accountId)
         settings.accentColor = normalizeHexColor(request.accentColor)
         settings.themeMode = request.themeMode
+        settings.language = request.language
         settings.displayBrightness = request.displayBrightness.coerceIn(0, 100)
         settings.displayTimeout = request.displayTimeout
         settings.deviceVolume = request.deviceVolume.coerceIn(0, 100)
@@ -41,11 +43,28 @@ class NfcSettingsService(
     }
 
     @Transactional
+    fun acknowledgeTestSound(deviceId: String, deviceKey: String, version: Long): NfcSettingsResponse {
+        val device = deviceAuthenticator.authenticate(deviceId, deviceKey)
+        val accountId = device.accountId ?: return toResponse(defaultSettings())
+        val settings = settingsForAccount(accountId)
+
+        if (version > 0 && settings.testSoundVersion <= version) {
+            settings.testSoundVersion = 0
+        }
+
+        return toResponse(settingsRepository.save(settings))
+    }
+
+    @Transactional
     fun getDeviceSettings(deviceId: String, deviceKey: String): NfcSettingsResponse {
         val device = deviceAuthenticator.authenticate(deviceId, deviceKey)
         val accountId = device.accountId ?: return toResponse(defaultSettings())
         return toResponse(settingsForAccount(accountId))
     }
+
+    @Transactional(readOnly = true)
+    fun languageForAccount(accountId: Long?): NfcLanguage =
+        accountId?.let { settingsRepository.findByAccountId(it)?.language } ?: NfcLanguage.DE
 
     private fun settingsForAccount(accountId: Long): NfcAccountSettings =
         settingsRepository.findByAccountId(accountId) ?: settingsRepository.save(
@@ -67,6 +86,7 @@ class NfcSettingsService(
             accentColor = settings.accentColor,
             themeMode = settings.themeMode,
             effectiveTheme = if (settings.themeMode == NfcThemeMode.LIGHT) NfcThemeMode.LIGHT else NfcThemeMode.DARK,
+            language = settings.language,
             displayBrightness = settings.displayBrightness.coerceIn(0, 100),
             displayTimeout = settings.displayTimeout,
             displayTimeoutSeconds = settings.displayTimeout.seconds(),

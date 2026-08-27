@@ -3,78 +3,142 @@
   [class.nfc-theme-dark]="theme() === 'dark'"
   [class.nfc-theme-light]="theme() === 'light'"
 >
-  <aside class="fixed inset-y-0 left-0 hidden w-64 border-r ui-border-subtle ui-surface-muted p-5 lg:block">
-    <a routerLink="/nfc-game" class="block text-lg font-semibold">NFC Game Admin</a>
-    <nav class="mt-8 grid gap-2 text-sm">
-      @for (link of visibleLinks(); track link.href) {
-        <a
-          [routerLink]="link.href"
-          routerLinkActive="ui-surface ui-text-strong"
-          [routerLinkActiveOptions]="link.href === '/admin' ? { exact: true } : { exact: false }"
-          class="rounded-md px-3 py-2 ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
-        >
-          {{ link.label }}
-        </a>
-      }
-      @if (auth.canManageAccounts()) {
-        <a
-          routerLink="/nfc-game/admin/accounts"
-          routerLinkActive="ui-surface ui-text-strong"
-          class="rounded-md px-3 py-2 ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
-        >
-          Accounts
-        </a>
+  <aside [class]="desktopSidebarClass()">
+    <div class="flex items-start justify-between gap-3">
+      <a
+        routerLink="/nfc-game"
+        class="block overflow-hidden text-lg font-semibold leading-tight transition-all"
+        [class.sr-only]="sidebarCollapsed()"
+        [matTooltip]="navTooltip('NFC Game Admin')"
+      >
+        NFC Game Admin
+      </a>
+      <button
+        type="button"
+        class="nfc-admin-sidebar-toggle inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ui-border-subtle ui-text-soft transition"
+        [attr.aria-label]="sidebarCollapsed() ? 'Sidebar ausklappen' : 'Sidebar einklappen'"
+        [attr.aria-pressed]="sidebarCollapsed()"
+        (click)="toggleSidebar()"
+      >
+        <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">{{ sidebarCollapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+      </button>
+    </div>
+    <nav class="mt-8 grid gap-5 text-sm">
+      @for (group of visibleLinkGroups(); track group.label) {
+        <div class="grid gap-1">
+          <p
+            class="px-3 text-[0.68rem] font-black uppercase tracking-[0.14em] ui-text-muted"
+            [class.sr-only]="sidebarCollapsed()"
+          >
+            {{ group.label }}
+          </p>
+          @for (link of group.links; track link.href) {
+            <a
+              [routerLink]="link.href"
+              routerLinkActive="nfc-admin-nav-link-active"
+              [routerLinkActiveOptions]="link.href === '/nfc-game/admin' ? { exact: true } : { exact: false }"
+              class="nfc-admin-nav-link flex min-h-11 items-center rounded-md px-3 py-2 ui-text-soft"
+              [class.justify-center]="sidebarCollapsed()"
+              [class.gap-2]="!sidebarCollapsed()"
+              [class.nfc-admin-tooltip-side]="sidebarCollapsed()"
+              [matTooltip]="navTooltip(link.label)"
+              [attr.aria-label]="sidebarCollapsed() ? link.label : null"
+            >
+              <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">{{ link.icon }}</mat-icon>
+              @if (!sidebarCollapsed()) {
+                <span>{{ link.label }}</span>
+              }
+            </a>
+          }
+        </div>
       }
     </nav>
     <div class="absolute bottom-5 left-5 right-5 grid gap-2">
+      <a
+        [routerLink]="settingsLink.href"
+        routerLinkActive="nfc-admin-nav-link-active"
+        class="nfc-admin-nav-link flex min-h-11 items-center rounded-md border ui-border-subtle px-3 py-2 text-sm ui-text-soft"
+        [class.justify-center]="sidebarCollapsed()"
+        [class.gap-2]="!sidebarCollapsed()"
+        [class.nfc-admin-tooltip-side]="sidebarCollapsed()"
+        [matTooltip]="navTooltip(settingsLink.label)"
+        [attr.aria-label]="sidebarCollapsed() ? settingsLink.label : null"
+      >
+        <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">{{ settingsLink.icon }}</mat-icon>
+        @if (!sidebarCollapsed()) {
+          <span>{{ settingsLink.label }}</span>
+        }
+      </a>
+      <div
+        class="flex min-h-11 items-center rounded-md border ui-border-subtle px-3 py-2 text-xs ui-text-soft"
+        [class.justify-center]="sidebarCollapsed()"
+        [class.gap-2]="!sidebarCollapsed()"
+        [class.nfc-admin-tooltip-side]="sidebarCollapsed()"
+        [attr.aria-label]="sidebarCollapsed() ? (auth.user()?.username || 'Admin') : 'Aktueller Benutzer'"
+        [matTooltip]="sidebarCollapsed() ? (auth.user()?.username || 'Admin') : null"
+      >
+        <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">account_circle</mat-icon>
+        @if (!sidebarCollapsed()) {
+          <span>{{ auth.user()?.username || 'Admin' }}</span>
+        }
+      </div>
       <button
         type="button"
-        class="rounded-md border ui-border-subtle px-3 py-2 text-sm"
-        [attr.aria-label]="themeLabel()"
-        [attr.title]="themeLabel()"
-        (click)="toggleTheme()"
+        class="nfc-admin-nav-link flex min-h-11 items-center rounded-md border ui-border-subtle px-3 py-2 text-sm"
+        [class.justify-center]="sidebarCollapsed()"
+        [class.gap-2]="!sidebarCollapsed()"
+        [class.nfc-admin-tooltip-side]="sidebarCollapsed()"
+        [matTooltip]="navTooltip('Logout')"
+        [attr.aria-label]="sidebarCollapsed() ? 'Logout' : null"
+        (click)="auth.logout()"
       >
-        <span aria-hidden="true">{{ theme() === 'dark' ? '☼' : '◐' }}</span>
-        {{ theme() === 'dark' ? 'Light' : 'Dark' }}
-      </button>
-      <a
-        routerLink="/nfc-game/account"
-        class="rounded-md border ui-border-subtle px-3 py-2 text-xs ui-text-soft hover:ui-surface-hover hover:ui-text-strong"
-        aria-label="Account öffnen"
-        title="Account öffnen"
-      >
-        {{ auth.user()?.username || 'Admin' }}
-      </a>
-      <button type="button" class="rounded-md border ui-border-subtle px-3 py-2 text-sm" (click)="auth.logout()">
-        Logout
+        <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">logout</mat-icon>
+        @if (!sidebarCollapsed()) {
+          <span>Logout</span>
+        }
       </button>
     </div>
   </aside>
 
-  <section [class]="fullScreen() ? 'h-screen overflow-hidden lg:pl-64' : 'lg:pl-64'">
+  <section [class]="contentClass()">
     @if (!fullScreen()) {
       <div class="border-b ui-border-subtle px-4 py-4 lg:hidden">
         <div class="flex flex-wrap gap-2">
-          @for (link of visibleLinks(); track link.href) {
-            <a [routerLink]="link.href" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">{{ link.label }}</a>
+          @for (group of visibleLinkGroups(); track group.label) {
+            @for (link of group.links; track link.href) {
+              <a [routerLink]="link.href" class="inline-flex items-center gap-2 rounded-md border ui-border-subtle px-3 py-2 text-sm">
+                <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">{{ link.icon }}</mat-icon>
+                <span>{{ link.label }}</span>
+              </a>
+            }
           }
-          @if (auth.canManageAccounts()) {
-            <a routerLink="/nfc-game/admin/accounts" class="rounded-md border ui-border-subtle px-3 py-2 text-sm">Accounts</a>
-          }
-          <button type="button" class="rounded-md border ui-border-subtle px-3 py-2 text-sm" (click)="toggleTheme()">
-            {{ theme() === 'dark' ? 'Light' : 'Dark' }}
-          </button>
+          <a [routerLink]="settingsLink.href" class="inline-flex items-center gap-2 rounded-md border ui-border-subtle px-3 py-2 text-sm">
+            <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">{{ settingsLink.icon }}</mat-icon>
+            <span>{{ settingsLink.label }}</span>
+          </a>
         </div>
       </div>
     }
     <div [class]="fullScreen() ? 'h-full overflow-hidden' : 'mx-auto max-w-9xl px-4 py-8 sm:px-6'">
-      @if (!fullScreen()) {
-        <p class="text-xs font-semibold uppercase tracking-[0.16em] ui-text-accent">Admin</p>
-        <h1 class="mt-2 text-3xl font-semibold tracking-normal">{{ title() }}</h1>
-      }
-      <div [class]="fullScreen() ? 'h-full overflow-hidden' : 'mt-6'">
-        <ng-content />
+      <div [class]="fullScreen() ? 'h-full overflow-hidden' : 'min-h-[calc(100vh+14rem)]'">
+        @if (!fullScreen()) {
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] ui-text-accent">Admin</p>
+          <h1 class="mt-2 text-3xl font-semibold tracking-normal">{{ title() }}</h1>
+        }
+        <div [class]="fullScreen() ? 'h-full overflow-hidden' : 'mt-6'">
+          <ng-content />
+        </div>
       </div>
+      @if (!fullScreen()) {
+        <footer class="mt-10 flex flex-wrap items-center gap-3 border-t ui-border-subtle pt-5 text-xs ui-text-muted">
+          @for (link of legalLinks; track link.href) {
+            <a [routerLink]="link.href" class="font-bold hover:ui-text-accent">{{ link.label }}</a>
+          }
+          <button type="button" class="font-bold hover:ui-text-accent" (click)="openCookieSettings()">
+            Cookie-Einstellungen
+          </button>
+        </footer>
+      }
     </div>
   </section>
   <nfc-toast-host />

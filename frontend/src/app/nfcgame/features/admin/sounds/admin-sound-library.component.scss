@@ -1,0 +1,152 @@
+.sound-recorder-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.sound-recorder-panel::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--nfc-accent) 16%, transparent), transparent 20rem),
+    radial-gradient(circle at 92% 14%, color-mix(in srgb, var(--nfc-warm) 12%, transparent), transparent 18rem);
+}
+
+.sound-recorder-panel > * {
+  position: relative;
+}
+
+.sound-editor {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.sound-editor-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.sound-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: var(--nfc-muted);
+  font-size: 0.8rem;
+}
+
+.sound-editor-meta span {
+  border: 1px solid var(--nfc-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  background: var(--nfc-surface-muted);
+}
+
+.sound-waveform-wrap {
+  position: relative;
+  min-height: 128px;
+  overflow: hidden;
+  border: 1px solid var(--nfc-border);
+  border-radius: 8px;
+  background: var(--nfc-surface-muted);
+}
+
+.sound-waveform {
+  display: block;
+  width: 100%;
+  height: 128px;
+  touch-action: none;
+}
+
+.sound-trim-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sound-trim-dim {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  background: color-mix(in srgb, var(--nfc-bg) 68%, transparent);
+  backdrop-filter: grayscale(0.7);
+}
+
+.sound-trim-dim.is-right {
+  left: auto;
+  right: auto;
+}
+
+.sound-trim-selection {
+  position: absolute;
+  inset-block: 0;
+  border-inline: 2px solid var(--nfc-warm);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--nfc-warm) 18%, transparent), transparent 42%),
+    color-mix(in srgb, var(--nfc-accent) 8%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--nfc-accent-strong) 28%, transparent),
+    0 0 28px color-mix(in srgb, var(--nfc-accent) 18%, transparent);
+}
+
+.sound-trim-handle {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 18px;
+  height: 64px;
+  border: 1px solid color-mix(in srgb, var(--nfc-warm) 72%, var(--nfc-border));
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, var(--nfc-warm-soft), var(--nfc-warm)),
+    var(--nfc-warm);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--nfc-warm) 28%, transparent);
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+  touch-action: none;
+}
+
+.sound-trim-handle::after {
+  position: absolute;
+  inset: 16px 7px;
+  border-radius: 999px;
+  content: '';
+  background: color-mix(in srgb, var(--nfc-bg) 46%, transparent);
+}
+
+.sound-trim-handle.is-end {
+  transform: translate(-50%, -50%);
+}
+
+.sound-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--nfc-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nfc-surface-strong) 85%, transparent);
+  color: var(--nfc-text);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--nfc-shadow) 36%, transparent);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.sound-icon-button.is-playing {
+  background: color-mix(in srgb, var(--nfc-warm) 14%, var(--nfc-surface-strong));
+}
+
+.sound-editor-help {
+  margin: 0;
+  color: var(--nfc-muted-soft);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .sound-editor-row {
+    grid-template-columns: 1fr;
+  }
+}

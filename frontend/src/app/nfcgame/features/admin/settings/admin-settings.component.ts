@@ -1,22 +1,42 @@
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
 import { firstValueFrom } from 'rxjs';
 import { NfcPublicApiService } from '../../../core/api/nfc-public-api.service';
 import {
-  NfcDisplayTimeout,
+  NfcLanguage,
   NfcSettingsDto,
   NfcSettingsRequest,
   NfcThemeMode,
 } from '../../../shared/models/nfc-game.models';
-import { NfcPublicShellComponent } from '../../../shared/ui/public-shell.component';
+import { NfcI18nService } from '../../../shared/i18n/nfc-i18n.service';
+import { MatIcon } from '../../../../../shims/angular-material/icon';
+import { NfcAdminShellComponent } from '../../../shared/ui/admin-shell.component';
 import { NfcThemeService } from '../../../shared/ui/nfc-theme.service';
 import { NfcToastService } from '../../../shared/ui/nfc-toast.service';
 
 type SaveState = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 
+type ColorPreset = {
+  color: string;
+  label: string;
+};
+
+const colorPresets: ColorPreset[] = [
+  { color: '#00B8FF', label: 'Cyan' },
+  { color: '#34D399', label: 'Grün' },
+  { color: '#F472B6', label: 'Pink' },
+  { color: '#8B5CF6', label: 'Violett' },
+  { color: '#FBBF24', label: 'Amber' },
+  { color: '#F43F5E', label: 'Rot' },
+  { color: '#3B82F6', label: 'Blau' },
+  { color: '#84CC16', label: 'Lime' },
+];
+
 const defaultSettings: NfcSettingsRequest = {
-  accentColor: '#00B8FF',
+  accentColor: colorPresets[0].color,
   themeMode: 'SYSTEM',
+  language: 'DE',
   displayBrightness: 80,
   displayTimeout: 'FIVE_MINUTES',
   deviceVolume: 80,
@@ -24,13 +44,14 @@ const defaultSettings: NfcSettingsRequest = {
 };
 
 @Component({
-  selector: 'nfc-settings',
-  imports: [FormsModule, NfcPublicShellComponent],
-  templateUrl: './settings.component.html',
-  styleUrl: './settings.component.scss',
+  selector: 'nfc-admin-settings',
+  imports: [FormsModule, MatSelectModule, MatIcon, NfcAdminShellComponent],
+  templateUrl: './admin-settings.component.html',
+  styleUrl: './admin-settings.component.scss',
 })
-export class NfcSettingsComponent implements OnDestroy {
+export class NfcAdminSettingsComponent implements OnDestroy {
   private readonly api = inject(NfcPublicApiService);
+  private readonly i18n = inject(NfcI18nService);
   private readonly themeService = inject(NfcThemeService);
   private readonly toasts = inject(NfcToastService);
 
@@ -39,11 +60,12 @@ export class NfcSettingsComponent implements OnDestroy {
   protected readonly saveState = signal<SaveState>('loading');
   protected readonly error = signal<string | null>(null);
 
+  protected readonly colorPresets = colorPresets;
   protected readonly isBusy = computed(() => this.saveState() === 'loading' || this.saveState() === 'saving');
   protected readonly statusLabel = computed(() => {
     switch (this.saveState()) {
       case 'loading':
-        return 'Laedt...';
+        return 'Lädt...';
       case 'saving':
         return 'Speichert...';
       case 'saved':
@@ -57,15 +79,13 @@ export class NfcSettingsComponent implements OnDestroy {
 
   protected readonly themeModes: { value: NfcThemeMode; label: string }[] = [
     { value: 'SYSTEM', label: 'System' },
-    { value: 'DARK', label: 'Dark' },
-    { value: 'LIGHT', label: 'Light' },
+    { value: 'DARK', label: 'Dark Mode' },
+    { value: 'LIGHT', label: 'Light Mode' },
   ];
 
-  protected readonly timeoutOptions: { value: NfcDisplayTimeout; label: string }[] = [
-    { value: 'NEVER', label: 'Nie' },
-    { value: 'ONE_MINUTE', label: '1 Minute' },
-    { value: 'FIVE_MINUTES', label: '5 Minuten' },
-    { value: 'TEN_MINUTES', label: '10 Minuten' },
+  protected readonly languageOptions: { value: NfcLanguage; label: string }[] = [
+    { value: 'DE', label: 'Deutsch' },
+    { value: 'EN', label: 'Englisch' },
   ];
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -80,27 +100,27 @@ export class NfcSettingsComponent implements OnDestroy {
     }
   }
 
-  protected setAccentColor(accentColor: string) {
-    this.patchSettings({ accentColor });
-    this.themeService.setAccentColor(accentColor);
+  protected setColor(color: string) {
+    if (!this.isPresetColor(color)) return;
+
+    this.patchSettings({ accentColor: color });
+    this.themeService.setAccentColor(color);
     this.scheduleSave();
   }
 
   protected setThemeMode(themeMode: string) {
     if (!this.isThemeMode(themeMode)) return;
+
     this.patchSettings({ themeMode });
     this.themeService.setThemeMode(themeMode);
     this.scheduleSave();
   }
 
-  protected setDisplayBrightness(value: string | number) {
-    this.patchSettings({ displayBrightness: this.percentValue(value) });
-    this.scheduleSave();
-  }
+  protected setLanguage(language: string) {
+    if (!this.isLanguage(language)) return;
 
-  protected setDisplayTimeout(displayTimeout: string) {
-    if (!this.isDisplayTimeout(displayTimeout)) return;
-    this.patchSettings({ displayTimeout });
+    this.patchSettings({ language });
+    this.i18n.setLanguage(language);
     this.scheduleSave();
   }
 
@@ -143,11 +163,11 @@ export class NfcSettingsComponent implements OnDestroy {
       const saved = await firstValueFrom(this.api.playSettingsTestSound());
       this.applyLoadedSettings(saved);
       this.saveState.set('saved');
-      this.toasts.success('Testsound wurde ans Geraet gesendet.');
+      this.toasts.success(this.i18n.translate('Testton wurde ans Gerät gesendet.'));
     } catch {
       this.saveState.set('error');
-      this.error.set('Testsound konnte nicht gesendet werden.');
-      this.toasts.error('Testsound konnte nicht gesendet werden.');
+      this.error.set('Testton konnte nicht gesendet werden.');
+      this.toasts.error(this.i18n.translate('Testton konnte nicht gesendet werden.'));
     }
   }
 
@@ -161,7 +181,7 @@ export class NfcSettingsComponent implements OnDestroy {
       this.saveState.set('idle');
     } catch {
       this.saveState.set('error');
-      this.error.set('Bitte melde dich im Account an, um Einstellungen zu laden.');
+      this.error.set('Bitte melde dich im Admin-Bereich an, um Einstellungen zu laden.');
     }
   }
 
@@ -170,12 +190,14 @@ export class NfcSettingsComponent implements OnDestroy {
     this.settings.set({
       accentColor: loaded.accentColor,
       themeMode: loaded.themeMode,
+      language: loaded.language,
       displayBrightness: loaded.displayBrightness,
       displayTimeout: loaded.displayTimeout,
       deviceVolume: loaded.deviceVolume,
       soundsEnabled: loaded.soundsEnabled,
     });
     this.themeService.applySettings(loaded);
+    this.i18n.applySettings(loaded);
   }
 
   private patchSettings(patch: Partial<NfcSettingsRequest>) {
@@ -196,7 +218,7 @@ export class NfcSettingsComponent implements OnDestroy {
     const settings = this.settings();
     return {
       ...settings,
-      accentColor: /^#[0-9A-Fa-f]{6}$/.test(settings.accentColor) ? settings.accentColor : defaultSettings.accentColor,
+      accentColor: this.isPresetColor(settings.accentColor) ? settings.accentColor : defaultSettings.accentColor,
       displayBrightness: this.percentValue(settings.displayBrightness),
       deviceVolume: this.percentValue(settings.deviceVolume),
     };
@@ -208,11 +230,15 @@ export class NfcSettingsComponent implements OnDestroy {
     return Math.max(0, Math.min(100, parsed));
   }
 
+  private isPresetColor(value: string): boolean {
+    return colorPresets.some((preset) => preset.color === value);
+  }
+
   private isThemeMode(value: string): value is NfcThemeMode {
     return value === 'DARK' || value === 'LIGHT' || value === 'SYSTEM';
   }
 
-  private isDisplayTimeout(value: string): value is NfcDisplayTimeout {
-    return value === 'NEVER' || value === 'ONE_MINUTE' || value === 'FIVE_MINUTES' || value === 'TEN_MINUTES';
+  private isLanguage(value: string): value is NfcLanguage {
+    return value === 'DE' || value === 'EN';
   }
 }

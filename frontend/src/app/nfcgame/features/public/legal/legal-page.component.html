@@ -1,0 +1,202 @@
+<nfc-public-shell [title]="pageTitle()" eyebrow="Rechtliches">
+  <article class="legal-page">
+    <nav class="legal-tabs" aria-label="Rechtliche Seiten">
+      <a routerLink="/nfc-game/legal/impressum" [class.is-active]="pageKind() === 'impressum'">Impressum</a>
+      <a routerLink="/nfc-game/legal/datenschutz" [class.is-active]="pageKind() === 'datenschutz'">Datenschutz</a>
+      <a routerLink="/nfc-game/legal/cookies" [class.is-active]="pageKind() === 'cookies'">Cookies</a>
+      <a routerLink="/nfc-game/legal/nutzungsbedingungen" [class.is-active]="pageKind() === 'nutzungsbedingungen'">Nutzung</a>
+    </nav>
+
+    <section class="legal-card legal-warning">
+      <p class="legal-kicker">Bitte vor Veröffentlichung prüfen</p>
+      <p>
+        Diese Seiten schaffen eine technische und redaktionelle Grundlage, ersetzen aber keine Rechtsberatung.
+        Alle TODO-Angaben müssen mit den echten Betreiber-, Kontakt- und Behördeninformationen befüllt werden.
+      </p>
+    </section>
+
+    @switch (pageKind()) {
+      @case ('impressum') {
+        <section class="legal-card">
+          <p class="legal-kicker">Anbieterkennzeichnung</p>
+          <h2>Impressum und Offenlegung</h2>
+          <dl class="legal-details">
+            <div>
+              <dt>Website</dt>
+              <dd>{{ operator.siteName }}</dd>
+            </div>
+            <div>
+              <dt>Betreiber / Medieninhaber</dt>
+              <dd>{{ operator.operatorName }}</dd>
+            </div>
+            <div>
+              <dt>Rechtsform</dt>
+              <dd>{{ operator.legalForm }}</dd>
+            </div>
+            <div>
+              <dt>Anschrift</dt>
+              <dd>{{ operator.streetAddress }}, {{ operator.postalCode }} {{ operator.city }}, {{ operator.country }}</dd>
+            </div>
+            <div>
+              <dt>Kontakt</dt>
+              <dd>{{ operator.email }} · {{ operator.phone }}</dd>
+            </div>
+            <div>
+              <dt>Register / USt</dt>
+              <dd>{{ operator.companyRegister }} · {{ operator.registerCourt }} · {{ operator.vatId }}</dd>
+            </div>
+            <div>
+              <dt>Aufsichtsbehörde</dt>
+              <dd>{{ operator.supervisoryAuthority }}</dd>
+            </div>
+            <div>
+              <dt>Berufsrechtliche Angaben</dt>
+              <dd>{{ operator.professionalTitle }} · {{ operator.memberState }}</dd>
+            </div>
+            <div>
+              <dt>Für Inhalte verantwortlich</dt>
+              <dd>{{ operator.responsibleForContent }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="legal-card">
+          <h2>Haftung, Links und Urheberrecht</h2>
+          <p>
+            Wir bemühen uns um aktuelle und richtige Inhalte. Für Vollständigkeit, Aktualität und Verfügbarkeit
+            kann dennoch keine Gewähr übernommen werden. Externe Links führen zu Angeboten Dritter; für deren
+            Inhalte ist der jeweilige Anbieter verantwortlich.
+          </p>
+          <p>
+            Texte, Grafiken, Marken, Sounds, Bilder und Softwarebestandteile dieser Website sind urheberrechtlich
+            oder markenrechtlich geschützt, soweit nicht ausdrücklich anders angegeben. Eine Nutzung außerhalb der
+            gesetzlichen Grenzen benötigt vorherige Zustimmung der Rechteinhaber.
+          </p>
+        </section>
+      }
+
+      @case ('datenschutz') {
+        <section class="legal-card">
+          <p class="legal-kicker">DSGVO-Information</p>
+          <h2>Verantwortlicher</h2>
+          <p>
+            Verantwortlich für die Verarbeitung personenbezogener Daten auf dieser Website ist
+            <strong>{{ operator.operatorName }}</strong>, {{ operator.streetAddress }},
+            {{ operator.postalCode }} {{ operator.city }}, {{ operator.country }}.
+          </p>
+          <p>Kontakt: {{ operator.email }} · {{ operator.phone }}</p>
+          <p>Datenschutzbeauftragte Person: {{ operator.dataProtectionOfficer }}</p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Welche Daten verarbeitet werden</h2>
+          <ul>
+            <li>Server- und Sicherheitsdaten wie IP-Adresse, Zeitpunkt, URL, Statuscode und technische Browserdaten.</li>
+            <li>Account- und Login-Daten wie Benutzername, Rolle, Login-Status und Session-Cookie.</li>
+            <li>Spiel- und NFC-Daten wie Spielerprofile, Teams, Kartenzuordnungen, Sessions, Punkte, Verlauf und Sounds.</li>
+            <li>Freiwillige Einstellungen wie Sprache, Theme, Akzentfarbe und lokale Builder-Entwürfe.</li>
+            <li>Kontakt- oder Supportdaten, falls du uns aktiv schreibst.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card">
+          <h2>Zwecke und Rechtsgrundlagen</h2>
+          <ul>
+            <li>Betrieb, Sicherheit und Fehleranalyse: berechtigtes Interesse an einer sicheren Website.</li>
+            <li>Account, Login, Spielverwaltung und TV-Verbindung: Vertragserfüllung oder vorvertragliche Nutzung.</li>
+            <li>Präferenzen wie Sprache und Darstellung: Einwilligung oder von dir angeforderte Komfortfunktion.</li>
+            <li>Gesetzliche Aufbewahrungspflichten: rechtliche Verpflichtung, sofern einschlägig.</li>
+            <li>Optionale Statistik oder Marketingdienste: nur nach ausdrücklicher Einwilligung, aktuell nicht eingebunden.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card">
+          <h2>Empfänger, Hosting und Drittlandtransfer</h2>
+          <p>
+            Die Website wird bei <strong>{{ operator.hostingProvider }}</strong>,
+            {{ operator.hostingProviderAddress }}, betrieben. Technische Dienstleister können Zugriff auf Daten erhalten,
+            soweit dies für Betrieb, Wartung, Sicherheit oder Support erforderlich ist.
+          </p>
+          <p>
+            Eine Übermittlung in Länder außerhalb der EU/des EWR findet nur statt, wenn ein angemessenes
+            Datenschutzniveau, geeignete Garantien oder eine gesetzliche Ausnahme vorliegen. Externe Analyse-,
+            Werbe- oder Social-Media-Trackingdienste sind aktuell nicht eingebunden.
+          </p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Speicherdauer und Rechte</h2>
+          <p>
+            Personenbezogene Daten werden nur so lange gespeichert, wie es für die genannten Zwecke notwendig ist
+            oder gesetzliche Pflichten bestehen. Du hast nach Maßgabe der DSGVO Rechte auf Auskunft, Berichtigung,
+            Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch und Widerruf erteilter Einwilligungen.
+          </p>
+          <p>
+            Beschwerden können bei der zuständigen Datenschutzaufsichtsbehörde eingereicht werden:
+            <strong>{{ operator.dataProtectionAuthority }}</strong>, {{ operator.dataProtectionAuthorityUrl }}.
+          </p>
+        </section>
+      }
+
+      @case ('cookies') {
+        <section class="legal-card">
+          <p class="legal-kicker">Consent Management</p>
+          <h2>Cookie- und Speichertechnologien</h2>
+          <p>
+            Wir setzen notwendige Speicherungen ein, damit Login, Sicherheit, Sessions und Kernfunktionen laufen.
+            Optionale Kategorien kannst du jederzeit ablehnen, akzeptieren oder ändern.
+          </p>
+          <button type="button" class="legal-button" (click)="openCookieSettings()">Cookie-Einstellungen öffnen</button>
+        </section>
+
+        <section class="legal-card">
+          <h2>Aktuelle Speicherungen</h2>
+          <div class="legal-storage-list">
+            @for (entry of storageEntries; track entry.name) {
+              <div class="legal-storage-entry">
+                <span>{{ entry.category }}</span>
+                <h3>{{ entry.name }}</h3>
+                <p><strong>Typ:</strong> {{ entry.type }} · <strong>Anbieter:</strong> {{ entry.provider }}</p>
+                <p>{{ entry.purpose }}</p>
+                <p><strong>Dauer:</strong> {{ entry.duration }}</p>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @case ('nutzungsbedingungen') {
+        <section class="legal-card">
+          <p class="legal-kicker">Fair Play</p>
+          <h2>Nutzungsbedingungen</h2>
+          <p>
+            Diese Website stellt Funktionen für NFC-basierte Spiele, Spielabende, Rankings, Sounds und Verwaltung
+            bereit. Die Nutzung setzt voraus, dass du rechtmäßig auf die jeweilige Umgebung zugreifst und keine
+            fremden Accounts, Karten, Geräte oder Inhalte missbrauchst.
+          </p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Accounts, Inhalte und Verfügbarkeit</h2>
+          <ul>
+            <li>Zugangsdaten müssen vertraulich behandelt werden.</li>
+            <li>Hochgeladene Bilder, Sounds, Namen und Spielinhalte dürfen keine Rechte Dritter verletzen.</li>
+            <li>Die Plattform kann sich ändern, zeitweise nicht verfügbar sein oder für Wartung deaktiviert werden.</li>
+            <li>Bei Missbrauch kann der Zugriff eingeschränkt oder beendet werden.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card">
+          <h2>Haftung</h2>
+          <p>
+            Die Nutzung erfolgt im Rahmen der gesetzlichen Bestimmungen. Für leichte Fahrlässigkeit wird nur bei
+            Verletzung wesentlicher Pflichten gehaftet; zwingende Haftung, insbesondere für Vorsatz, grobe
+            Fahrlässigkeit, Personenschäden oder gesetzliche Gewährleistungsrechte, bleibt unberührt.
+          </p>
+        </section>
+      }
+    }
+
+    <p class="legal-updated">Stand: {{ operator.lastUpdated }}</p>
+  </article>
+</nfc-public-shell>

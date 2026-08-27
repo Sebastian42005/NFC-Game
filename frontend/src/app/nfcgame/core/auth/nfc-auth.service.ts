@@ -65,7 +65,7 @@ export class NfcAuthService {
     });
   }
 
-  async logout(redirectTo = '/nfc-game/account') {
+  async logout(redirectTo = '/nfc-game/admin/login') {
     this.user.set(null);
     localStorage.removeItem(nfcAuthStorageKey);
     await firstValueFrom(this.http.post<AdminLoginResponse>(`${authBase}/logout`, {})).catch(() => null);
@@ -77,11 +77,9 @@ export class NfcAuthService {
     localStorage.removeItem(nfcAuthStorageKey);
 
     if (!redirectTo.startsWith('/nfc-game')) return;
-    if (redirectTo.startsWith('/nfc-game/admin/login') || redirectTo.startsWith('/nfc-game/account')) return;
+    if (redirectTo.startsWith('/nfc-game/admin/login')) return;
 
-    const loginUrl = redirectTo.startsWith('/nfc-game/admin') ? '/nfc-game/admin/login' : '/nfc-game/account';
-    const queryParams = loginUrl === '/nfc-game/admin/login' ? { redirectTo } : undefined;
-    void this.router.navigate([loginUrl], { queryParams });
+    void this.router.navigate(['/nfc-game/admin/login'], { queryParams: { redirectTo } });
   }
 
   private storeAuthResponse(response: AdminLoginResponse) {

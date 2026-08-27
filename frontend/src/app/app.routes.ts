@@ -41,6 +41,11 @@ export const routes: Routes = [
       import('./nfcgame/features/public/game-night/game-night.component').then((m) => m.NfcGameNightComponent),
   },
   {
+    path: 'nfc-game/game-night/:id',
+    loadComponent: () =>
+      import('./nfcgame/features/public/game-night/game-night.component').then((m) => m.NfcGameNightComponent),
+  },
+  {
     path: 'nfc-game/players',
     loadComponent: () =>
       import('./nfcgame/features/public/players/player-list.component').then((m) => m.NfcPlayerListComponent),
@@ -67,8 +72,8 @@ export const routes: Routes = [
   },
   {
     path: 'nfc-game/settings',
-    loadComponent: () =>
-      import('./nfcgame/features/public/settings/settings.component').then((m) => m.NfcSettingsComponent),
+    redirectTo: 'nfc-game/admin/settings',
+    pathMatch: 'full',
   },
   {
     path: 'nfc-game/simulation',
@@ -81,11 +86,6 @@ export const routes: Routes = [
       import('./nfcgame/features/public/history/history.component').then((m) => m.NfcHistoryComponent),
   },
   {
-    path: 'nfc-game/account',
-    loadComponent: () =>
-      import('./nfcgame/features/public/account/account.component').then((m) => m.NfcAccountComponent),
-  },
-  {
     path: 'nfc-game/tv',
     loadComponent: () =>
       import('./nfcgame/features/public/tv/tv-view.component').then((m) => m.NfcTvViewComponent),
@@ -94,6 +94,35 @@ export const routes: Routes = [
     path: 'nfc-game/tv-login/:requestId',
     loadComponent: () =>
       import('./nfcgame/features/public/tv/tv-login-approve.component').then((m) => m.NfcTvLoginApproveComponent),
+  },
+  {
+    path: 'nfc-game/legal',
+    redirectTo: 'nfc-game/legal/datenschutz',
+    pathMatch: 'full',
+  },
+  {
+    path: 'nfc-game/legal/impressum',
+    data: { legalPage: 'impressum' },
+    loadComponent: () =>
+      import('./nfcgame/features/public/legal/legal-page.component').then((m) => m.NfcLegalPageComponent),
+  },
+  {
+    path: 'nfc-game/legal/datenschutz',
+    data: { legalPage: 'datenschutz' },
+    loadComponent: () =>
+      import('./nfcgame/features/public/legal/legal-page.component').then((m) => m.NfcLegalPageComponent),
+  },
+  {
+    path: 'nfc-game/legal/cookies',
+    data: { legalPage: 'cookies' },
+    loadComponent: () =>
+      import('./nfcgame/features/public/legal/legal-page.component').then((m) => m.NfcLegalPageComponent),
+  },
+  {
+    path: 'nfc-game/legal/nutzungsbedingungen',
+    data: { legalPage: 'nutzungsbedingungen' },
+    loadComponent: () =>
+      import('./nfcgame/features/public/legal/legal-page.component').then((m) => m.NfcLegalPageComponent),
   },
   {
     path: 'nfc-game/admin/login',
@@ -135,6 +164,12 @@ export const routes: Routes = [
     canActivate: [nfcAdminGuard],
     loadComponent: () =>
       import('./nfcgame/features/admin/devices/admin-devices.component').then((m) => m.NfcAdminDevicesComponent),
+  },
+  {
+    path: 'nfc-game/admin/settings',
+    canActivate: [nfcAdminGuard],
+    loadComponent: () =>
+      import('./nfcgame/features/admin/settings/admin-settings.component').then((m) => m.NfcAdminSettingsComponent),
   },
   {
     path: 'nfc-game/admin/audio-test',

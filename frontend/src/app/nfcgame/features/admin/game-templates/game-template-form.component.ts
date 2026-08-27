@@ -103,7 +103,7 @@ export class NfcGameTemplateFormComponent {
     const values = [
       { name: 'Team Nord', value: 12 },
       { name: 'Team West', value: 8 },
-      { name: 'Team Sued', value: 5 },
+      { name: 'Team Süd', value: 5 },
     ].sort((a, b) => direction === 'ASC' ? a.value - b.value : b.value - a.value);
     const max = Math.max(...values.map((team) => team.value));
     const min = Math.min(...values.map((team) => team.value));

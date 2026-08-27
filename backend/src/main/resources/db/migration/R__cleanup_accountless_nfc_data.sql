@@ -7,6 +7,7 @@ drop table if exists nfc_cleanup_target_flow_definitions;
 drop table if exists nfc_cleanup_target_session_accounts;
 drop table if exists nfc_cleanup_target_teams;
 drop table if exists nfc_cleanup_target_sessions;
+drop table if exists nfc_cleanup_target_game_nights;
 drop table if exists nfc_cleanup_target_devices;
 drop table if exists nfc_cleanup_target_games;
 drop table if exists nfc_cleanup_target_players;
@@ -55,6 +56,13 @@ where s.account_id is null
    or u.id is null
    or g.account_id is null
    or d.account_id is null;
+
+create temporary table nfc_cleanup_target_game_nights as
+select n.id
+from nfc_game_night n
+left join nfc_cleanup_existing_accounts u on u.id = n.account_id
+where n.account_id is null
+   or u.id is null;
 
 create temporary table nfc_cleanup_target_teams as
 select id
@@ -117,6 +125,9 @@ where id in (select id from nfc_cleanup_target_teams);
 delete from nfc_game_session
 where id in (select id from nfc_cleanup_target_sessions);
 
+delete from nfc_game_night
+where id in (select id from nfc_cleanup_target_game_nights);
+
 delete from nfc_flow_transition
 where flow_definition_id in (select id from nfc_cleanup_target_flow_definitions);
 
@@ -152,6 +163,7 @@ drop table if exists nfc_cleanup_target_flow_definitions;
 drop table if exists nfc_cleanup_target_session_accounts;
 drop table if exists nfc_cleanup_target_teams;
 drop table if exists nfc_cleanup_target_sessions;
+drop table if exists nfc_cleanup_target_game_nights;
 drop table if exists nfc_cleanup_target_devices;
 drop table if exists nfc_cleanup_target_games;
 drop table if exists nfc_cleanup_target_players;

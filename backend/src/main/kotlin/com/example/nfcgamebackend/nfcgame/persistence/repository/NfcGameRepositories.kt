@@ -2,6 +2,7 @@ package com.example.nfcgamebackend.nfcgame.persistence.repository
 
 import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
+import com.example.nfcgamebackend.nfcgame.domain.GameNightStatus
 import com.example.nfcgamebackend.nfcgame.domain.GamePublicationStatus
 import com.example.nfcgamebackend.nfcgame.domain.OwnerType
 import com.example.nfcgamebackend.nfcgame.domain.SessionStatus
@@ -16,6 +17,7 @@ import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcFlowNode
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcFlowState
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcFlowTransition
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcGameResult
+import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcGameNight
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcGameSession
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcGameRating
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcGameTemplate
@@ -134,6 +136,13 @@ interface NfcFlowTransitionRepository : JpaRepository<NfcFlowTransition, UUID> {
     fun deleteAllByFlowDefinitionId(flowDefinitionId: UUID)
 }
 
+interface NfcGameNightRepository : JpaRepository<NfcGameNight, UUID> {
+    fun findFirstByAccountIdAndStatusOrderByStartedAtDesc(accountId: Long, status: GameNightStatus): NfcGameNight?
+    fun findAllByAccountIdOrderByStartedAtDesc(accountId: Long): List<NfcGameNight>
+    fun findByIdAndAccountId(id: UUID, accountId: Long): NfcGameNight?
+    fun deleteAllByAccountId(accountId: Long)
+}
+
 interface NfcGameSessionRepository : JpaRepository<NfcGameSession, UUID> {
     fun findFirstByStatusInOrderByCreatedAtDesc(statuses: Collection<SessionStatus>): NfcGameSession?
     fun findFirstByAccountIdAndStatusInOrderByCreatedAtDesc(accountId: Long, statuses: Collection<SessionStatus>): NfcGameSession?
@@ -141,6 +150,7 @@ interface NfcGameSessionRepository : JpaRepository<NfcGameSession, UUID> {
     fun findAllByAccountIdAndStatusInOrderByCreatedAtDesc(accountId: Long, statuses: Collection<SessionStatus>): List<NfcGameSession>
     fun findAllByOrderByCreatedAtDesc(): List<NfcGameSession>
     fun findAllByAccountIdOrderByCreatedAtDesc(accountId: Long): List<NfcGameSession>
+    fun findAllByAccountIdAndGameNightIdOrderByCreatedAtDesc(accountId: Long, gameNightId: UUID): List<NfcGameSession>
     fun deleteAllByAccountId(accountId: Long)
 }
 

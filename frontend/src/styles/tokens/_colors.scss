@@ -309,8 +309,32 @@
   --nfc-warm: var(--nfc-brand-warm-muted);
   --nfc-warm-soft: var(--nfc-brand-warm-deep);
   --nfc-danger: #be123c;
+  --nfc-danger-soft: #be123c;
   --nfc-grid-line: var(--nfc-light-grid-line);
   --nfc-aura-primary: var(--nfc-light-aura-primary);
   --nfc-aura-warm: var(--nfc-light-aura-warm);
   --nfc-shadow: var(--nfc-light-shadow);
+  --nfc-shadow-soft: rgba(15, 23, 42, 0.10);
+
+  /* Legacy neutral aliases used by older NFC components. Keep them theme-safe here. */
+  --color-neutral-cloud: var(--nfc-light-text);
+  --color-neutral-mist: #1e293b;
+  --color-neutral-soft: var(--nfc-light-muted);
+  --color-neutral-muted: var(--nfc-light-muted-soft);
+  --color-success-preview: #047857;
+  --color-danger-preview: #be123c;
+  --color-info: #2563eb;
+  --color-border-subtle: var(--nfc-light-border);
+  --color-icon-muted: var(--nfc-light-muted-soft);
+  --nfc-kind-object: #0f766e;
+  --nfc-kind-string: #0891b2;
+  --nfc-kind-integer: #a16207;
+  --nfc-kind-boolean: #2563eb;
+  --nfc-flow-ui-accent: var(--nfc-accent-strong);
+  --nfc-flow-input-accent: #047857;
+  --nfc-flow-session-accent: #a16207;
+  --nfc-flow-score-accent: #c2410c;
+  --nfc-flow-economy-accent: #0f766e;
+  --nfc-flow-logic-accent: #6d28d9;
+  --nfc-flow-fallback-accent: var(--nfc-muted);
 }

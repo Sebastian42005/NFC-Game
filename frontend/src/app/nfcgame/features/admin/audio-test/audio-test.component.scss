@@ -20,7 +20,7 @@
     radial-gradient(circle at top left, color-mix(in srgb, var(--nfc-accent) 22%, transparent), transparent 38%);
   border-radius: 1.5rem;
   padding: 1.5rem;
-  color: var(--color-neutral-mist);
+  color: var(--nfc-text);
   box-shadow: 0 22px 50px var(--nfc-shadow);
 }
 
@@ -42,7 +42,7 @@
 
 .audio-test-copy {
   margin: 0.85rem 0 0;
-  color: var(--color-neutral-soft);
+  color: var(--nfc-muted);
   line-height: 1.6;
 }
 
@@ -80,7 +80,7 @@
 
 .audio-test-button.is-ghost {
   background: color-mix(in srgb, var(--nfc-muted) 18%, transparent);
-  color: var(--color-neutral-mist);
+  color: var(--nfc-text);
 }
 
 .audio-test-button.is-accent {
@@ -135,6 +135,6 @@
 .audio-test-steps ol {
   margin: 0.8rem 0 0;
   padding-left: 1.1rem;
-  color: var(--color-neutral-soft);
+  color: var(--nfc-muted);
   line-height: 1.7;
 }

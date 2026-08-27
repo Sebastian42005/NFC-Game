@@ -1,0 +1,16 @@
+<div class="sound-mini-player">
+  <div class="sound-mini-controls">
+    <button
+      type="button"
+      class="sound-mini-button"
+      [class.is-playing]="playing()"
+      [disabled]="loading() || !audioUrl"
+      [attr.aria-label]="playing() ? label + ' pausieren' : label + ' abspielen'"
+      [title]="playing() ? label + ' pausieren' : label + ' abspielen'"
+      (click)="togglePlayback()"
+    >
+      <mat-icon aria-hidden="true">{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
+    </button>
+  </div>
+  <canvas #canvas class="sound-mini-waveform" aria-hidden="true"></canvas>
+</div>

@@ -11,7 +11,7 @@
   </div>
   <div class="relative" [style.width.px]="scaledCanvasWidth()" [style.height.px]="scaledCanvasHeight()">
     <div class="absolute left-0 top-0 origin-top-left" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()" [style.transform]="'scale(' + zoom() + ')'">
-      <svg class="absolute left-0 top-0" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()" [attr.width]="canvasWidth()" [attr.height]="canvasHeight()">
+      <svg class="flow-edge-layer absolute left-0 top-0 z-10" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()" [attr.width]="canvasWidth()" [attr.height]="canvasHeight()">
         <defs>
           <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
             <path class="flow-edge-arrow" d="M0,0 L0,6 L9,3 z"></path>
@@ -20,37 +20,48 @@
         @for (edge of edges(); track edge.id) {
           @if (nodeById(edge.sourceNodeId); as source) {
             @if (nodeById(edge.targetNodeId); as target) {
-              <g class="cursor-pointer" (click)="selectEdge.emit(edge.id); $event.stopPropagation()">
+              <g class="flow-edge-group cursor-pointer" (click)="selectEdge.emit(edge.id); $event.stopPropagation()">
                 <line
-                  class="transition"
-                  [attr.x1]="edgeStartX(source)"
-                  [attr.y1]="edgeStartY(source)"
-                  [attr.x2]="edgeEndX(target)"
-                  [attr.y2]="edgeEndY(target)"
+                  class="flow-edge-hit transition"
+                  [attr.x1]="edgeStartX(source, target)"
+                  [attr.y1]="edgeStartY(source, target)"
+                  [attr.x2]="edgeEndX(source, target)"
+                  [attr.y2]="edgeEndY(source, target)"
                   stroke="transparent"
                   stroke-width="18"
                 />
                 <line
-                  [attr.x1]="edgeStartX(source)"
-                  [attr.y1]="edgeStartY(source)"
-                  [attr.x2]="edgeEndX(target)"
-                  [attr.y2]="edgeEndY(target)"
-                  [attr.stroke]="selectedEdgeId() === edge.id ? 'var(--nfc-accent)' : 'var(--nfc-kind-string)'"
+                  class="flow-edge-line"
+                  [attr.x1]="edgeStartX(source, target)"
+                  [attr.y1]="edgeStartY(source, target)"
+                  [attr.x2]="edgeEndX(source, target)"
+                  [attr.y2]="edgeEndY(source, target)"
+                  stroke="var(--nfc-accent)"
                   [attr.stroke-width]="selectedEdgeId() === edge.id ? 4 : 2"
                   marker-end="url(#arrow)"
                 />
+                <rect
+                  class="flow-edge-label-bg"
+                  [attr.x]="edgeLabelX(source, target) - edgeLabelWidth(edge) / 2"
+                  [attr.y]="edgeLabelY(source, target) - 9"
+                  [attr.width]="edgeLabelWidth(edge)"
+                  height="18"
+                  rx="5"
+                ></rect>
                 <text
-                  [attr.x]="edgeMidX(source, target)"
-                  [attr.y]="edgeMidY(source, target) - 10"
+                  class="flow-edge-label"
+                  [attr.x]="edgeLabelX(source, target)"
+                  [attr.y]="edgeLabelY(source, target)"
                   [attr.fill]="selectedEdgeId() === edge.id ? 'var(--nfc-accent-strong)' : 'var(--nfc-muted-soft)'"
                   font-size="12"
+                  dominant-baseline="middle"
                   text-anchor="middle"
                 >
                   {{ edge.eventType }}
                 </text>
                 @if (selectedEdgeId() === edge.id) {
                   <g
-                    class="cursor-pointer"
+                    class="flow-edge-delete cursor-pointer"
                     [attr.transform]="'translate(' + (edgeMidX(source, target) - 13) + ' ' + (edgeMidY(source, target) + 6) + ')'"
                     (click)="deleteEdge.emit(edge.id); $event.stopPropagation()"
                   >
@@ -66,7 +77,7 @@
 
       @for (node of nodes(); track node.id) {
         <article
-          class="absolute w-[220px] rounded-lg border p-3 shadow-xl"
+          class="absolute z-30 min-h-[116px] w-[220px] rounded-lg border p-3 shadow-xl"
           [class.ui-border-accent]="selectedNodeId() === node.id"
           [class.ui-border-warm]="startNodeId() === node.id"
           [style.left.px]="node.x"
@@ -78,7 +89,7 @@
         >
           <div class="flex items-start justify-between gap-2">
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-wide" [style.color]="nodeAccent(node)">{{ node.type }}</p>
+              <p class="flow-node-type text-[11px] font-semibold uppercase tracking-wide">{{ node.type }}</p>
               <h3 class="mt-1 text-sm font-semibold">{{ node.title }}</h3>
             </div>
             @if (startNodeId() === node.id) {

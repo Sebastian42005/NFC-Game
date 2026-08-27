@@ -1,0 +1,75 @@
+@if (consent.bannerVisible()) {
+  <section class="nfc-consent-backdrop" aria-label="Cookie- und Datenschutz-Einstellungen">
+    <div class="nfc-consent-card" role="dialog" aria-modal="false" aria-labelledby="nfc-consent-title">
+      <div class="nfc-consent-copy">
+        <p class="nfc-consent-eyebrow">Datenschutz</p>
+        <h2 id="nfc-consent-title">{{ operator.siteName }} respektiert deine Privatsphäre</h2>
+        <p>
+          Wir verwenden notwendige Speicherungen für Login, Sicherheit und Betrieb. Optionale Präferenzen,
+          Statistik- oder Marketing-Speicherungen aktivieren wir nur, wenn du zustimmst.
+        </p>
+        <div class="nfc-consent-links">
+          <a routerLink="/nfc-game/legal/datenschutz">Datenschutzerklärung</a>
+          <a routerLink="/nfc-game/legal/cookies">Cookie-Richtlinie</a>
+          <a routerLink="/nfc-game/legal/impressum">Impressum</a>
+        </div>
+      </div>
+
+      @if (showDetails()) {
+        <div class="nfc-consent-options" aria-label="Optionale Kategorien">
+          <label class="nfc-consent-option">
+            <input type="checkbox" checked disabled />
+            <span>
+              <strong>Notwendig</strong>
+              <small>Login, Sicherheit, Session und deine Consent-Auswahl. Immer aktiv.</small>
+            </span>
+          </label>
+          <label class="nfc-consent-option">
+            <input
+              type="checkbox"
+              [checked]="draft().preferences"
+              (change)="toggleCategory('preferences', $any($event.target).checked)"
+            />
+            <span>
+              <strong>Präferenzen</strong>
+              <small>Theme, Akzentfarbe und Sprache für eine angenehmere Oberfläche.</small>
+            </span>
+          </label>
+          <label class="nfc-consent-option">
+            <input
+              type="checkbox"
+              [checked]="draft().statistics"
+              (change)="toggleCategory('statistics', $any($event.target).checked)"
+            />
+            <span>
+              <strong>Statistik</strong>
+              <small>Aktuell nicht eingebunden. Diese Kategorie blockiert künftige Analyse-Tools bis zur Zustimmung.</small>
+            </span>
+          </label>
+          <label class="nfc-consent-option">
+            <input
+              type="checkbox"
+              [checked]="draft().marketing"
+              (change)="toggleCategory('marketing', $any($event.target).checked)"
+            />
+            <span>
+              <strong>Marketing</strong>
+              <small>Aktuell nicht eingebunden. Diese Kategorie blockiert künftige Marketing-Tools bis zur Zustimmung.</small>
+            </span>
+          </label>
+        </div>
+      }
+
+      <div class="nfc-consent-actions">
+        @if (showDetails()) {
+          <button type="button" class="nfc-consent-button secondary" (click)="closeDetails()">Abbrechen</button>
+          <button type="button" class="nfc-consent-button primary" (click)="saveSelection()">Auswahl speichern</button>
+        } @else {
+          <button type="button" class="nfc-consent-button ghost" (click)="openDetails()">Einstellungen</button>
+          <button type="button" class="nfc-consent-button secondary" (click)="rejectOptional()">Nur notwendige</button>
+          <button type="button" class="nfc-consent-button primary" (click)="acceptAll()">Alle akzeptieren</button>
+        }
+      </div>
+    </div>
+  </section>
+}

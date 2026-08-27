@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   GameTemplateDto,
   LeaderboardEntryDto,
@@ -6,6 +6,7 @@ import {
   SessionDetailDto,
   TeamDto,
 } from '../models/nfc-game.models';
+import { NfcI18nService } from '../i18n/nfc-i18n.service';
 import {
   NfcAward,
   NfcChartDatum,
@@ -22,12 +23,14 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class NfcStatisticsService {
+  private readonly i18n = inject(NfcI18nService);
+
   timeframeLabel(timeframe: NfcRankingTimeframe) {
     const labels: Record<NfcRankingTimeframe, string> = {
-      all: 'Gesamt',
-      today: 'Heute',
-      '7d': 'Letzte 7 Tage',
-      '30d': 'Letzte 30 Tage',
+      all: this.text('Gesamt', 'All time'),
+      today: this.text('Heute', 'Today'),
+      '7d': this.text('Letzte 7 Tage', 'Last 7 days'),
+      '30d': this.text('Letzte 30 Tage', 'Last 30 days'),
     };
     return labels[timeframe];
   }
@@ -108,7 +111,7 @@ export class NfcStatisticsService {
         if (value !== 0) return value;
         const pointTieBreaker = sort !== 'totalPoints' ? Number(b.totalPoints ?? 0) - Number(a.totalPoints ?? 0) : 0;
         if (pointTieBreaker !== 0) return pointTieBreaker;
-        return (a.playerName ?? a.playerId).localeCompare(b.playerName ?? b.playerId, 'de-AT');
+        return (a.playerName ?? a.playerId).localeCompare(b.playerName ?? b.playerId, this.locale());
       });
 
     const ranked = sorted.map((entry, index) => {
@@ -132,9 +135,9 @@ export class NfcStatisticsService {
         ...entry,
         isTied,
         tieSize,
-        rankLabel: `#${entry.rank}${isTied ? ' geteilt' : ''}`,
+        rankLabel: `#${entry.rank}${isTied ? this.text(' geteilt', ' tied') : ''}`,
         tieReason: isTied ? this.tieReason(sort) : undefined,
-        tieBreakerLabel: sort !== 'totalPoints' ? 'Tiebreaker: Punkte' : undefined,
+        tieBreakerLabel: sort !== 'totalPoints' ? this.text('Tiebreaker: Punkte', 'Tiebreaker: points') : undefined,
       };
     });
   }
@@ -147,7 +150,7 @@ export class NfcStatisticsService {
         playerId,
         playerName: this.playerNameFromSession(session, playerId),
         gameId: session.gameTemplateId,
-        gameName: session.gameName ?? gameNames.get(session.gameTemplateId) ?? 'Spiel',
+        gameName: session.gameName ?? gameNames.get(session.gameTemplateId) ?? this.text('Spiel', 'Game'),
         gamesPlayed: 0,
         gamesWon: 0,
         roundsWon: 0,
@@ -179,7 +182,7 @@ export class NfcStatisticsService {
         return {
           label: this.shortDate(session),
           value: total,
-          subLabel: session.gameName ?? 'Session',
+          subLabel: session.gameName ?? this.text('Session', 'Session'),
         };
       });
   }
@@ -198,7 +201,7 @@ export class NfcStatisticsService {
         for (const opponent of team.members) {
           const row = rows.get(opponent.playerId) ?? {
             opponentId: opponent.playerId,
-            opponentName: opponent.playerName ?? 'Spieler',
+            opponentName: opponent.playerName ?? this.text('Spieler', 'Player'),
             wins: 0,
             losses: 0,
             draws: 0,
@@ -244,7 +247,7 @@ export class NfcStatisticsService {
     return ranking.slice(0, 8).map((entry) => ({
       label: entry.playerName ?? entry.playerId,
       value: entry.totalPoints,
-      subLabel: `${entry.gamesWon} Siege`,
+      subLabel: `${entry.gamesWon} ${this.winWord(entry.gamesWon)}`,
     }));
   }
 
@@ -267,14 +270,19 @@ export class NfcStatisticsService {
     return { rows, columns, cells };
   }
 
-  gameNightSummary(sessions: SessionDetailDto[], players: PlayerDto[], games: GameTemplateDto[]): NfcGameNightSummary {
-    const nightSessions = this.filterSessions(sessions, 'today');
-    const ranking = this.rankingFromSessions(nightSessions, players, [], 'totalPoints');
+  gameNightSummary(
+    sessions: SessionDetailDto[],
+    players: PlayerDto[],
+    games: GameTemplateDto[],
+    sort: NfcRankingSort = 'totalPoints',
+  ): NfcGameNightSummary {
+    const nightSessions = sessions;
+    const ranking = this.rankingFromSessions(nightSessions, players, [], sort);
     const gameCounts = new Map<string, { id: string; name: string; count: number }>();
     for (const session of nightSessions) {
       const entry = gameCounts.get(session.gameTemplateId) ?? {
         id: session.gameTemplateId,
-        name: session.gameName ?? games.find((game) => game.id === session.gameTemplateId)?.name ?? 'Spiel',
+        name: session.gameName ?? games.find((game) => game.id === session.gameTemplateId)?.name ?? this.text('Spiel', 'Game'),
         count: 0,
       };
       entry.count += 1;
@@ -297,45 +305,47 @@ export class NfcStatisticsService {
       : undefined;
     const awards: NfcAward[] = [
       mvp && {
-        label: topTie ? 'MVP geteilt' : 'MVP des Abends',
+        label: topTie ? this.text('Geteiltes MVP', 'Shared MVP') : this.text('MVP des Abends', 'MVP of the night'),
         owner: topTie ? this.joinNames(topTie.playerNames) : mvp.playerName ?? mvp.playerId,
         value: `${mvp.totalPoints} ${this.pointsWord(mvp.totalPoints)}`,
-        subLabel: topTie ? 'Kein Tiebreaker · Platz 1 geteilt' : `${mvp.gamesWon} ${this.winWord(mvp.gamesWon)} · ${this.percent(mvp.winRate)} Siegquote`,
+        subLabel: topTie
+          ? this.text('Kein Tiebreaker · Platz 1 geteilt', 'No tiebreaker · shared first place')
+          : `${mvp.gamesWon} ${this.winWord(mvp.gamesWon)} · ${this.percent(mvp.winRate)} ${this.text('Siegquote', 'win rate')}`,
         tone: 'amber',
       },
       mostWins && mostWins.gamesWon > 0 && {
-        label: 'Meiste Siege',
+        label: this.text('Meiste Siege', 'Most wins'),
         owner: mostWins.playerName ?? mostWins.playerId,
-        value: `${mostWins.gamesWon} ${this.winWord(mostWins.gamesWon)} in ${mostWins.gamesPlayed} Sessions`,
-        subLabel: `${this.percent(mostWins.winRate)} Siegquote`,
+        value: `${mostWins.gamesWon} ${this.winWord(mostWins.gamesWon)} ${this.text('in', 'in')} ${mostWins.gamesPlayed} ${this.sessionWord(mostWins.gamesPlayed)}`,
+        subLabel: `${this.percent(mostWins.winRate)} ${this.text('Siegquote', 'win rate')}`,
         tone: 'sky',
       },
       longestStreak && {
-        label: 'Siegeserie',
+        label: this.text('Siegeserie', 'Win streak'),
         owner: longestStreak.playerName,
-        value: `${longestStreak.count} am Stück`,
-        subLabel: longestStreak.active ? 'heute aktiv' : 'im Verlauf des Abends',
+        value: `${longestStreak.count} ${this.text('am Stück', 'in a row')}`,
+        subLabel: longestStreak.active ? this.text('heute aktiv', 'still active tonight') : this.text('im Verlauf des Abends', 'during the night'),
         tone: 'cyan',
       },
       mostPlayedGame && {
-        label: 'Top Spiel',
+        label: this.text('Top-Spiel', 'Top game'),
         owner: mostPlayedGame.name,
         value: `${mostPlayedGame.count} ${this.sessionWord(mostPlayedGame.count)}`,
-        subLabel: `${this.percent(nightSessions.length ? mostPlayedGame.count / nightSessions.length : 0)} des Abends`,
+        subLabel: `${this.percent(nightSessions.length ? mostPlayedGame.count / nightSessions.length : 0)} ${this.text('des Abends', 'of the night')}`,
         tone: 'violet',
       },
       activePlayer && {
-        label: 'Aktivster Spieler',
+        label: this.text('Aktivster Spieler', 'Most active player'),
         owner: activePlayer.playerName ?? activePlayer.playerId,
         value: `${activePlayer.gamesPlayed} ${this.sessionWord(activePlayer.gamesPlayed)}`,
-        subLabel: `${activePlayer.totalPoints} ${this.pointsWord(activePlayer.totalPoints)} gesammelt`,
+        subLabel: `${activePlayer.totalPoints} ${this.pointsWord(activePlayer.totalPoints)} ${this.text('gesammelt', 'earned')}`,
         tone: 'teal',
       },
       mostRounds && mostRounds.roundsWon > 0 && {
         label: 'Round Hunter',
         owner: mostRounds.playerName ?? mostRounds.playerId,
-        value: `${mostRounds.roundsWon} Runden`,
-        subLabel: `${mostRounds.gamesPlayed} Sessions gespielt`,
+        value: `${mostRounds.roundsWon} ${this.text('Runden', 'rounds')}`,
+        subLabel: `${mostRounds.gamesPlayed} ${this.sessionWord(mostRounds.gamesPlayed)} ${this.text('gespielt', 'played')}`,
         tone: 'sky',
       },
     ].filter(Boolean) as NfcAward[];
@@ -362,8 +372,8 @@ export class NfcStatisticsService {
       .sort((a, b) => this.sessionDate(a).getTime() - this.sessionDate(b).getTime())
       .map((session) => ({
         id: session.id,
-        title: session.gameName ?? 'Session',
-        meta: `${this.dateTime(session)} · ${session.teams.reduce((sum, team) => sum + team.members.length, 0)} Spieler`,
+        title: session.gameName ?? this.text('Session', 'Session'),
+        meta: `${this.dateTime(session)} · ${session.teams.reduce((sum, team) => sum + team.members.length, 0)} ${this.playerWord(session.teams.reduce((sum, team) => sum + team.members.length, 0))}`,
         value: this.winnerLabel(session),
       }));
   }
@@ -376,7 +386,7 @@ export class NfcStatisticsService {
       for (const id of sessionPlayerIds) {
         if (playerId && id !== playerId) continue;
         const member = this.sessionPlayerTeams(session).find((entry) => entry.playerId === id)?.member;
-        const row = streaks.get(id) ?? { playerName: member?.playerName ?? 'Spieler', current: 0, best: 0 };
+        const row = streaks.get(id) ?? { playerName: member?.playerName ?? this.text('Spieler', 'Player'), current: 0, best: 0 };
         if (winner?.members.some((member) => member.playerId === id)) {
           row.current += 1;
           row.best = Math.max(row.best, row.current);
@@ -392,9 +402,9 @@ export class NfcStatisticsService {
 
   winnerLabel(session: SessionDetailDto) {
     const winner = session.teams.find((team) => team.id === session.result?.winningTeamId);
-    if (!winner) return session.status === 'FINISHED' ? 'Unentschieden' : session.status;
-    if (winner.members.length === 1) return `${winner.members[0]?.playerName ?? winner.name} gewinnt`;
-    return `${winner.name} gewinnt`;
+    if (!winner) return session.status === 'FINISHED' ? this.text('Unentschieden', 'Draw') : session.status;
+    if (winner.members.length === 1) return `${winner.members[0]?.playerName ?? winner.name} ${this.text('gewinnt', 'wins')}`;
+    return `${winner.name} ${this.text('gewinnt', 'wins')}`;
   }
 
   playerTeam(session: SessionDetailDto, playerId: string): TeamDto | undefined {
@@ -417,7 +427,7 @@ export class NfcStatisticsService {
       placementPoints: finished && team ? this.placementPointsForTeam(team) : 0,
       roundPoints: finished && team ? this.roundPointsForTeam(team, session) : 0,
       position,
-      teamLabel: team?.name ?? 'Ohne Team',
+      teamLabel: team?.name ?? this.text('Ohne Team', 'No team'),
       teamMode: members > 1 ? 'Team' : 'Solo',
       participantCount: session.teams.reduce((sum, entry) => sum + entry.members.length, 0),
       occurredAt: this.sessionDate(session),
@@ -480,15 +490,15 @@ export class NfcStatisticsService {
   }
 
   shortDate(session: SessionDetailDto) {
-    return new Intl.DateTimeFormat('de-AT', { day: '2-digit', month: '2-digit' }).format(this.sessionDate(session));
+    return new Intl.DateTimeFormat(this.locale(), { day: '2-digit', month: '2-digit' }).format(this.sessionDate(session));
   }
 
   time(session: SessionDetailDto) {
-    return new Intl.DateTimeFormat('de-AT', { hour: '2-digit', minute: '2-digit' }).format(this.sessionDate(session));
+    return new Intl.DateTimeFormat(this.locale(), { hour: '2-digit', minute: '2-digit' }).format(this.sessionDate(session));
   }
 
   dateTime(session: SessionDetailDto) {
-    return new Intl.DateTimeFormat('de-AT', {
+    return new Intl.DateTimeFormat(this.locale(), {
       day: '2-digit',
       month: '2-digit',
       year: '2-digit',
@@ -534,7 +544,7 @@ export class NfcStatisticsService {
   }
 
   private playerNameFromSession(session: SessionDetailDto, playerId: string) {
-    return this.sessionPlayerTeams(session).find((entry) => entry.playerId === playerId)?.member.playerName ?? 'Spieler';
+    return this.sessionPlayerTeams(session).find((entry) => entry.playerId === playerId)?.member.playerName ?? this.text('Spieler', 'Player');
   }
 
   private sortValue(entry: LeaderboardEntryDto, sort: NfcRankingSort) {
@@ -548,20 +558,26 @@ export class NfcStatisticsService {
   }
 
   private tieReason(sort: NfcRankingSort) {
-    if (sort === 'totalPoints') return 'Gleiche Punktzahl, kein zusätzlicher Tiebreaker';
-    if (sort === 'gamesWon') return 'Gleiche Siege und gleiche Punkte';
-    if (sort === 'winRate') return 'Gleiche Siegquote und gleiche Punkte';
-    return 'Gleiche Sessions und gleiche Punkte';
+    if (sort === 'totalPoints') return this.text('Gleiche Punktzahl, kein zusätzlicher Tiebreaker', 'Same points, no extra tiebreaker');
+    if (sort === 'gamesWon') return this.text('Gleiche Siege und gleiche Punkte', 'Same wins and same points');
+    if (sort === 'winRate') return this.text('Gleiche Siegquote und gleiche Punkte', 'Same win rate and same points');
+    return this.text('Gleiche Sessions und gleiche Punkte', 'Same sessions and same points');
   }
 
   private gameNightRankingNote(ranking: LeaderboardEntryDto[]) {
     const top = ranking[0];
-    if (!top) return 'Noch keine abgeschlossene Session für die Abendwertung.';
+    if (!top) return this.text('Noch keine abgeschlossene Session für die Abendwertung.', 'No finished session yet for tonight\'s ranking.');
     const tiedTop = ranking.filter((entry) => entry.rank === top.rank);
     if (tiedTop.length > 1) {
-      return `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} teilen Platz ${top.rank} mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)}. Es gibt keinen zusätzlichen Tiebreaker; die Anzeige bleibt ein echter Gleichstand.`;
+      return this.text(
+        `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} teilen Platz ${top.rank} mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)}. Es gibt keinen zusätzlichen Tiebreaker; die Anzeige bleibt ein echter Gleichstand.`,
+        `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} share place ${top.rank} with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}. There is no extra tiebreaker, so the tie stays in place.`,
+      );
     }
-    return `${top.playerName ?? top.playerId} führt die Abendwertung mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)} an. Bei gleicher Punktzahl werden Plätze geteilt.`;
+    return this.text(
+      `${top.playerName ?? top.playerId} führt die Abendwertung mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)} an. Bei gleicher Punktzahl werden Plätze geteilt.`,
+      `${top.playerName ?? top.playerId} leads the night with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}. Equal points mean shared places.`,
+    );
   }
 
   private gameNightRecap(
@@ -569,15 +585,27 @@ export class NfcStatisticsService {
     sessions: SessionDetailDto[],
     mostPlayedGame?: { id: string; name: string; count: number },
   ) {
-    if (!sessions.length) return 'Der Spielabend wartet noch auf die ersten abgeschlossenen Sessions.';
+    if (!sessions.length) return this.text('Der Spielabend wartet noch auf die ersten abgeschlossenen Sessions.', 'The game night is still waiting for its first finished sessions.');
     const top = ranking[0];
-    if (!top) return `${sessions.length} ${this.sessionWord(sessions.length)} abgeschlossen, aber noch ohne Spielerwertung.`;
+    if (!top) return this.text(
+      `${sessions.length} ${this.sessionWord(sessions.length)} abgeschlossen, aber noch ohne Spielerwertung.`,
+      `${sessions.length} ${this.sessionWord(sessions.length)} finished, but no player ranking yet.`,
+    );
     const tiedTop = ranking.filter((entry) => entry.rank === top.rank);
     const lead = tiedTop.length > 1
-      ? `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} lieferten sich einen engen Abend und teilen Platz ${top.rank} mit je ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`
-      : `${top.playerName ?? top.playerId} gewinnt den Abend mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`;
+      ? this.text(
+          `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} lieferten sich einen engen Abend und teilen Platz ${top.rank} mit je ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
+          `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} battled closely and share place ${top.rank} with ${top.totalPoints} ${this.pointsWord(top.totalPoints)} each.`,
+        )
+      : this.text(
+          `${top.playerName ?? top.playerId} gewinnt den Abend mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
+          `${top.playerName ?? top.playerId} wins the night with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
+        );
     const gameLine = mostPlayedGame
-      ? ` ${mostPlayedGame.name} war mit ${mostPlayedGame.count} ${this.sessionWord(mostPlayedGame.count)} das meistgespielte Spiel.`
+      ? this.text(
+          ` ${mostPlayedGame.name} war mit ${mostPlayedGame.count} ${this.sessionWord(mostPlayedGame.count)} das meistgespielte Spiel.`,
+          ` ${mostPlayedGame.name} was the most played game with ${mostPlayedGame.count} ${this.sessionWord(mostPlayedGame.count)}.`,
+        )
       : '';
     return `${lead}${gameLine}`;
   }
@@ -590,23 +618,26 @@ export class NfcStatisticsService {
     const highest = this.highestPointSession(sessions);
     return [
       closest && {
-        label: 'Engste Session',
+        label: this.text('Engste Session', 'Closest session'),
         title: closest.title,
         detail: closest.detail,
         sessionId: closest.sessionId,
         tone: 'teal',
       },
       highest && {
-        label: 'Höchste Punktzahl',
+        label: this.text('Höchste Punktzahl', 'Highest score'),
         title: highest.title,
         detail: highest.detail,
         sessionId: highest.sessionId,
         tone: 'amber',
       },
       longestStreak && {
-        label: 'Längste Serie',
+        label: this.text('Längste Serie', 'Longest streak'),
         title: longestStreak.playerName,
-        detail: `${longestStreak.count} Siege am Stück${longestStreak.active ? ', aktuell aktiv' : ''}.`,
+        detail: this.text(
+          `${longestStreak.count} Siege am Stück${longestStreak.active ? ', aktuell aktiv' : ''}.`,
+          `${longestStreak.count} wins in a row${longestStreak.active ? ', still active' : ''}.`,
+        ),
         tone: 'cyan',
       },
     ].filter(Boolean) as NfcGameNightMoment[];
@@ -622,8 +653,11 @@ export class NfcStatisticsService {
         const gap = Math.abs(this.globalPointsForTeam(first, session) - this.globalPointsForTeam(second, session));
         return {
           sessionId: session.id,
-          title: session.gameName ?? 'Session',
-          detail: `${this.teamLabel(first)} vor ${this.teamLabel(second)} · ${gap} ${this.pointsWord(gap)} Abstand`,
+          title: session.gameName ?? this.text('Session', 'Session'),
+          detail: this.text(
+            `${this.teamLabel(first)} vor ${this.teamLabel(second)} · ${gap} ${this.pointsWord(gap)} Abstand`,
+            `${this.teamLabel(first)} ahead of ${this.teamLabel(second)} · ${gap} ${this.pointsWord(gap)} gap`,
+          ),
           gap,
         };
       })
@@ -640,8 +674,11 @@ export class NfcStatisticsService {
         );
         return {
           sessionId: session.id,
-          title: session.gameName ?? 'Session',
-          detail: `${points} ${this.pointsWord(points)} wurden in dieser Session vergeben.`,
+          title: session.gameName ?? this.text('Session', 'Session'),
+          detail: this.text(
+            `${points} ${this.pointsWord(points)} wurden in dieser Session vergeben.`,
+            `${points} ${this.pointsWord(points)} were awarded in this session.`,
+          ),
           points,
         };
       })
@@ -653,16 +690,16 @@ export class NfcStatisticsService {
   }
 
   private joinNames(names: string[]) {
-    if (names.length <= 2) return names.join(' und ');
-    return `${names.slice(0, -1).join(', ')} und ${names[names.length - 1]}`;
+    if (names.length <= 2) return names.join(this.text(' und ', ' and '));
+    return `${names.slice(0, -1).join(', ')}${this.text(' und ', ' and ')}${names[names.length - 1]}`;
   }
 
   private pointsWord(points: number) {
-    return points === 1 ? 'Punkt' : 'Punkte';
+    return this.text(points === 1 ? 'Punkt' : 'Punkte', points === 1 ? 'point' : 'points');
   }
 
   private winWord(wins: number) {
-    return wins === 1 ? 'Sieg' : 'Siege';
+    return this.text(wins === 1 ? 'Sieg' : 'Siege', wins === 1 ? 'win' : 'wins');
   }
 
   private sessionWord(count: number) {
@@ -671,5 +708,17 @@ export class NfcStatisticsService {
 
   private percent(value: number) {
     return `${Math.round(value * 100)}%`;
+  }
+
+  private playerWord(count: number) {
+    return this.text(count === 1 ? 'Spieler' : 'Spieler', count === 1 ? 'player' : 'players');
+  }
+
+  private text(de: string, en: string) {
+    return this.i18n.pick(de, en);
+  }
+
+  private locale() {
+    return this.i18n.locale();
   }
 }

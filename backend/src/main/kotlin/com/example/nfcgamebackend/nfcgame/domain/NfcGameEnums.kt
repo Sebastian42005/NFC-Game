@@ -86,9 +86,24 @@ enum class NfcThemeMode {
     SYSTEM,
 }
 
+enum class NfcLanguage {
+    DE,
+    EN,
+}
+
 enum class NfcDisplayTimeout {
     NEVER,
     ONE_MINUTE,
     FIVE_MINUTES,
     TEN_MINUTES,
+}
+
+enum class GameNightStatus {
+    ACTIVE,
+    FINISHED,
+}
+
+enum class GameNightScoringSystem {
+    POINTS,
+    WINS,
 }

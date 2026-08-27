@@ -3,6 +3,7 @@ package com.example.nfcgamebackend.nfcgame.application.session
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceUiPrediction
 import com.example.nfcgamebackend.nfcgame.api.dto.MenuItem
 import com.example.nfcgamebackend.nfcgame.api.dto.ScreenModel
+import com.example.nfcgamebackend.nfcgame.application.gamenight.NfcGameNightService
 import com.example.nfcgamebackend.nfcgame.application.statistics.NfcStatisticsService
 import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
@@ -107,6 +108,7 @@ class SessionStateMachineService(
     private val valueRepository: NfcSessionValueRepository,
     private val moneyTransactionRepository: NfcMoneyTransactionRepository,
     private val resultRepository: NfcGameResultRepository,
+    private val gameNightService: NfcGameNightService,
     private val statisticsService: NfcStatisticsService,
     private val objectMapper: ObjectMapper,
 ) {
@@ -141,7 +143,7 @@ class SessionStateMachineService(
     @Transactional
     fun handleReset(device: NfcDevice): StateMachineResult {
         val session = findActiveSession(device.accountId)
-            ?: return message("Keine aktive Session", "Es gibt gerade nichts zurueckzusetzen.")
+            ?: return message("Keine aktive Session", "Es gibt gerade nichts zurückzusetzen.")
 
         session.status = SessionStatus.RESET
         session.currentStateKey = "reset"
@@ -151,8 +153,8 @@ class SessionStateMachineService(
             session = session,
             screen = ScreenModel(
                 screenType = ScreenType.MESSAGE,
-                title = "Session zurueckgesetzt",
-                subtitle = "Masterdaten bleiben unveraendert.",
+                title = "Session zurückgesetzt",
+                subtitle = "Masterdaten bleiben unverändert.",
                 context = mapOf("deviceId" to device.id),
             ),
             effects = listOf("BEEP_RESET"),
@@ -248,11 +250,11 @@ class SessionStateMachineService(
     }
 
     private fun handleGameCard(device: NfcDevice, card: NfcCard): StateMachineResult {
-        val templateId = card.gameTemplateId ?: return error("Spielkarte ohne Spiel", "Bitte Game Template zuweisen.")
+        val templateId = card.gameTemplateId ?: return error("Spielkarte ohne Spiel", "Bitte eine Spielvorlage zuweisen.")
         val template = gameTemplateRepository.findById(templateId).orElse(null)
-            ?: return error("Spiel nicht gefunden", "Das verknuepfte Game Template fehlt.")
+            ?: return error("Spiel nicht gefunden", "Die verknüpfte Spielvorlage fehlt.")
         if (!template.active) {
-            return error("Spiel deaktiviert", "Dieses Game Template ist nicht aktiv.")
+            return error("Spiel deaktiviert", "Diese Spielvorlage ist nicht aktiv.")
         }
 
         val activeSession = findActiveSessionForGame(templateId, device.accountId)
@@ -339,7 +341,7 @@ class SessionStateMachineService(
             ?: return error("Keine aktive Session", "Zuerst eine Spielkarte scannen.")
         val playerId = card.playerId ?: return error("Spieler fehlt", "Diese Karte ist keinem Spieler zugeordnet.")
         val player = playerRepository.findById(playerId).orElse(null)
-            ?: return error("Spieler nicht gefunden", "Die Karten-Zuordnung ist ungueltig.")
+            ?: return error("Spieler nicht gefunden", "Die Kartenzuordnung ist ungültig.")
         if (!player.active) {
             return error("Spieler inaktiv", "${player.name} ist deaktiviert.")
         }
@@ -349,7 +351,7 @@ class SessionStateMachineService(
                 session = session,
                 screen = buildScreen(session),
                 effects = listOf("BEEP_ERROR"),
-                errors = listOf("Erst Spieloptionen auswaehlen."),
+                errors = listOf("Erst Spieloptionen auswählen."),
             )
             SessionStatus.BUILDING_TEAMS, SessionStatus.LOBBY -> {
                 if (session.currentStateKey == TEAM_SIZE_STATE) {
@@ -378,6 +380,7 @@ class SessionStateMachineService(
                 gameTemplateId = requireNotNull(template.id)
                 deviceId = requireNotNull(device.id)
                 accountId = device.accountId
+                gameNightId = gameNightService.activeForAccount(device.accountId)?.id
                 status = SessionStatus.BUILDING_TEAMS
                 currentStateKey = TEAM_SIZE_STATE
                 roundLimitType = RoundLimitType.NONE
@@ -496,7 +499,7 @@ class SessionStateMachineService(
         val sessionId = requireNotNull(session.id)
         val teams = teamRepository.findAllBySessionIdOrderByTeamOrderAsc(sessionId)
         val membership = memberRepository.findByPlayerIdAndSessionTeamIdIn(playerId, teams.mapNotNull { it.id })
-            ?: return error("Spieler nicht im Spiel", "Dieser Spieler gehoert zu keinem Team in der Session.")
+            ?: return error("Spieler nicht im Spiel", "Dieser Spieler gehört zu keinem Team in der Session.")
         val winningTeamId = requireNotNull(membership.sessionTeamId)
 
         val currentNode = currentFlowNode(session) ?: implicitRuntimePlayerWaitNode(session)
@@ -527,7 +530,7 @@ class SessionStateMachineService(
     private fun handleRunningPlayerScan(session: NfcGameSession, node: NfcFlowNode, playerId: UUID): StateMachineResult {
         val teams = teamRepository.findAllBySessionIdOrderByTeamOrderAsc(requireNotNull(session.id))
         val membership = memberRepository.findByPlayerIdAndSessionTeamIdIn(playerId, teams.mapNotNull { it.id })
-            ?: return error("Spieler nicht im Spiel", "Dieser Spieler gehoert zu keinem Team in der Session.")
+            ?: return error("Spieler nicht im Spiel", "Dieser Spieler gehört zu keinem Team in der Session.")
         val nextNodeId = nextNodeForCardScan(node, CardType.PLAYER)
         if (nextNodeId == null) {
             return recordWinFromPlayerCard(session, playerId)
@@ -1338,13 +1341,13 @@ class SessionStateMachineService(
             session = session,
             screen = buildScreen(session),
             effects = listOf("BEEP_ERROR"),
-            errors = listOf("Zuerst Empfaenger auswaehlen."),
+            errors = listOf("Zuerst Empfänger auswählen."),
         )
         if (payerAccount.id == targetAccount.id) {
-            return StateMachineResult(session, buildScreen(session), effects = listOf("BEEP_ERROR"), errors = listOf("Zahler und Empfaenger sind gleich."))
+            return StateMachineResult(session, buildScreen(session), effects = listOf("BEEP_ERROR"), errors = listOf("Zahler und Empfänger sind gleich."))
         }
         val payerName = playerRepository.findById(payerPlayerId).orElse(null)?.name ?: "Ein Spieler"
-        val targetLabel = bankTargets(session).firstOrNull { it.accountId == targetAccount.id }?.label ?: "Empfaenger"
+        val targetLabel = bankTargets(session).firstOrNull { it.accountId == targetAccount.id }?.label ?: "Empfänger"
         val currency = bankStepConfig(session).currency
         val amount = BigDecimal.valueOf(state.amount.toLong())
         val payerOwner = ValueOwner(OwnerType.TEAM, requireNotNull(payerAccount.teamId))
@@ -1471,8 +1474,8 @@ class SessionStateMachineService(
                 } else {
                     buildFlowScreen(session) ?: ScreenModel(
                         screenType = ScreenType.WAITING_FOR_SCAN,
-                        title = "Spiel laeuft",
-                        subtitle = "Spielerkarte fuer Gewinn scannen",
+                        title = "Spiel läuft",
+                        subtitle = "Spielerkarte für Gewinn scannen",
                         lines = listOf("Runde ${effectiveCurrentRoundNumber(session) + 1}", "Spielkarte scannt = beenden"),
                         context = mapOf("sessionStatus" to session.status.name),
                     )
@@ -1488,7 +1491,7 @@ class SessionStateMachineService(
 
             SessionStatus.RESET -> ScreenModel(
                 screenType = ScreenType.MESSAGE,
-                title = "Zurueckgesetzt",
+                title = "Zurückgesetzt",
                 subtitle = "Session wurde beendet",
                 context = mapOf("sessionStatus" to session.status.name),
             )
@@ -1546,7 +1549,7 @@ class SessionStateMachineService(
         } ?: ScreenModel(
             screenType = ScreenType.WAITING_FOR_SCAN,
             title = "Team komplett",
-            subtitle = "Spielkarte starten oder naechstes Team waehlen.",
+            subtitle = "Spielkarte starten oder nächstes Team wählen.",
             lines = compactTeamSummary(teams),
             context = mapOf("sessionStatus" to session.status.name),
         )
@@ -2169,7 +2172,7 @@ class SessionStateMachineService(
         val payerName = payerPlayerId?.let { playerRepository.findById(it).orElse(null)?.name }
             ?: if (payerAccount.ownerType == OwnerType.BANK) "Bank" else "Ein Spieler"
         val targetLabel = bankTargets(session).firstOrNull { it.accountId == targetAccount.id }?.label
-            ?: if (targetAccount.ownerType == OwnerType.BANK) "Bank" else "Empfaenger"
+            ?: if (targetAccount.ownerType == OwnerType.BANK) "Bank" else "Empfänger"
         val currency = bankStepConfig(session).currency
         val message = formatTimelineTemplate(session, payerName, targetLabel, amount, currency)
         return MoneyTransferExecution(
@@ -2188,7 +2191,7 @@ class SessionStateMachineService(
             ?: context["targetAccountId"]?.let { accountLabel(session, it) }
             ?: context["target"]?.let { accountLabel(session, it) }
             ?: context["lastAwardedTeam"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }?.let { teamLabel(it) }
-            ?: "Empfaenger"
+            ?: "Empfänger"
         val amount = context["amount"]?.toIntOrNull()
             ?: context["lastAwardedPoints"]?.toIntOrNull()
             ?: 0
@@ -2545,13 +2548,13 @@ class SessionStateMachineService(
                 val selected = targets.getOrNull(state.targetIndex.coerceIn(0, (targets.size - 1).coerceAtLeast(0)))
                 ScreenModel(
                     screenType = ScreenType.MENU,
-                    title = "Empfaenger waehlen",
+                    title = "Empfänger wählen",
                     subtitle = selected?.let { "Aktuell: ${it.label}" } ?: "Spieler oder Bank",
                     menuItems = targets.map { MenuItem(it.label, it.accountId.toString()) },
                     selectedIndex = state.targetIndex.coerceIn(0, (targets.size - 1).coerceAtLeast(0)),
                     lines = listOfNotNull(
                         state.message?.takeIf { it == "transfer" }?.let { "Transfer gebucht" },
-                        "Touch: Empfaenger antippen",
+                        "Touch: Empfänger antippen",
                         "Spielkarte scannt = beenden",
                     ),
                     context = mapOf("sessionStatus" to session.status.name, "bankMode" to state.mode),
@@ -2563,13 +2566,13 @@ class SessionStateMachineService(
                 val target = state.targetAccountId?.let { id -> targets.firstOrNull { it.accountId == id } }
                 ScreenModel(
                     screenType = ScreenType.NUMBER_PICKER,
-                    title = "Betrag waehlen",
-                    subtitle = "An ${target?.label ?: "Empfaenger"}",
+                    title = "Betrag wählen",
+                    subtitle = "An ${target?.label ?: "Empfänger"}",
                     numberValue = state.amount,
                     lines = listOf(
                         "Kleine Schritte: ${steps.smallStep}",
-                        "Grosse Schritte: ${steps.largeStep}",
-                        "Touch: Wert setzen uebernimmt sofort",
+                        "Große Schritte: ${steps.largeStep}",
+                        "Touch: Wert setzen übernimmt sofort",
                     ),
                     context = mapOf(
                         "sessionStatus" to session.status.name,
@@ -2585,7 +2588,7 @@ class SessionStateMachineService(
                 ScreenModel(
                     screenType = ScreenType.WAITING_FOR_SCAN,
                     title = "Zahler scannen",
-                    subtitle = "${state.amount} an ${target?.label ?: "Empfaenger"}",
+                    subtitle = "${state.amount} an ${target?.label ?: "Empfänger"}",
                     lines = listOf("Karte des zahlenden Spielers scannen"),
                     context = mapOf("sessionStatus" to session.status.name, "bankMode" to state.mode),
                 )

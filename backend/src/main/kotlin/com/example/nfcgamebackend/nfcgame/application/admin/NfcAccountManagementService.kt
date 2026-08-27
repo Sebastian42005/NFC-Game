@@ -11,6 +11,7 @@ import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcFlowNodeRepo
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcFlowStateRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcFlowTransitionRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameResultRepository
+import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameNightRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameSessionRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameTemplateRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcMoneyTransactionRepository
@@ -51,6 +52,7 @@ class NfcAccountManagementService(
     private val moneyTransactionRepository: NfcMoneyTransactionRepository,
     private val gameResultRepository: NfcGameResultRepository,
     private val sessionEventRepository: NfcSessionEventRepository,
+    private val gameNightRepository: NfcGameNightRepository,
     private val statisticsService: NfcStatisticsService,
 ) {
     fun listAccounts(currentUser: AuthenticatedUser?): List<AdminAccountSummaryResponse> {
@@ -96,6 +98,7 @@ class NfcAccountManagementService(
         }
 
         sessionRepository.deleteAllByAccountId(accountId)
+        gameNightRepository.deleteAllByAccountId(accountId)
     }
 
     private fun deleteCardsDevicesGamesAndPlayers(accountId: Long) {

@@ -1,6 +1,7 @@
 package com.example.nfcgamebackend.nfcgame.application.session
 
 import com.example.nfcgamebackend.nfcgame.application.statistics.NfcStatisticsService
+import com.example.nfcgamebackend.nfcgame.application.gamenight.NfcGameNightService
 import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
 import com.example.nfcgamebackend.nfcgame.domain.EventType
@@ -60,6 +61,7 @@ class SessionStateMachineServiceTest {
     private val valueRepository = mock(NfcSessionValueRepository::class.java)
     private val moneyTransactionRepository = mock(NfcMoneyTransactionRepository::class.java)
     private val resultRepository = mock(NfcGameResultRepository::class.java)
+    private val gameNightService = mock(NfcGameNightService::class.java)
     private val statisticsService = mock(NfcStatisticsService::class.java)
     private val objectMapper = ObjectMapper().registerKotlinModule()
 
@@ -77,6 +79,7 @@ class SessionStateMachineServiceTest {
         valueRepository,
         moneyTransactionRepository,
         resultRepository,
+        gameNightService,
         statisticsService,
         objectMapper,
     )

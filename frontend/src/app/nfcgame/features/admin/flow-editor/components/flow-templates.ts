@@ -25,7 +25,7 @@ export const gameBuilderTemplates: GameBuilderTemplate[] = [
   {
     id: 'blank',
     title: 'Leerer Builder',
-    description: 'Nur ein Startknoten. Gut fuer komplett eigene Spielideen.',
+    description: 'Nur ein Startknoten. Gut für komplett eigene Spielideen.',
   },
   {
     id: 'rounds',
@@ -104,7 +104,7 @@ function createRoundBasedFlow(gameTemplateId: string): GameFlowDto {
   });
   const check = node('IF_ELSE', 'Rundenlimit prüfen', 520, 1160, {
     expression: '$roundLimit == null || $currentRound < $roundLimit',
-    trueLabel: 'Naechste Runde',
+    trueLabel: 'Nächste Runde',
     falseLabel: 'Spiel beenden',
   });
   const end = node('END_GAME', 'Ergebnis anzeigen', 700, 1320, { text: 'Spiel beendet' });
@@ -272,7 +272,7 @@ function createCaboFlow(gameTemplateId: string): GameFlowDto {
   const check = node('IF_ELSE', 'Punktelimit prüfen', 520, 1190, {
     expression: '$loser.points >= $pointLimit',
     trueLabel: 'Spiel beenden',
-    falseLabel: 'Naechste Wertung',
+    falseLabel: 'Nächste Wertung',
   });
   const end = node('END_GAME', 'Spiel abschließen', 700, 1350, { text: 'Spiel vorbei. Wenigste Punkte gewinnen.' });
 

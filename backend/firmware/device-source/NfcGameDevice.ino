@@ -231,7 +231,7 @@ unsigned long lastSettingsPollAt = 0;
 unsigned long lastDisplayActivityAt = 0;
 long lastKnownGameSoundVersion = 0;
 long lastKnownAudioTestVersion = 0;
-long lastKnownTestSoundVersion = 0;
+long lastKnownTestSoundVersion = -1;
 bool startupAudioPlaybackAttempted = false;
 bool displayAwake = true;
 
@@ -286,6 +286,7 @@ struct DeviceSettings {
 String accentColor = "#00B8FF";
 String themeMode = "SYSTEM";
 String effectiveTheme = "DARK";
+String language = "DE";
 int displayBrightness = 80;
 unsigned long displayTimeoutMs = 5UL * 60UL * 1000UL;
 int deviceVolume = 80;
@@ -330,6 +331,7 @@ static const size_t CAP_PAIRING_CODE = 12;
 static const size_t CAP_ACCOUNT_USERNAME = 48;
 static const size_t CAP_AUDIO_URL = 256;
 static const size_t CAP_COLOR_HEX = 8;
+static const size_t CAP_LANGUAGE = 8;
 
 void reserveStringCapacity(String &value, size_t capacity) {
 if (capacity == 0) return;
@@ -374,6 +376,14 @@ void setLastRawUidLimited(const String &value) {
 setStringLimited(lastRawUid, value.c_str(), CAP_LAST_UUID - 1);
 }
 
+bool isEnglishLanguage() {
+return deviceSettings.language == "EN";
+}
+
+String localizedText(const char *de, const char *en) {
+return String(isEnglishLanguage() ? en : de);
+}
+
 bool ensureWifiConnected(bool showStatus = true);
 
 void initStringCapacities() {
@@ -394,6 +404,7 @@ reserveStringCapacity(linkedAccountUsername, CAP_ACCOUNT_USERNAME);
 reserveStringCapacity(deviceSettings.accentColor, CAP_COLOR_HEX);
 reserveStringCapacity(deviceSettings.themeMode, CAP_SCREEN_TYPE);
 reserveStringCapacity(deviceSettings.effectiveTheme, CAP_SCREEN_TYPE);
+reserveStringCapacity(deviceSettings.language, CAP_LANGUAGE);
 
 reserveStringCapacity(screen.screenType, CAP_SCREEN_TYPE);
 reserveStringCapacity(screen.title, CAP_SCREEN_TITLE);
@@ -917,7 +928,7 @@ void buildFooterText(char *buffer, size_t bufferSize) {
 if (bufferSize == 0) return;
 
 if (lastScanWasPlayer && lastScannedPlayerName.length() > 0) {
-snprintf(buffer, bufferSize, "Letzter Spieler: %s", lastScannedPlayerName.c_str());
+snprintf(buffer, bufferSize, "%s: %s", localizedText("Letzter Spieler", "Last player").c_str(), lastScannedPlayerName.c_str());
 return;
 }
 
@@ -927,40 +938,40 @@ return;
 }
 
 if (lastError.length() > 0) {
-snprintf(buffer, bufferSize, "Fehler: %s", lastError.c_str());
+snprintf(buffer, bufferSize, "%s: %s", localizedText("Fehler", "Error").c_str(), lastError.c_str());
 return;
 }
 
-snprintf(buffer, bufferSize, "%s", statusText.length() > 0 ? statusText.c_str() : "Bereit");
+snprintf(buffer, bufferSize, "%s", statusText.length() > 0 ? statusText.c_str() : localizedText("Bereit", "Ready").c_str());
 }
 
 String linkedAccountFooterText() {
 if (!deviceLinked) {
 if (WiFi.status() != WL_CONNECTED) {
-return "WLAN offline";
+return localizedText("WLAN offline", "Wi-Fi offline");
 }
 
 if (!deviceRegistered && lastError.startsWith("Register HTTP ")) {
   int code = lastError.substring(14).toInt();
 
   if (code == 404) {
-    return "Device API fehlt";
+    return localizedText("Device API fehlt", "Device API missing");
   }
 
   if (code == 409) {
-    return "Device Konflikt";
+    return localizedText("Device-Konflikt", "Device conflict");
   }
 
   if (code > 0) {
-    return "Register Fehler";
+    return localizedText("Registrierungsfehler", "Registration error");
   }
 }
 
 if (!deviceRegistered) {
-  return "Backend offline";
+  return localizedText("Backend offline", "Backend offline");
 }
 
-return "Nicht verbunden";
+return localizedText("Nicht verbunden", "Not linked");
 
 }
 
@@ -968,7 +979,7 @@ if (linkedAccountUsername.length() > 0) {
 return linkedAccountUsername;
 }
 
-return "Account verbunden";
+return localizedText("Account verbunden", "Account linked");
 }
 
 void drawFooter() {
@@ -994,7 +1005,7 @@ lastDrawnPairingCode = "";
 lastDrawnPairingFooterText = "";
 }
 
-void setStartScreen(const String &status = "Bereit fuer neuen Scan") {
+void setStartScreen(const String &status = "") {
 invalidatePairingCodeScreen();
 
 sessionId = "";
@@ -1005,8 +1016,8 @@ menuPageStart = 0;
 autoReturnToStartPending = false;
 
 screen.screenType = "WAITING_FOR_SCAN";
-screen.title = "Bereit";
-screen.subtitle = "Karte scannen zum Starten";
+screen.title = localizedText("Bereit", "Ready");
+screen.subtitle = localizedText("Karte scannen zum Starten", "Scan card to start");
 screen.nodeType = "";
 screen.sessionStatus = "";
 screen.teamName = "";
@@ -1025,7 +1036,7 @@ screen.backendStatus = "NO SESSION";
 clearUiHints();
 clearAllowedCards();
 
-setStatusTextLimited(status);
+setStatusTextLimited(status.length() > 0 ? status : localizedText("Bereit für neuen Scan", "Ready for next scan"));
 }
 
 void drawPairingCodeScreen() {
@@ -1038,9 +1049,9 @@ return;
 
 tft.fillScreen(COLOR_BG);
 tft.fillRect(0, 0, SCREEN_W, 58, COLOR_PANEL);
-drawTextLine("Reader verbinden", 28, 22, 24, COLOR_ACCENT, 2, COLOR_PANEL);
+drawTextLine(localizedText("Reader verbinden", "Link reader"), 28, 22, 24, COLOR_ACCENT, 2, COLOR_PANEL);
 
-drawTextLine("Code im Account eingeben", 52, 76, 32, COLOR_MUTED, 1);
+drawTextLine(localizedText("Code im Admin unter Geräte eingeben", "Enter code in Admin > Devices"), 30, 76, 44, COLOR_MUTED, 1);
 
 String code = pairingCode.length() > 0 ? pairingCode : "------";
 tft.setTextColor(COLOR_TEXT, COLOR_BG);
@@ -1053,8 +1064,8 @@ if (textX < 8) textX = 8;
 tft.setCursor(textX, 106);
 tft.print(code);
 
-drawTextLine("nfc-game/account", 92, 184, 30, COLOR_MUTED, 1);
-drawTextLine("Verbindung wird automatisch erkannt", 42, 204, 40, COLOR_MUTED, 1);
+drawTextLine("nfc-game/admin/devices", 36, 184, 42, COLOR_MUTED, 1);
+drawTextLine(localizedText("Verbindung wird automatisch erkannt", "Connection is detected automatically"), 26, 204, 46, COLOR_MUTED, 1);
 drawFooter();
 
 pairingCodeScreenVisible = true;
@@ -1065,14 +1076,14 @@ lastDrawnPairingFooterText = footerText;
 void drawWifiRecoveryScreen() {
 tft.fillScreen(COLOR_BG);
 tft.fillRect(0, 0, SCREEN_W, 66, COLOR_PANEL);
-drawTextLine("WLAN fehlgeschlagen", 32, 24, 24, COLOR_ACCENT, 2, COLOR_PANEL);
+drawTextLine(localizedText("WLAN fehlgeschlagen", "Wi-Fi failed"), 32, 24, 24, COLOR_ACCENT, 2, COLOR_PANEL);
 
-drawTextLine("Gespeichertes WLAN:", 18, 82, 34, COLOR_MUTED, 1);
+drawTextLine(localizedText("Gespeichertes WLAN:", "Saved Wi-Fi:"), 18, 82, 34, COLOR_MUTED, 1);
 drawTextLine(savedWifiSsid, 18, 102, 23, COLOR_TEXT, 2);
-drawTextLine("Was soll ich tun?", 18, 132, 34, COLOR_MUTED, 1);
+drawTextLine(localizedText("Was soll ich tun?", "What should I do?"), 18, 132, 34, COLOR_MUTED, 1);
 
-drawButton(18, 162, 132, 50, "Nochmal", COLOR_ACCENT, COLOR_SELECTED, COLOR_TEXT, 2);
-drawButton(170, 162, 132, 50, "Neu", COLOR_LINE, COLOR_PANEL_INNER, COLOR_TEXT, 2);
+drawButton(18, 162, 132, 50, localizedText("Nochmal", "Retry"), COLOR_ACCENT, COLOR_SELECTED, COLOR_TEXT, 2);
+drawButton(170, 162, 132, 50, localizedText("Neu", "New"), COLOR_LINE, COLOR_PANEL_INNER, COLOR_TEXT, 2);
 }
 
 void redrawTeamSizeValueOnly() {
@@ -1172,7 +1183,7 @@ int scanned = constrain(screen.teamPlayerCount, 0, target);
 String teamLabel = screen.teamName.length() > 0 ? screen.teamName : "Team";
 
 drawTextLine(teamLabel, 16, 78, 46, COLOR_ACCENT, 2);
-drawTextLine("Teamgroesse fest", 186, 82, 24, COLOR_MUTED, 1);
+drawTextLine(localizedText("Teamgröße fest", "Team size set"), 186, 82, 24, COLOR_MUTED, 1);
 
 tft.fillRoundRect(16, 108, 82, 62, 10, COLOR_SELECTED);
 tft.drawRoundRect(16, 108, 82, 62, 10, COLOR_ACCENT);
@@ -1184,11 +1195,11 @@ tft.setCursor(16 + (82 - textW) / 2, 122);
 tft.print(value);
 
 char progressBuffer[32];
-snprintf(progressBuffer, sizeof(progressBuffer), "%d/%d gescannt", scanned, target);
+snprintf(progressBuffer, sizeof(progressBuffer), isEnglishLanguage() ? "%d/%d scanned" : "%d/%d gescannt", scanned, target);
 drawTextLineBuffer(progressBuffer, 116, 114, 32, COLOR_TEXT, 2);
 
 char remainingBuffer[40];
-snprintf(remainingBuffer, sizeof(remainingBuffer), "Noch %d moeglich", remaining);
+snprintf(remainingBuffer, sizeof(remainingBuffer), isEnglishLanguage() ? "%d left" : "Noch %d möglich", remaining);
 drawTextLineBuffer(remainingBuffer, 116, 142, 34, COLOR_MUTED, 1);
 
 if (screen.lineCount > 0) {
@@ -1198,7 +1209,7 @@ if (screen.lineCount > 0) {
     y += 16;
   }
 } else {
-  drawTextLine("Naechste Spielerkarte scannen.", 16, 188, 47, COLOR_MUTED, 1);
+  drawTextLine(localizedText("Nächste Spielerkarte scannen.", "Scan the next player card."), 16, 188, 47, COLOR_MUTED, 1);
 }
 
 return;
@@ -1206,7 +1217,7 @@ return;
 }
 
 int y = 82;
-String subtitle = screen.subtitle.length() > 0 ? screen.subtitle : "Warte auf Scan...";
+String subtitle = screen.subtitle.length() > 0 ? screen.subtitle : localizedText("Warte auf Scan...", "Waiting for scan...");
 drawTextLine(subtitle, 16, y, 46, COLOR_ACCENT, 2);
 y += 28;
 
@@ -1216,12 +1227,12 @@ drawTextLine(screen.lines[i], 16, y, 48, i == 0 ? COLOR_TEXT : COLOR_MUTED, i ==
 y += i == 0 ? 24 : 18;
 }
 } else {
-drawTextLine("Halte die Karte an den Leser.", 16, y, 47, COLOR_TEXT, 1);
+drawTextLine(localizedText("Halte die Karte an den Leser.", "Hold the card to the reader."), 16, y, 47, COLOR_TEXT, 1);
 }
 
 if (lastScanWasPlayer && lastScannedPlayerName.length() > 0) {
 char lastScanBuffer[96];
-snprintf(lastScanBuffer, sizeof(lastScanBuffer), "Letzter Spieler: %s", lastScannedPlayerName.c_str());
+snprintf(lastScanBuffer, sizeof(lastScanBuffer), "%s: %s", localizedText("Letzter Spieler", "Last player").c_str(), lastScannedPlayerName.c_str());
 drawTextLineBuffer(lastScanBuffer, 16, 198, 47, COLOR_MUTED, 1);
 }
 }
@@ -1299,9 +1310,9 @@ drawTextLineBuffer(pageBuffer, layout.nextX + 6, layout.nextY + 5, 8, COLOR_MUTE
 
 void drawTeamSizeScreen() {
 if (screen.canStartGame) {
-drawTextLine("Fertige Teams: " + String(screen.completedTeamCount), 18, 74, 40, COLOR_MUTED, 1);
+drawTextLine(localizedText("Fertige Teams: ", "Teams ready: ") + String(screen.completedTeamCount), 18, 74, 40, COLOR_MUTED, 1);
 } else {
-drawTextLine("Zahl waehlen, erste Karte scannen", 18, 74, 48, COLOR_MUTED, 1);
+drawTextLine(localizedText("Zahl wählen, erste Karte scannen", "Choose a number, then scan the first card"), 18, 74, 48, COLOR_MUTED, 1);
 }
 
 tft.fillRoundRect(110, 84, 100, 62, 12, COLOR_SELECTED);
@@ -1323,7 +1334,7 @@ drawButton(
 156,
 144,
 36,
-"Spiel starten",
+localizedText("Spiel starten", "Start game"),
 screen.canStartGame ? COLOR_ACCENT : COLOR_LINE,
 screen.canStartGame ? COLOR_SELECTED : COLOR_PANEL_INNER,
 COLOR_TEXT,
@@ -1382,7 +1393,7 @@ redrawNumberStepperValueOnly();
 
 drawButton(26, 66, 60, 46, "<", COLOR_LINE, COLOR_PANEL_INNER, COLOR_TEXT, 3);
 drawButton(234, 66, 60, 46, ">", COLOR_LINE, COLOR_PANEL_INNER, COLOR_TEXT, 3);
-drawButton(92, 146, 136, 40, "Auswaehlen", COLOR_ACCENT, COLOR_SELECTED, COLOR_TEXT, 1);
+drawButton(92, 146, 136, 40, localizedText("Auswählen", "Select"), COLOR_ACCENT, COLOR_SELECTED, COLOR_TEXT, 1);
 }
 
 void drawScreen() {
@@ -2210,12 +2221,12 @@ Serial.println("Settings testsound skipped: sounds disabled or volume zero");
 return;
 }
 
-setStatusTextLimited("Testsound spielt");
+setStatusTextLimited(localizedText("Testton spielt", "Test tone playing"));
 drawFooter();
 writeTone(16000, 180, 880);
 delay(60);
 writeTone(16000, 180, 1320);
-setStatusTextLimited("Testsound abgespielt");
+setStatusTextLimited(localizedText("Testton abgespielt", "Test tone played"));
 drawFooter();
 }
 
@@ -2449,11 +2460,11 @@ if (!error) {
 
 deviceRegistered = true;
 if (deviceLinked) {
-  setStatusTextLimited("Account geprueft");
+  setStatusTextLimited(localizedText("Account geprüft", "Account checked"));
 } else if (deviceCreatedInBackend) {
-  setStatusTextLimited("Reader neu registriert");
+  setStatusTextLimited(localizedText("Reader neu registriert", "Reader registered"));
 } else {
-  setStatusTextLimited("Pairing Code bereit");
+  setStatusTextLimited(localizedText("Pairing-Code bereit", "Pairing code ready"));
 }
 return true;
 
@@ -2709,8 +2720,8 @@ doc.clear();
 DeserializationError err = deserializeJson(doc, body);
 
 if (err) {
-setLastErrorLimited("JSON Fehler");
-showTransientFooter("Antwort ungueltig/zu gross", 2500);
+setLastErrorLimited(localizedText("JSON-Fehler", "JSON error"));
+showTransientFooter(localizedText("Antwort ungültig oder zu groß", "Response invalid or too large"), 2500);
 Serial.print("JSON parse failed: ");
 Serial.println(err.c_str());
 Serial.print("JSON length: ");
@@ -2737,7 +2748,7 @@ lastScanWasPlayer = false;
 JsonObject s = doc["screen"];
 bool screenApplied = applyScreenModel(s, doc["currentStateKey"] | "", doc["status"] | "NO SESSION");
 if (!screenApplied) {
-setLastErrorLimited("Screen fehlt");
+setLastErrorLimited(localizedText("Screen fehlt", "Screen missing"));
 return false;
 }
 
@@ -2776,8 +2787,12 @@ setStringLimited(lastError, errors[0].as<const char*>(), CAP_LAST_ERROR - 1);
 
 if (isBackendTerminalState()) {
 String terminalStatus = screen.backendStatus;
-setStartScreen(terminalStatus == "RESET" ? "Session reset" : "Spiel beendet");
-showTransientFooter(terminalStatus == "RESET" ? "Session wurde beendet" : "Spiel beendet", 2200);
+setStartScreen(terminalStatus == "RESET"
+  ? localizedText("Session zurückgesetzt", "Session reset")
+  : localizedText("Spiel beendet", "Game finished"));
+showTransientFooter(terminalStatus == "RESET"
+  ? localizedText("Session wurde beendet", "Session ended")
+  : localizedText("Spiel beendet", "Game finished"), 2200);
 } else {
 autoReturnToStartPending = false;
 }
@@ -2810,8 +2825,8 @@ if (!ok) {
 return false;
 }
 
-setStatusTextLimited("Sofortanzeige");
-showTransientFooter("Backend prueft...", 1200);
+setStatusTextLimited(localizedText("Sofortanzeige", "Instant preview"));
+showTransientFooter(localizedText("Backend prüft...", "Backend is checking..."), 1200);
 lastScreenRefreshAt = millis();
 drawScreen();
 return true;
@@ -2861,7 +2876,7 @@ JsonDocument *payloadDoc,
 const String *eventStateKeyOverride = nullptr
 ) {
 if (WiFi.status() != WL_CONNECTED && !ensureWifiConnected()) {
-setLastErrorLimited("WLAN offline");
+setLastErrorLimited(localizedText("WLAN offline", "Wi-Fi offline"));
 drawScreen();
 return false;
 }
@@ -2916,7 +2931,7 @@ HTTPClient http;
 String url = apiUrl("/api/device/events");
 
 if (!beginHttpClient(http, url)) {
-setLastErrorLimited("HTTP init failed");
+setLastErrorLimited(localizedText("HTTP-Start fehlgeschlagen", "HTTP init failed"));
 drawScreen();
 return false;
 }
@@ -2936,7 +2951,7 @@ if (code < 200 || code >= 300) {
 setLastErrorLimited("HTTP " + String(code));
 
 screen.screenType = "ERROR";
-screen.title = "Request Fehler";
+screen.title = localizedText("Anfrage fehlgeschlagen", "Request failed");
 screen.subtitle = response.length() > 0
   ? fitText(response, 80)
   : lastError;
@@ -2951,7 +2966,7 @@ return false;
 uint32_t beforeSnapshot = screenSnapshotHash();
 bool ok = parseDeviceResponse(response);
 
-setStatusTextLimited(eventType + " gesendet");
+setStatusTextLimited(eventType + localizedText(" gesendet", " sent"));
 
 if (!ok && sessionId.length() > 0) {
 loadCurrentScreen();
@@ -2980,7 +2995,7 @@ HTTPClient http;
 String url = apiUrl("/api/device/sessions/" + sessionId + "/screen");
 
 if (!beginHttpClient(http, url)) {
-setLastErrorLimited("HTTP init failed");
+setLastErrorLimited(localizedText("HTTP-Start fehlgeschlagen", "HTTP init failed"));
 drawScreen();
 return false;
 }
@@ -2994,7 +3009,7 @@ String response = http.getString();
 http.end();
 
 if (code < 200 || code >= 300) {
-setLastErrorLimited("Screen HTTP " + String(code));
+setLastErrorLimited(localizedText("Screen HTTP ", "Screen HTTP ") + String(code));
 drawScreen();
 return false;
 }
@@ -3002,7 +3017,7 @@ return false;
 bool ok = parseDeviceResponse(response);
 
 if (ok) {
-setStatusTextLimited("Screen geladen");
+setStatusTextLimited(localizedText("Screen geladen", "Screen loaded"));
 uint32_t afterSnapshot = screenSnapshotHash();
 
 if (afterSnapshot != beforeSnapshot) {
@@ -3114,11 +3129,13 @@ long previousSettingsVersion = deviceSettings.settingsVersion;
 long previousTestSoundVersion = deviceSettings.testSoundVersion;
 String previousAccent = deviceSettings.accentColor;
 String previousTheme = deviceSettings.effectiveTheme;
+String previousLanguage = deviceSettings.language;
 int previousBrightness = deviceSettings.displayBrightness;
 
 setStringLimited(deviceSettings.accentColor, doc["accentColor"] | "#00B8FF", CAP_COLOR_HEX - 1);
 setStringLimited(deviceSettings.themeMode, doc["themeMode"] | "SYSTEM", CAP_SCREEN_TYPE - 1);
 setStringLimited(deviceSettings.effectiveTheme, doc["effectiveTheme"] | "DARK", CAP_SCREEN_TYPE - 1);
+setStringLimited(deviceSettings.language, doc["language"] | "DE", CAP_LANGUAGE - 1);
 deviceSettings.displayBrightness = constrain(doc["displayBrightness"] | 80, 0, 100);
 deviceSettings.deviceVolume = constrain(doc["deviceVolume"] | 80, 0, 100);
 deviceSettings.soundsEnabled = doc["soundsEnabled"] | true;
@@ -3134,6 +3151,7 @@ deviceSettings.displayTimeoutMs = max(0, timeoutSeconds) * 1000UL;
 
 bool visualChanged = previousAccent != deviceSettings.accentColor || previousTheme != deviceSettings.effectiveTheme;
 bool brightnessChanged = previousBrightness != deviceSettings.displayBrightness;
+bool languageChanged = previousLanguage != deviceSettings.language;
 
 if (visualChanged) {
 applyThemeColors();
@@ -3144,11 +3162,23 @@ if (brightnessChanged) {
 applyDisplayBrightness();
 }
 
-if (lastKnownTestSoundVersion == 0) {
-lastKnownTestSoundVersion = deviceSettings.testSoundVersion;
-} else if (deviceSettings.testSoundVersion > previousTestSoundVersion && deviceSettings.testSoundVersion > lastKnownTestSoundVersion) {
+if (languageChanged) {
+  if (sessionId.length() > 0) {
+    loadCurrentScreen();
+  } else if (pairingCode.length() > 0 && !deviceLinked) {
+    drawPairingCodeScreen();
+  } else if (!wifiSetupMode) {
+    setStartScreen(deviceLinked ? localizedText("Account verbunden", "Account linked") : localizedText("Bereit", "Ready"));
+    drawScreen();
+  }
+}
+
+if (deviceSettings.testSoundVersion > previousTestSoundVersion && deviceSettings.testSoundVersion > lastKnownTestSoundVersion) {
 lastKnownTestSoundVersion = deviceSettings.testSoundVersion;
 playSettingsTestSound();
+acknowledgeAudioPlayback("/api/device/settings/test-sound/ack", deviceSettings.testSoundVersion);
+} else if (deviceSettings.testSoundVersion > lastKnownTestSoundVersion) {
+lastKnownTestSoundVersion = deviceSettings.testSoundVersion;
 }
 
 if (deviceSettings.settingsVersion != previousSettingsVersion) {
@@ -3760,11 +3790,11 @@ return screen.sessionStatus == "RUNNING"
 void drawEndGameConfirmationScreen() {
 tft.fillScreen(COLOR_BG);
 tft.fillRect(0, 0, SCREEN_W, 62, COLOR_PANEL);
-drawTextLine("Spiel beenden?", 42, 22, 24, COLOR_ACCENT, 2, COLOR_PANEL);
-drawTextLine("Spielkarte wurde gescannt.", 20, 82, 46, COLOR_TEXT, 1);
-drawTextLine("Bist du sicher?", 20, 104, 46, COLOR_MUTED, 2);
-drawButton(18, 160, 132, 50, "Zurueck", COLOR_LINE, COLOR_PANEL_INNER, COLOR_TEXT, 2);
-drawButton(170, 160, 132, 50, "Beenden", COLOR_ACCENT, COLOR_SELECTED, COLOR_TEXT, 2);
+drawTextLine(localizedText("Spiel beenden?", "Finish game?"), 42, 22, 24, COLOR_ACCENT, 2, COLOR_PANEL);
+drawTextLine(localizedText("Spielkarte wurde gescannt.", "Game card was scanned."), 20, 82, 46, COLOR_TEXT, 1);
+drawTextLine(localizedText("Bist du sicher?", "Are you sure?"), 20, 104, 46, COLOR_MUTED, 2);
+drawButton(18, 160, 132, 50, localizedText("Zurück", "Back"), COLOR_LINE, COLOR_PANEL_INNER, COLOR_TEXT, 2);
+drawButton(170, 160, 132, 50, localizedText("Beenden", "Finish"), COLOR_ACCENT, COLOR_SELECTED, COLOR_TEXT, 2);
 }
 
 bool waitForEndGameConfirmation() {
@@ -3839,8 +3869,8 @@ return;
 }
 
 if (shouldConfirmEndGameScan(uuid) && !waitForEndGameConfirmation()) {
-setStatusTextLimited("Spiel laeuft weiter");
-showTransientFooter("Abbrechen bestaetigt", 1200);
+setStatusTextLimited(localizedText("Spiel läuft weiter", "Game continues"));
+showTransientFooter(localizedText("Abbrechen bestätigt", "Cancel confirmed"), 1200);
 drawFooter();
 return;
 }
@@ -3977,7 +4007,7 @@ if (networkCount <= 0) {
 Serial.println("Keine WLANs gefunden");
 wifiScanDone = true;
 WiFi.scanDelete();
-setStatusTextLimited("Keine WLANs gefunden");
+setStatusTextLimited(localizedText("Keine WLANs gefunden", "No Wi-Fi networks found"));
 return;
 }
 
@@ -4001,7 +4031,7 @@ wifiScanDone = true;
 
 Serial.print("WLAN-Scan fertig, gefunden: ");
 Serial.println(scannedWifiCount);
-setStatusTextLimited("WLAN-Scan fertig");
+setStatusTextLimited(localizedText("WLAN-Scan fertig", "Wi-Fi scan finished"));
 }
 
 String wifiNetworkOptionsHtml() {
@@ -4041,7 +4071,9 @@ String setupPageHtml(bool showForm) {
 String escapedSsid = htmlEscape(savedWifiSsid);
 String html = "";
 
-html += "<!doctype html><html lang=\"de\"><head>";
+html += "<!doctype html><html lang=\"";
+html += isEnglishLanguage() ? "en" : "de";
+html += "\"><head>";
 html += "<meta charset=\"utf-8\">";
 html += "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">";
 html += "<title>NFC Game Device Setup</title>";
@@ -4060,37 +4092,37 @@ html += "</style></head><body><main><section>";
 html += "<h1>NFC Game Device</h1>";
 
 if (wifiConnectionFailed && wifiCredentialsAvailable) {
-html += "<p class=\"warn\">Verbindung mit dem gespeicherten WLAN fehlgeschlagen.</p>";
-html += "<p>Gespeichertes WLAN: <strong>" + escapedSsid + "</strong></p>";
+html += "<p class=\"warn\">" + localizedText("Verbindung mit dem gespeicherten WLAN fehlgeschlagen.", "Connection to the saved Wi-Fi failed.") + "</p>";
+html += "<p>" + localizedText("Gespeichertes WLAN:", "Saved Wi-Fi:") + " <strong>" + escapedSsid + "</strong></p>";
 } else if (!wifiCredentialsAvailable) {
-html += "<p>Es sind noch keine WLAN-Daten gespeichert.</p>";
+html += "<p>" + localizedText("Es sind noch keine WLAN-Daten gespeichert.", "No Wi-Fi details are saved yet.") + "</p>";
 } else {
-html += "<p>Setup-Modus ist aktiv.</p>";
+html += "<p>" + localizedText("Setup-Modus ist aktiv.", "Setup mode is active.") + "</p>";
 }
 
-html += "<p>Setup-WLAN: <strong>";
+html += "<p>" + localizedText("Setup-WLAN:", "Setup Wi-Fi:") + " <strong>";
 html += SETUP_AP_SSID;
-html += "</strong><br>Adresse: <strong>http://192.168.4.1</strong></p>";
+html += "</strong><br>" + localizedText("Adresse:", "Address:") + " <strong>http://192.168.4.1</strong></p>";
 
 if (wifiCredentialsAvailable && !showForm) {
-html += "<form method=\"post\" action=\"/retry\"><button type=\"submit\">Nochmal versuchen</button></form>";
-html += "<a class=\"button secondary\" href=\"/new\">Neues WLAN eingeben</a>";
+html += "<form method=\"post\" action=\"/retry\"><button type=\"submit\">" + localizedText("Nochmal versuchen", "Try again") + "</button></form>";
+html += "<a class=\"button secondary\" href=\"/new\">" + localizedText("Neues WLAN eingeben", "Enter new Wi-Fi") + "</a>";
 }
 
 if (showForm || !wifiCredentialsAvailable) {
-html += "<a class=\"button secondary\" href=\"/scan\">WLANs neu suchen</a>";
+html += "<a class=\"button secondary\" href=\"/scan\">" + localizedText("WLANs neu suchen", "Scan Wi-Fi again") + "</a>";
 html += "<form method=\"post\" action=\"/save\">";
 html += wifiNetworkOptionsHtml();
-html += "<label for=\"ssid_manual\">SSID manuell eingeben</label>";
-html += "<input id=\"ssid_manual\" name=\"ssid_manual\" maxlength=\"63\" value=\"\" placeholder=\"Nur ausfüllen, wenn nötig\" autocomplete=\"off\">";
-html += "<label for=\"password\">Passwort</label>";
+html += "<label for=\"ssid_manual\">" + localizedText("SSID manuell eingeben", "Enter SSID manually") + "</label>";
+html += "<input id=\"ssid_manual\" name=\"ssid_manual\" maxlength=\"63\" value=\"\" placeholder=\"" + localizedText("Nur ausfüllen, wenn nötig", "Only fill in if needed") + "\" autocomplete=\"off\">";
+html += "<label for=\"password\">" + localizedText("Passwort", "Password") + "</label>";
 html += "<input id=\"password\" name=\"password\" type=\"password\" maxlength=\"127\" autocomplete=\"current-password\">";
-html += "<button type=\"submit\">Speichern und verbinden</button>";
+html += "<button type=\"submit\">" + localizedText("Speichern und verbinden", "Save and connect") + "</button>";
 html += "</form>";
 }
 
 if (wifiCredentialsAvailable) {
-html += "<form method=\"post\" action=\"/reset-wifi\"><button class=\"secondary\" type=\"submit\">WLAN-Daten löschen</button></form>";
+html += "<form method=\"post\" action=\"/reset-wifi\"><button class=\"secondary\" type=\"submit\">" + localizedText("WLAN-Daten löschen", "Delete Wi-Fi details") + "</button></form>";
 }
 
 html += "</section></main></body></html>";
@@ -4176,13 +4208,15 @@ String ssid = manualSsid.length() > 0 ? manualSsid : selectedSsid;
 ssid.trim();
 
 if (ssid.length() == 0) {
-  setupServer.send(400, "text/plain; charset=utf-8", "Bitte ein WLAN auswählen oder eine SSID manuell eingeben.");
+  setupServer.send(400, "text/plain; charset=utf-8", localizedText("Bitte ein WLAN auswählen oder eine SSID manuell eingeben.", "Please select a Wi-Fi network or enter an SSID manually."));
   return;
 }
 
 saveWifiCredentials(ssid, password);
 setupServer.send(200, "text/html; charset=utf-8",
-  "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body><p>WLAN-Daten gespeichert. Das Gerät startet neu und verbindet sich.</p></body></html>");
+  String("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body><p>")
+  + localizedText("WLAN-Daten gespeichert. Das Gerät startet neu und verbindet sich.", "Wi-Fi details saved. The device restarts and reconnects.")
+  + "</p></body></html>");
 Serial.println("Neustart nach Speichern neuer WLAN-Daten");
 restartAfterResponse();
 
@@ -4196,7 +4230,9 @@ return;
 
 Serial.println("Neustart fuer erneuten WLAN-Verbindungsversuch angefordert");
 setupServer.send(200, "text/html; charset=utf-8",
-  "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body><p>Das Gerät startet neu und versucht erneut, sich mit dem gespeicherten WLAN zu verbinden.</p></body></html>");
+  String("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body><p>")
+  + localizedText("Das Gerät startet neu und versucht erneut, sich mit dem gespeicherten WLAN zu verbinden.", "The device restarts and tries the saved Wi-Fi again.")
+  + "</p></body></html>");
 restartAfterResponse();
 
 });
@@ -4204,7 +4240,9 @@ restartAfterResponse();
 setupServer.on("/reset-wifi", HTTP_POST, []() {
 clearWifiCredentials();
 setupServer.send(200, "text/html; charset=utf-8",
-"<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body><p>WLAN-Daten gelöscht. Das Gerät startet neu.</p></body></html>");
+String("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body><p>")
++ localizedText("WLAN-Daten gelöscht. Das Gerät startet neu.", "Wi-Fi details deleted. The device restarts.")
++ "</p></body></html>");
 Serial.println("Neustart nach WLAN-Reset");
 restartAfterResponse();
 });
@@ -4218,7 +4256,7 @@ void startWifiSetupMode(bool showNewForm) {
 wifiSetupMode = true;
 wifiShowNewForm = showNewForm || !wifiCredentialsAvailable;
 
-showBoot("Setup WLAN starten...");
+showBoot(localizedText("WLAN-Setup starten...", "Starting Wi-Fi setup..."));
 
 WiFi.disconnect(true, true);
 configureWifiRadio();
@@ -4241,14 +4279,14 @@ setupServer.begin();
 dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
 
 screen.screenType = "MESSAGE";
-screen.title = "WLAN Setup";
-screen.subtitle = "Mit Setup-WLAN verbinden";
+screen.title = localizedText("WLAN-Setup", "Wi-Fi setup");
+screen.subtitle = localizedText("Mit Setup-WLAN verbinden", "Connect to setup Wi-Fi");
 screen.lineCount = 2;
 screen.lines[0] = "SSID: NfcGameDevice-Setup";
 screen.lines[1] = "Browser: http://192.168.4.1";
 screen.menuCount = 0;
 screen.backendStatus = "SETUP";
-setStatusTextLimited("WLAN Setup aktiv");
+setStatusTextLimited(localizedText("WLAN-Setup aktiv", "Wi-Fi setup active"));
 drawScreen();
 }
 
@@ -4256,7 +4294,7 @@ void connectWiFi() {
 loadWifiCredentials();
 
 if (!wifiCredentialsAvailable) {
-setLastErrorLimited("Keine WLAN-Daten");
+setLastErrorLimited(localizedText("Keine WLAN-Daten", "No Wi-Fi details"));
 startWifiSetupMode(true);
 return;
 }
@@ -4277,7 +4315,7 @@ if (WiFi.status() == WL_CONNECTED) return true;
 if (!wifiCredentialsAvailable || savedWifiSsid.length() == 0) return false;
 
 if (showStatus) {
-setStatusTextLimited("WLAN reconnect...");
+setStatusTextLimited(localizedText("WLAN verbindet neu...", "Reconnecting Wi-Fi..."));
 drawScreen();
 }
 
@@ -4351,7 +4389,7 @@ Serial.println("Audio output muted");
 initStringCapacities();
 loadOrCreateDeviceIdentity();
 
-setStartScreen("Bereit");
+setStartScreen(localizedText("Bereit", "Ready"));
 
 drawScreen();
 
@@ -4419,7 +4457,7 @@ bool wasLinked = deviceLinked;
 registerDeviceWithBackend();
 
   if (!wasLinked && deviceLinked) {
-    setStartScreen("Account verbunden");
+    setStartScreen(localizedText("Account verbunden", "Account linked"));
     fetchDeviceSettings(true);
     drawScreen();
     playStartupAudioOnce();
@@ -4439,7 +4477,7 @@ handleNfc();
 handleDisplayTimeout();
 
 if (autoReturnToStartPending && millis() - finishedScreenAt >= 5000) {
-setStartScreen("Startscreen aktiv");
+setStartScreen(localizedText("Startscreen aktiv", "Start screen active"));
 drawScreen();
 }
 

@@ -146,6 +146,13 @@ class NfcDeviceController(
         @RequestHeader("X-Device-Key") deviceKey: String,
     ) = settingsService.getDeviceSettings(deviceId, deviceKey)
 
+    @PostMapping("/settings/test-sound/ack")
+    fun acknowledgeSettingsTestSound(
+        @RequestHeader("X-Device-Id") deviceId: String,
+        @RequestHeader("X-Device-Key") deviceKey: String,
+        @RequestBody request: AudioAckRequest,
+    ) = settingsService.acknowledgeTestSound(deviceId, deviceKey, request.version)
+
     @GetMapping("/health")
     fun health() = deviceEventService.health()
 }

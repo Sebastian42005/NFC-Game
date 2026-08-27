@@ -2,6 +2,8 @@ package com.example.nfcgamebackend.nfcgame.application.publicapi
 
 import com.example.nfcgamebackend.nfcgame.api.dto.GameResultResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.GameRatingRequest
+import com.example.nfcgamebackend.nfcgame.api.dto.GameNightResponse
+import com.example.nfcgamebackend.nfcgame.api.dto.GameNightStartRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.LeaderboardEntryResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.PlayerStatsResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.SessionSummaryResponse
@@ -11,6 +13,7 @@ import com.example.nfcgamebackend.nfcgame.api.dto.TeamResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.TimelineEventResponse
 import com.example.nfcgamebackend.nfcgame.application.NfcGameMapper
 import com.example.nfcgamebackend.nfcgame.application.admin.NfcGameBuilderService
+import com.example.nfcgamebackend.nfcgame.application.gamenight.NfcGameNightService
 import com.example.nfcgamebackend.nfcgame.domain.GamePublicationStatus
 import com.example.nfcgamebackend.nfcgame.application.session.SessionStateMachineService
 import com.example.nfcgamebackend.nfcgame.domain.OwnerType
@@ -24,6 +27,7 @@ import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcSessionTeam
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcSessionValue
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameResultRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameRatingRepository
+import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameNightRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameSessionRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcGameTemplateRepository
 import com.example.nfcgamebackend.nfcgame.persistence.repository.NfcFlowNodeRepository
@@ -58,12 +62,14 @@ class NfcPublicQueryService(
     private val accountRepository: NfcSessionAccountRepository,
     private val resultRepository: NfcGameResultRepository,
     private val ratingRepository: NfcGameRatingRepository,
+    private val gameNightRepository: NfcGameNightRepository,
     private val eventRepository: NfcSessionEventRepository,
     private val roundRepository: NfcSessionRoundRepository,
     private val valueRepository: NfcSessionValueRepository,
     private val statsRepository: NfcPlayerStatsProjectionRepository,
     private val mapper: NfcGameMapper,
     private val gameBuilderService: NfcGameBuilderService,
+    private val gameNightService: NfcGameNightService,
     private val stateMachineService: SessionStateMachineService,
     private val messagingTemplate: SimpMessagingTemplate,
     private val objectMapper: ObjectMapper,
@@ -164,6 +170,39 @@ class NfcPublicQueryService(
         accountId?.let(sessionRepository::findAllByAccountIdOrderByCreatedAtDesc)
             .orEmpty()
             .map(::toSessionSummary)
+
+    fun getActiveGameNight(accountId: Long?): GameNightResponse? =
+        gameNightService.activeForAccount(accountId)?.let { toGameNightResponse(requireNotNull(it.id), accountId, includeSessions = true) }
+
+    fun listGameNights(accountId: Long?): List<GameNightResponse> =
+        accountId?.let { gameNightService.list(it) }.orEmpty().map { night ->
+            toGameNightResponse(requireNotNull(night.id), accountId, includeSessions = false)
+        }
+
+    fun getGameNight(gameNightId: UUID, accountId: Long?): GameNightResponse {
+        gameNightService.requireOwned(gameNightId, accountId)
+        return toGameNightResponse(gameNightId, accountId, includeSessions = true)
+    }
+
+    fun startGameNight(request: GameNightStartRequest, accountId: Long?): GameNightResponse {
+        val night = gameNightService.start(accountId, request)
+        val response = toGameNightResponse(requireNotNull(night.id), accountId, includeSessions = true)
+        publishGameNightUpdate(accountId)
+        return response
+    }
+
+    fun finishGameNight(gameNightId: UUID, accountId: Long?): GameNightResponse {
+        val night = gameNightService.finish(gameNightId, accountId)
+        val response = toGameNightResponse(requireNotNull(night.id), accountId, includeSessions = true)
+        publishGameNightUpdate(accountId)
+        return response
+    }
+
+    fun publishGameNightUpdate(accountId: Long?) {
+        val activeNight = getActiveGameNight(accountId)
+        messagingTemplate.convertAndSend("/topic/game-night", activeNight ?: mapOf("active" to false))
+        messagingTemplate.convertAndSend("/topic/game-nights", listGameNights(accountId))
+    }
 
     fun getPlayerStats(playerId: UUID, accountId: Long?): PlayerStatsResponse {
         val player = playerRepository.findById(playerId).orElse(null)
@@ -281,6 +320,7 @@ class NfcPublicQueryService(
         return SessionSummaryResponse(
             id = sessionId,
             gameTemplateId = requireNotNull(session.gameTemplateId),
+            gameNightId = session.gameNightId,
             gameName = template?.name,
             gameImageUrl = gameImageUrl(template),
             moneyCurrency = dashboardMetricConfig.suffix,
@@ -362,6 +402,21 @@ class NfcPublicQueryService(
 
     private fun readMap(json: String): Map<String, Any?> =
         objectMapper.readValue(json, object : TypeReference<Map<String, Any?>>() {})
+
+    private fun toGameNightResponse(gameNightId: UUID, accountId: Long?, includeSessions: Boolean): GameNightResponse {
+        val night = gameNightRepository.findById(gameNightId).orElseThrow { notFound("Game night not found") }
+        if (accountId == null || night.accountId != accountId) {
+            throw notFound("Game night not found")
+        }
+        val sessions = sessionRepository.findAllByAccountIdAndGameNightIdOrderByCreatedAtDesc(accountId, gameNightId)
+        val sessionResponses = sessions.map(::toSessionSummary)
+        val response = gameNightService.toResponse(
+            night = night,
+            sessions = sessions,
+            sessionResponses = sessionResponses,
+        )
+        return if (includeSessions) response else response.copy(sessions = emptyList())
+    }
 
     private fun dashboardMetricConfig(template: com.example.nfcgamebackend.nfcgame.persistence.entity.NfcGameTemplate?): DashboardMetricConfig {
         val gameTemplateId = template?.id

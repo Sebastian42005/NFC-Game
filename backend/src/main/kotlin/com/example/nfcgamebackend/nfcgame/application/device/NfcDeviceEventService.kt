@@ -10,10 +10,12 @@ import com.example.nfcgamebackend.nfcgame.api.dto.ScreenModel
 import com.example.nfcgamebackend.nfcgame.application.NfcGameMapper
 import com.example.nfcgamebackend.nfcgame.application.publicapi.NfcPublicQueryService
 import com.example.nfcgamebackend.nfcgame.application.session.SessionStateMachineService
+import com.example.nfcgamebackend.nfcgame.application.settings.NfcSettingsService
 import com.example.nfcgamebackend.nfcgame.application.sound.NfcSoundLibraryService
 import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
 import com.example.nfcgamebackend.nfcgame.domain.EventType
+import com.example.nfcgamebackend.nfcgame.domain.NfcLanguage
 import com.example.nfcgamebackend.nfcgame.domain.ScreenType
 import com.example.nfcgamebackend.nfcgame.domain.SessionStatus
 import com.example.nfcgamebackend.nfcgame.persistence.entity.NfcMoneyTransaction
@@ -56,6 +58,7 @@ class NfcDeviceEventService(
     private val memberRepository: NfcSessionTeamMemberRepository,
     private val publicQueryService: NfcPublicQueryService,
     private val soundLibraryService: NfcSoundLibraryService,
+    private val settingsService: NfcSettingsService,
     private val messagingTemplate: SimpMessagingTemplate,
     private val mapper: NfcGameMapper,
     private val objectMapper: ObjectMapper,
@@ -140,16 +143,17 @@ class NfcDeviceEventService(
             null
         }
 
+        val language = settingsService.languageForAccount(device.accountId)
         return DeviceEventResponse(
             sessionId = result.session?.id,
             status = result.session?.status,
             currentStateKey = result.session?.currentStateKey,
-            screen = result.screen,
+            screen = localizeScreen(result.screen, language),
             effects = result.effects,
-            errors = result.errors,
+            errors = result.errors.map { localizeDeviceText(it, language) },
             scannedCardType = scanFeedback?.cardType,
             scannedPlayerName = scanFeedback?.playerName,
-            uiHints = buildUiHints(device, result.session?.id),
+            uiHints = buildUiHints(device, result.session?.id, language),
         )
     }
 
@@ -162,14 +166,15 @@ class NfcDeviceEventService(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found")
         }
         val result = stateMachineService.currentScreen(sessionId)
+        val language = settingsService.languageForAccount(device.accountId)
         return DeviceEventResponse(
             sessionId = result.session?.id,
             status = result.session?.status,
             currentStateKey = result.session?.currentStateKey,
-            screen = result.screen,
+            screen = localizeScreen(result.screen, language),
             effects = result.effects,
-            errors = result.errors,
-            uiHints = buildUiHints(device, result.session?.id),
+            errors = result.errors.map { localizeDeviceText(it, language) },
+            uiHints = buildUiHints(device, result.session?.id, language),
         )
     }
 
@@ -273,6 +278,7 @@ class NfcDeviceEventService(
             }
         }
         messagingTemplate.convertAndSend("/topic/leaderboard", publicQueryService.getLeaderboard(accountId))
+        publicQueryService.publishGameNightUpdate(accountId)
     }
 
     private fun publishSessionUpdatesAfterCommit(sessionId: java.util.UUID?) {
@@ -294,14 +300,114 @@ class NfcDeviceEventService(
         val playerName: String? = null,
     )
 
-    private fun buildUiHints(device: NfcDevice, sessionId: java.util.UUID?): DeviceUiHints {
+    private fun buildUiHints(device: NfcDevice, sessionId: java.util.UUID?, language: NfcLanguage): DeviceUiHints {
         val accountId = device.accountId
         return DeviceUiHints(
-            predictions = sessionId?.let { stateMachineService.previewUiPredictions(it) }.orEmpty(),
+            predictions = sessionId
+                ?.let { stateMachineService.previewUiPredictions(it) }
+                .orEmpty()
+                .map { it.copy(screen = localizeScreen(it.screen, language)) },
             allowedPlayerCardUids = allowedPlayerCardUids(accountId, sessionId),
             allowedGameCardUids = allowedGameCardUids(accountId, sessionId),
         )
     }
+
+    private fun localizeScreen(screen: ScreenModel, language: NfcLanguage): ScreenModel =
+        screen.copy(
+            title = localizeDeviceText(screen.title, language),
+            subtitle = screen.subtitle?.let { localizeDeviceText(it, language) },
+            lines = screen.lines.map { localizeDeviceText(it, language) },
+            menuItems = screen.menuItems.map { it.copy(label = localizeDeviceText(it.label, language)) },
+        )
+
+    private fun localizeDeviceText(text: String, language: NfcLanguage): String {
+        val normalized = restoreGermanUmlauts(text)
+        if (language == NfcLanguage.DE) return normalized
+
+        deviceTranslations[normalized]?.let { return it }
+        return normalized
+            .replace("Runde ", "Round ")
+            .replace(" weitere", " more")
+            .replace("Aktuell: ", "Current: ")
+            .replace("An ", "To ")
+    }
+
+    private fun restoreGermanUmlauts(text: String): String =
+        text
+            .replace("zurueck", "zurück")
+            .replace("Zurueck", "Zurück")
+            .replace("unveraendert", "unverändert")
+            .replace("auswaehlen", "auswählen")
+            .replace("waehlen", "wählen")
+            .replace("laeuft", "läuft")
+            .replace("fuer", "für")
+            .replace("naechste", "nächste")
+            .replace("naechstes", "nächstes")
+            .replace("Teamgroesse", "Teamgröße")
+            .replace("Empfaenger", "Empfänger")
+            .replace("Grosse", "Große")
+            .replace("uebernimmt", "übernimmt")
+            .replace("gehoert", "gehört")
+
+    private val deviceTranslations = mapOf(
+        "Karte deaktiviert" to "Card disabled",
+        "Diese NFC-Karte ist deaktiviert." to "This NFC card is disabled.",
+        "Karte nicht zugewiesen" to "Card not assigned",
+        "Bitte im Adminbereich zuweisen." to "Assign it in the admin area.",
+        "Bitte im Adminbereich als Spieler- oder Spielkarte zuweisen." to "Assign it as a player or game card in the admin area.",
+        "Keine aktive Session" to "No active session",
+        "Zuerst eine Spielkarte scannen." to "Scan a game card first.",
+        "Spielkarte ohne Spiel" to "Game card without a game",
+        "Bitte eine Spielvorlage zuweisen." to "Please assign a game template.",
+        "Spiel nicht gefunden" to "Game not found",
+        "Die verknüpfte Spielvorlage fehlt." to "The linked game template is missing.",
+        "Spiel deaktiviert" to "Game disabled",
+        "Diese Spielvorlage ist nicht aktiv." to "This game template is not active.",
+        "Spieler fehlt" to "Player missing",
+        "Diese Karte ist keinem Spieler zugeordnet." to "This card is not assigned to a player.",
+        "Spieler nicht gefunden" to "Player not found",
+        "Die Kartenzuordnung ist ungültig." to "The card assignment is invalid.",
+        "Aktion nicht erlaubt" to "Action not allowed",
+        "Es gibt gerade nichts zurückzusetzen." to "There is nothing to reset right now.",
+        "Session zurückgesetzt" to "Session reset",
+        "Masterdaten bleiben unverändert." to "Master data stays unchanged.",
+        "Bereit" to "Ready",
+        "Spielkarte scannen zum Starten" to "Scan a game card to start",
+        "Start" to "Start",
+        "Spiel läuft" to "Game running",
+        "Spielerkarte für Gewinn scannen" to "Scan a player card to award the win",
+        "Spielkarte scannt = beenden" to "Scan game card = finish",
+        "Spiel beendet" to "Game finished",
+        "Ergebnis gespeichert" to "Result saved",
+        "Zurückgesetzt" to "Reset",
+        "Session wurde beendet" to "Session was ended",
+        "Unbekannte Karte" to "Unknown card",
+        "Karte wurde gespeichert und kann im Adminbereich zugewiesen werden." to "Card was saved and can be assigned in the admin area.",
+        "Spieler scannen" to "Scan players",
+        "Team komplett" to "Team complete",
+        "Spielkarte starten oder nächstes Team wählen." to "Start with the game card or choose the next team.",
+        "Teamgröße wählen" to "Choose team size",
+        "Teams fertig: " to "Teams complete: ",
+        "Erste Spielerkarte setzt Teamgröße" to "First player card sets team size",
+        "Button oder Spielkarte startet das Spiel" to "Button or game card starts the game",
+        "Empfänger wählen" to "Choose recipient",
+        "Spieler oder Bank" to "Player or bank",
+        "Transfer gebucht" to "Transfer booked",
+        "Touch: Empfänger antippen" to "Touch: tap recipient",
+        "Betrag wählen" to "Choose amount",
+        "Kleine Schritte: " to "Small steps: ",
+        "Große Schritte: " to "Large steps: ",
+        "Touch: Wert setzen übernimmt sofort" to "Touch: setting the value applies immediately",
+        "Zahler scannen" to "Scan payer",
+        "Karte des zahlenden Spielers scannen" to "Scan the paying player's card",
+        "Keine Konten vorhanden." to "No accounts available.",
+        "Erst Spieloptionen auswählen." to "Choose game options first.",
+        "Spieler nicht im Spiel" to "Player not in game",
+        "Dieser Spieler gehört zu keinem Team in der Session." to "This player does not belong to a team in the session.",
+        "Zuerst Empfänger auswählen." to "Choose a recipient first.",
+        "Zahler und Empfänger sind gleich." to "Payer and recipient are the same.",
+        "Nicht genug Guthaben." to "Insufficient balance.",
+    )
 
     private fun allowedPlayerCardUids(accountId: Long?, sessionId: java.util.UUID?): List<String> {
         val playerCards = assignedAccountCards(accountId, CardType.PLAYER)

@@ -5,11 +5,22 @@
   overflow: hidden;
 }
 
+.nfc-properties-panel {
+  background: var(--nfc-panel-solid);
+}
+
+.nfc-properties-section,
+.nfc-variable-group {
+  background: color-mix(in srgb, var(--nfc-surface-muted) 52%, transparent) !important;
+}
+
 .variable-kind-pill,
 .variable-code {
-  border: 1px solid var(--color-white-10);
+  --variable-kind-color: var(--nfc-accent);
+  border: 1px solid color-mix(in srgb, var(--variable-kind-color) 28%, var(--nfc-border));
   border-radius: 999px;
-  background: var(--color-surface-glass);
+  background: color-mix(in srgb, var(--variable-kind-color) 12%, var(--nfc-surface-strong));
+  color: color-mix(in srgb, var(--variable-kind-color) 72%, var(--nfc-text));
   padding: 3px 7px;
 }
 
@@ -20,19 +31,19 @@
 }
 
 .kind-object {
-  color: var(--nfc-kind-object);
+  --variable-kind-color: var(--nfc-kind-object);
 }
 
 .kind-string {
-  color: var(--nfc-kind-string);
+  --variable-kind-color: var(--nfc-kind-string);
 }
 
 .kind-integer {
-  color: var(--nfc-kind-integer);
+  --variable-kind-color: var(--nfc-kind-integer);
 }
 
 .kind-boolean {
-  color: var(--nfc-kind-boolean);
+  --variable-kind-color: var(--nfc-kind-boolean);
 }
 
 .nfc-nested-select {
@@ -59,4 +70,33 @@
 .nfc-select-chevron {
   color: var(--nfc-accent-strong);
   font-size: 16px;
+}
+
+:host-context(.nfc-theme-light) .nfc-properties-panel {
+  background: color-mix(in srgb, var(--color-canvas-white) 90%, var(--nfc-light-bg-alt));
+}
+
+:host-context(.nfc-theme-light) .nfc-properties-section {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  border-color: color-mix(in srgb, var(--nfc-border) 72%, transparent) !important;
+  background: transparent !important;
+  padding: 0 0 16px;
+}
+
+:host-context(.nfc-theme-light) .nfc-properties-section + .nfc-properties-section {
+  padding-top: 2px;
+}
+
+:host-context(.nfc-theme-light) .nfc-variable-group {
+  border-color: color-mix(in srgb, var(--nfc-border) 68%, transparent) !important;
+  background: color-mix(in srgb, var(--nfc-light-bg) 72%, var(--color-canvas-white)) !important;
+}
+
+:host-context(.nfc-theme-light) .variable-kind-pill,
+:host-context(.nfc-theme-light) .variable-code {
+  border-color: color-mix(in srgb, var(--variable-kind-color) 32%, var(--nfc-border));
+  background: color-mix(in srgb, var(--variable-kind-color) 11%, var(--color-canvas-white));
+  color: color-mix(in srgb, var(--variable-kind-color) 56%, var(--nfc-text));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-canvas-white) 88%, transparent);
 }

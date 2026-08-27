@@ -82,21 +82,33 @@
             <span class="rounded-md ui-bg-success-soft px-2 py-1 text-xs ui-text-success">Öffentlich</span>
           </div>
           <p class="mt-2 text-sm ui-text-muted">{{ game.description || 'Keine Beschreibung.' }}</p>
-          <div class="mt-4 flex flex-wrap items-center gap-2">
-            <span class="text-sm ui-text-soft">{{ ratingLabel(game) }}</span>
-            <div class="flex gap-1" aria-label="Spiel bewerten">
-              @for (rating of ratings; track rating) {
-                <button
-                  class="grid h-8 w-8 place-items-center rounded-md border ui-border-subtle text-sm"
-                  [class]="(game.myRating || 0) >= rating ? 'ui-bg-rating-active ui-text-on-accent' : 'ui-surface-muted ui-text-muted'"
-                  type="button"
-                  [attr.aria-label]="rating + ' Sterne geben'"
-                  [title]="rating + ' Sterne geben'"
-                  (click)="rateGame(game, rating)"
-                >
-                  ★
-                </button>
-              }
+          <div class="game-rating-card mt-4">
+            <div>
+              <p class="game-rating-label">Community</p>
+              <p class="game-rating-score">{{ game.ratingAverage ? game.ratingAverage.toFixed(1) : '0.0' }}</p>
+              <p class="game-rating-copy">{{ ratingLabel(game) }}</p>
+            </div>
+            <div class="nfc-reaction-row" aria-label="Spiel bewerten">
+              <button
+                class="nfc-reaction-button is-up"
+                [class.is-active]="isThumbUp(game)"
+                type="button"
+                [attr.aria-label]="isThumbUp(game) ? 'Daumen hoch ausgewählt' : 'Daumen hoch geben'"
+                [title]="isThumbUp(game) ? 'Daumen hoch ausgewählt' : 'Daumen hoch geben'"
+                (click)="rateGame(game, 5)"
+              >
+                <mat-icon aria-hidden="true">thumb_up</mat-icon>
+              </button>
+              <button
+                class="nfc-reaction-button is-down"
+                [class.is-active]="isThumbDown(game)"
+                type="button"
+                [attr.aria-label]="isThumbDown(game) ? 'Daumen runter ausgewählt' : 'Daumen runter geben'"
+                [title]="isThumbDown(game) ? 'Daumen runter ausgewählt' : 'Daumen runter geben'"
+                (click)="rateGame(game, 1)"
+              >
+                <mat-icon aria-hidden="true">thumb_down</mat-icon>
+              </button>
             </div>
           </div>
           <div class="mt-5 flex flex-wrap gap-2">

@@ -22,7 +22,10 @@ export type WinRuleType = 'FIRST_TO_WIN' | 'MOST_POINTS_AFTER_ROUNDS' | 'ROUND_W
 export type RoundLimitType = 'NONE' | 'ROUNDS' | 'POINTS';
 export type GamePublicationStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'BLOCKED';
 export type NfcThemeMode = 'DARK' | 'LIGHT' | 'SYSTEM';
+export type NfcLanguage = 'DE' | 'EN';
 export type NfcDisplayTimeout = 'NEVER' | 'ONE_MINUTE' | 'FIVE_MINUTES' | 'TEN_MINUTES';
+export type GameNightStatus = 'ACTIVE' | 'FINISHED';
+export type GameNightScoringSystem = 'POINTS' | 'WINS';
 export type DashboardMetricDisplayType = 'RACE_BAR' | 'COMPACT_LIST' | 'PODIUM' | 'TILE_GRID';
 export type DashboardStatusDisplayType = 'PROGRESS_BAR' | 'KPI' | 'RING' | 'PILL';
 export type DeviceEventType =
@@ -231,6 +234,7 @@ export interface NfcSettingsDto {
   accentColor: string;
   themeMode: NfcThemeMode;
   effectiveTheme: NfcThemeMode;
+  language: NfcLanguage;
   displayBrightness: number;
   displayTimeout: NfcDisplayTimeout;
   displayTimeoutSeconds?: number | null;
@@ -244,6 +248,7 @@ export interface NfcSettingsDto {
 export interface NfcSettingsRequest {
   accentColor: string;
   themeMode: NfcThemeMode;
+  language: NfcLanguage;
   displayBrightness: number;
   displayTimeout: NfcDisplayTimeout;
   deviceVolume: number;
@@ -359,6 +364,7 @@ export interface SessionRoundDto {
 export interface ActiveSessionDto {
   id: string;
   gameTemplateId: string;
+  gameNightId?: string | null;
   gameName?: string | null;
   gameImageUrl?: string | null;
   moneyCurrency?: string | null;
@@ -392,6 +398,27 @@ export interface ActiveSessionDto {
 }
 
 export type SessionDetailDto = ActiveSessionDto;
+
+export interface GameNightStartRequest {
+  name?: string | null;
+  scoringSystem: GameNightScoringSystem;
+}
+
+export interface GameNightDto {
+  id: string;
+  name?: string | null;
+  scoringSystem: GameNightScoringSystem;
+  status: GameNightStatus;
+  startedAt: string;
+  endedAt?: string | null;
+  durationMinutes: number;
+  sessionCount: number;
+  playerCount: number;
+  winnerPlayerId?: string | null;
+  winnerPlayerName?: string | null;
+  winnerScore: number;
+  sessions: SessionDetailDto[];
+}
 
 export interface SessionTimelineEventDto {
   id: string;

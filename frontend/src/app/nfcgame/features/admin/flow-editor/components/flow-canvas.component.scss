@@ -4,8 +4,32 @@
   min-height: 0;
 }
 
+.flow-edge-layer {
+  pointer-events: none;
+}
+
+.flow-edge-group,
+.flow-edge-hit,
+.flow-edge-delete {
+  pointer-events: auto;
+}
+
+.flow-edge-line,
 .flow-edge-arrow {
-  fill: var(--nfc-kind-string);
+  fill: var(--nfc-accent);
+}
+
+.flow-edge-label-bg {
+  fill: color-mix(in srgb, var(--nfc-panel-solid) 90%, transparent);
+  stroke: color-mix(in srgb, var(--nfc-accent) 18%, transparent);
+}
+
+.flow-edge-label {
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--nfc-panel-solid);
+  stroke-linejoin: round;
+  stroke-width: 3px;
 }
 
 .flow-edge-delete-bg {
@@ -15,4 +39,12 @@
 
 .flow-edge-delete-text {
   fill: var(--nfc-accent-strong);
+}
+
+.flow-node-type {
+  color: var(--nfc-accent-strong);
+}
+
+:host-context(.nfc-theme-light) .flow-node-type {
+  color: color-mix(in srgb, var(--nfc-accent-strong) 88%, var(--nfc-text));
 }

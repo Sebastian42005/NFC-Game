@@ -1,0 +1,27 @@
+:host {
+  display: block;
+}
+
+.game-night-page {
+  --game-night-accent: var(--nfc-accent);
+  --game-night-accent-soft: color-mix(in srgb, var(--game-night-accent) 12%, transparent);
+  --game-night-accent-border: color-mix(in srgb, var(--game-night-accent) 34%, var(--nfc-border));
+}
+
+.game-night-hero {
+  border-color: var(--game-night-accent-border);
+  background:
+    linear-gradient(180deg, var(--game-night-accent-soft), transparent),
+    var(--nfc-surface-muted);
+}
+
+.game-night-hero span,
+.is-leading-row span {
+  border-color: var(--game-night-accent-border);
+  background: var(--game-night-accent-soft);
+  color: var(--nfc-text);
+}
+
+.is-leading-row {
+  background: var(--game-night-accent-soft);
+}

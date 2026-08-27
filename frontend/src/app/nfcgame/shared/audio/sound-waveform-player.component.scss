@@ -1,0 +1,39 @@
+.sound-mini-player {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 76px;
+  margin-top: 1.25rem;
+  padding: 0.65rem;
+  border: 1px solid var(--nfc-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--nfc-surface-strong) 72%, transparent);
+}
+
+.sound-mini-controls {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.sound-mini-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--nfc-border);
+  border-radius: 999px;
+  background: var(--nfc-surface-muted);
+  color: var(--nfc-text);
+}
+
+.sound-mini-button.is-playing {
+  color: var(--nfc-warm);
+}
+
+.sound-mini-waveform {
+  display: block;
+  width: 100%;
+  height: 56px;
+}

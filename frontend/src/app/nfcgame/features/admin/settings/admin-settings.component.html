@@ -1,0 +1,141 @@
+<nfc-admin-shell title="Einstellungen">
+  <form class="settings-layout" (ngSubmit)="saveNow()">
+    <div class="settings-toolbar">
+      <div>
+        <p class="settings-kicker">NFC Game Admin</p>
+        <h2>Geräteeinstellungen</h2>
+      </div>
+      @if (statusLabel()) {
+        <span class="settings-status" [class.is-error]="saveState() === 'error'">{{ statusLabel() }}</span>
+      }
+    </div>
+
+    <div class="settings-card-grid">
+      <section class="settings-card settings-card-wide">
+        <header class="settings-card-header">
+          <span class="settings-card-icon">
+            <mat-icon aria-hidden="true">palette</mat-icon>
+          </span>
+          <div>
+            <p class="settings-kicker">Darstellung</p>
+            <h3>Farbe & Theme</h3>
+          </div>
+        </header>
+
+        <div class="settings-field">
+          <span>Farbe</span>
+          <div class="settings-preset-grid" role="radiogroup" aria-label="Farbe">
+            @for (preset of colorPresets; track preset.color) {
+              <button
+                type="button"
+                class="settings-preset"
+                [class.active]="settings().accentColor === preset.color"
+                (click)="setColor(preset.color)"
+                [disabled]="isBusy() && saveState() === 'loading'"
+              >
+                <span class="settings-preset-swatch" [style.background-color]="preset.color" aria-hidden="true"></span>
+                <span>{{ preset.label }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <label class="settings-field">
+          <span>Theme</span>
+          <mat-select
+            class="nfc-select settings-select"
+            [panelClass]="['nfc-select-panel', 'settings-select-panel']"
+            name="themeMode"
+            [ngModel]="settings().themeMode"
+            (ngModelChange)="setThemeMode($event)"
+            [disabled]="isBusy() && saveState() === 'loading'"
+          >
+            @for (mode of themeModes; track mode.value) {
+              <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+            }
+          </mat-select>
+        </label>
+
+        <label class="settings-field">
+          <span>Sprache</span>
+          <mat-select
+            class="nfc-select settings-select"
+            [panelClass]="['nfc-select-panel', 'settings-select-panel']"
+            name="language"
+            [ngModel]="settings().language"
+            (ngModelChange)="setLanguage($event)"
+            [disabled]="isBusy() && saveState() === 'loading'"
+            aria-label="Sprache für Website und Gerät"
+          >
+            @for (option of languageOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </label>
+      </section>
+
+      <section class="settings-card settings-card-wide">
+        <header class="settings-card-header">
+          <span class="settings-card-icon">
+            <mat-icon aria-hidden="true">volume_up</mat-icon>
+          </span>
+          <div>
+            <p class="settings-kicker">Audio</p>
+            <h3>Lautstärke & Sounds</h3>
+          </div>
+        </header>
+
+        <label class="settings-range">
+          <span class="settings-range-top">
+            <span>Lautstärke</span>
+            <strong>{{ settings().deviceVolume }}%</strong>
+          </span>
+          <span class="settings-slider" [style.--value]="settings().deviceVolume">
+            <span class="settings-slider-fill" aria-hidden="true"></span>
+            <span class="settings-slider-thumb" aria-hidden="true"></span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              [ngModel]="settings().deviceVolume"
+              (ngModelChange)="setDeviceVolume($event)"
+              name="deviceVolume"
+              aria-label="Gerätelautstärke"
+              [disabled]="isBusy() && saveState() === 'loading'"
+            />
+          </span>
+        </label>
+
+        <label class="settings-switch">
+          <input
+            type="checkbox"
+            [ngModel]="settings().soundsEnabled"
+            (ngModelChange)="setSoundsEnabled($event)"
+            name="soundsEnabled"
+            [disabled]="isBusy() && saveState() === 'loading'"
+          />
+          <span>Sounds aktiv</span>
+        </label>
+
+        <button
+          type="button"
+          class="settings-primary"
+          [disabled]="isBusy() || !settings().soundsEnabled"
+          (click)="playTestSound()"
+        >
+          <mat-icon aria-hidden="true">play_arrow</mat-icon>
+          <span>Testton abspielen</span>
+        </button>
+      </section>
+    </div>
+
+    @if (error()) {
+      <p class="settings-alert">{{ error() }}</p>
+    }
+
+    <button type="submit" class="settings-save" [disabled]="isBusy()">
+      <mat-icon aria-hidden="true">save</mat-icon>
+      <span>Speichern</span>
+    </button>
+  </form>
+</nfc-admin-shell>

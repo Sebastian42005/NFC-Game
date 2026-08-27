@@ -101,7 +101,14 @@
             <label class="grid gap-2 text-sm">
               <span class="flex items-center gap-1.5">
                 Wert-Variable
-                <mat-icon class="text-xs ui-text-muted" matTooltip="Technischer Name des Team-Werts, den die Hauptanzeige liest. Muss zu einem Wert passen, den dein Flow setzt, z.B. points, money oder lives.">info</mat-icon>
+                <span
+                  class="nfc-help-icon"
+                  tabindex="0"
+                  aria-label="Erklärung zur Wert-Variable"
+                  matTooltip="Technischer Name des Team-Werts, den die Hauptanzeige liest. Muss zu einem Wert passen, den dein Flow setzt, z.B. points, money oder lives."
+                >
+                  <mat-icon aria-hidden="true">info</mat-icon>
+                </span>
               </span>
               <input
                 name="dashboardMetricSource"
@@ -131,7 +138,14 @@
             <label class="grid gap-2 text-sm">
               <span class="flex items-center gap-1.5">
                 Max-Variable
-                <mat-icon class="text-xs ui-text-muted" matTooltip="Optionaler Ziel- oder Maximalwert für Fortschrittsanzeigen. Kann eine Zahl oder der Name einer Flow-Variable sein.">info</mat-icon>
+                <span
+                  class="nfc-help-icon"
+                  tabindex="0"
+                  aria-label="Erklärung zur Max-Variable der Hauptanzeige"
+                  matTooltip="Optionaler Ziel- oder Maximalwert für Fortschrittsanzeigen. Kann eine Zahl oder der Name einer Flow-Variable sein."
+                >
+                  <mat-icon aria-hidden="true">info</mat-icon>
+                </span>
               </span>
               <input
                 name="dashboardMetricMaxSource"
@@ -178,7 +192,14 @@
             <label class="grid gap-2 text-sm">
               <span class="flex items-center gap-1.5">
                 Status-Variable
-                <mat-icon class="text-xs ui-text-muted" matTooltip="Optionaler Flow-Wert fuer die kleine Statusanzeige, z.B. currentRound, lives oder phase. Leer lassen blendet die Zusatzanzeige aus.">info</mat-icon>
+                <span
+                  class="nfc-help-icon"
+                  tabindex="0"
+                  aria-label="Erklärung zur Status-Variable"
+                  matTooltip="Optionaler Flow-Wert für die kleine Statusanzeige, z.B. currentRound, lives oder phase. Leer lassen blendet die Zusatzanzeige aus."
+                >
+                  <mat-icon aria-hidden="true">info</mat-icon>
+                </span>
               </span>
               <input
                 name="dashboardStatusSource"
@@ -210,7 +231,14 @@
             <label class="grid gap-2 text-sm">
               <span class="flex items-center gap-1.5">
                 Max-Variable
-                <mat-icon class="text-xs ui-text-muted" matTooltip="Optionaler Maximalwert fuer Ring oder Balken, z.B. roundLimit, maxRounds oder 10. Leer lassen zeigt nur den aktuellen Wert.">info</mat-icon>
+                <span
+                  class="nfc-help-icon"
+                  tabindex="0"
+                  aria-label="Erklärung zur Max-Variable der Zusatzanzeige"
+                  matTooltip="Optionaler Maximalwert für Ring oder Balken, z.B. roundLimit, maxRounds oder 10. Leer lassen zeigt nur den aktuellen Wert."
+                >
+                  <mat-icon aria-hidden="true">info</mat-icon>
+                </span>
               </span>
               <input
                 name="dashboardStatusMaxSource"
@@ -246,10 +274,6 @@
               <mat-option [value]="card.cardUid">{{ card.cardUid }} · {{ card.cardType }}</mat-option>
             }
           </mat-select>
-        </label>
-        <label class="grid gap-2 text-sm">
-          Oder Card UID direkt
-          <input name="cardUid" [ngModel]="form().cardUid" (ngModelChange)="patch({ cardUid: $event })" />
         </label>
       </section>
 

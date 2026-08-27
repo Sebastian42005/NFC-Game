@@ -5,6 +5,16 @@ import { builderNodeDragDataType, categoryThemeFor } from './node-types';
 
 const nodeCardWidth = 220;
 const nodeCardEstimatedHeight = 116;
+const nodeCollisionHeight = 150;
+const nodeCardHalfWidth = nodeCardWidth / 2;
+const nodeCardHalfHeight = nodeCardEstimatedHeight / 2;
+const nodeCollisionGap = 0;
+const edgeLabelOffset = 16;
+
+type FlowPoint = {
+  x: number;
+  y: number;
+};
 
 @Component({
   selector: 'nfc-flow-canvas',
@@ -53,37 +63,55 @@ export class FlowCanvasComponent {
     return 'Diese Karte als Quelle wählen.';
   }
 
-  protected edgeStartX(source: FlowNodeDto) {
-    return source.x + 220;
+  protected edgeStartX(source: FlowNodeDto, target: FlowNodeDto) {
+    return this.edgeAnchor(source, target).x;
   }
 
-  protected edgeStartY(source: FlowNodeDto) {
-    return source.y + 48;
+  protected edgeStartY(source: FlowNodeDto, target: FlowNodeDto) {
+    return this.edgeAnchor(source, target).y;
   }
 
-  protected edgeEndX(target: FlowNodeDto) {
-    return target.x;
+  protected edgeEndX(source: FlowNodeDto, target: FlowNodeDto) {
+    return this.edgeAnchor(target, source).x;
   }
 
-  protected edgeEndY(target: FlowNodeDto) {
-    return target.y + 48;
+  protected edgeEndY(source: FlowNodeDto, target: FlowNodeDto) {
+    return this.edgeAnchor(target, source).y;
   }
 
   protected edgeMidX(source: FlowNodeDto, target: FlowNodeDto) {
-    return (this.edgeStartX(source) + this.edgeEndX(target)) / 2;
+    return (this.edgeStartX(source, target) + this.edgeEndX(source, target)) / 2;
   }
 
   protected edgeMidY(source: FlowNodeDto, target: FlowNodeDto) {
-    return (this.edgeStartY(source) + this.edgeEndY(target)) / 2;
+    return (this.edgeStartY(source, target) + this.edgeEndY(source, target)) / 2;
+  }
+
+  protected edgeLabelX(source: FlowNodeDto, target: FlowNodeDto) {
+    const normal = this.edgeNormal(source, target);
+    return this.edgeMidX(source, target) + normal.x * edgeLabelOffset;
+  }
+
+  protected edgeLabelY(source: FlowNodeDto, target: FlowNodeDto) {
+    const normal = this.edgeNormal(source, target);
+    return this.edgeMidY(source, target) + normal.y * edgeLabelOffset;
+  }
+
+  protected edgeLabelWidth(edge: FlowEdgeDto) {
+    return Math.max(42, edge.eventType.length * 7 + 16);
   }
 
   centerInsertionPosition() {
     const canvas = this.scrollContainer();
     if (!canvas) return null;
-    return this.clampNodePosition({
+    return this.resolveNodePosition({
       x: (canvas.scrollLeft + canvas.clientWidth / 2) / this.zoom() - nodeCardWidth / 2,
       y: (canvas.scrollTop + canvas.clientHeight / 2) / this.zoom() - nodeCardEstimatedHeight / 2,
     });
+  }
+
+  availableNodePosition(position: FlowPoint) {
+    return this.resolveNodePosition(position);
   }
 
   protected allowNodeDrop(event: DragEvent) {
@@ -99,7 +127,7 @@ export class FlowCanvasComponent {
     if (!pointer) return;
     event.preventDefault();
     event.stopPropagation();
-    const position = this.clampNodePosition({
+    const position = this.resolveNodePosition({
       x: pointer.x - nodeCardWidth / 2,
       y: pointer.y - nodeCardEstimatedHeight / 2,
     });
@@ -160,11 +188,11 @@ export class FlowCanvasComponent {
     if (!drag) return;
     const pointer = this.pointerPosition(event);
     if (!pointer) return;
-    this.moveNode.emit({
-      id: drag.id,
-      x: Math.max(0, Math.round(pointer.x - drag.offsetX)),
-      y: Math.max(0, Math.round(pointer.y - drag.offsetY)),
-    });
+    const position = this.resolveNodePosition({
+      x: pointer.x - drag.offsetX,
+      y: pointer.y - drag.offsetY,
+    }, drag.id);
+    this.moveNode.emit({ id: drag.id, ...position });
   }
 
   @HostListener('document:mouseup')
@@ -190,6 +218,82 @@ export class FlowCanvasComponent {
     return {
       x: Math.max(0, Math.round(position.x)),
       y: Math.max(0, Math.round(position.y)),
+    };
+  }
+
+  private resolveNodePosition(position: FlowPoint, movingNodeId: string | null = null): FlowPoint {
+    let next = this.clampNodePosition(position);
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const overlap = this.overlappingNode(next, movingNodeId);
+      if (!overlap) return next;
+      next = this.nearestFreePosition(next, overlap, movingNodeId);
+    }
+    return next;
+  }
+
+  private overlappingNode(position: FlowPoint, movingNodeId: string | null) {
+    return this.nodes().find((node) => node.id !== movingNodeId && this.nodesOverlap(position, node)) ?? null;
+  }
+
+  private nearestFreePosition(position: FlowPoint, blockingNode: FlowNodeDto, movingNodeId: string | null) {
+    const candidates = [
+      { x: blockingNode.x + nodeCardWidth + nodeCollisionGap, y: position.y },
+      { x: blockingNode.x - nodeCardWidth - nodeCollisionGap, y: position.y },
+      { x: position.x, y: blockingNode.y + nodeCollisionHeight + nodeCollisionGap },
+      { x: position.x, y: blockingNode.y - nodeCollisionHeight - nodeCollisionGap },
+    ]
+      .map((candidate) => this.clampNodePosition(candidate))
+      .sort((a, b) => this.distanceSquared(a, position) - this.distanceSquared(b, position));
+
+    return candidates.find((candidate) => !this.overlappingNode(candidate, movingNodeId)) ?? candidates[0];
+  }
+
+  private nodesOverlap(position: FlowPoint, node: FlowNodeDto) {
+    return (
+      position.x < node.x + nodeCardWidth + nodeCollisionGap &&
+      position.x + nodeCardWidth + nodeCollisionGap > node.x &&
+      position.y < node.y + nodeCollisionHeight + nodeCollisionGap &&
+      position.y + nodeCollisionHeight + nodeCollisionGap > node.y
+    );
+  }
+
+  private distanceSquared(a: FlowPoint, b: FlowPoint) {
+    return (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+  }
+
+  private edgeAnchor(from: FlowNodeDto, to: FlowNodeDto): FlowPoint {
+    const fromCenter = this.nodeCenter(from);
+    const toCenter = this.nodeCenter(to);
+    const dx = toCenter.x - fromCenter.x;
+    const dy = toCenter.y - fromCenter.y;
+
+    if (dx === 0 && dy === 0) return fromCenter;
+
+    const scaleX = dx === 0 ? Number.POSITIVE_INFINITY : nodeCardHalfWidth / Math.abs(dx);
+    const scaleY = dy === 0 ? Number.POSITIVE_INFINITY : nodeCardHalfHeight / Math.abs(dy);
+    const scale = Math.min(scaleX, scaleY);
+
+    return {
+      x: fromCenter.x + dx * scale,
+      y: fromCenter.y + dy * scale,
+    };
+  }
+
+  private edgeNormal(source: FlowNodeDto, target: FlowNodeDto): FlowPoint {
+    const start = this.edgeAnchor(source, target);
+    const end = this.edgeAnchor(target, source);
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy);
+
+    if (length === 0) return { x: 0, y: -1 };
+    return { x: -dy / length, y: dx / length };
+  }
+
+  private nodeCenter(node: FlowNodeDto): FlowPoint {
+    return {
+      x: node.x + nodeCardHalfWidth,
+      y: node.y + nodeCardHalfHeight,
     };
   }
 

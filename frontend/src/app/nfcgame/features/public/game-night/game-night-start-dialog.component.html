@@ -1,0 +1,56 @@
+<section class="grid gap-5 p-5">
+  <header class="flex items-start justify-between gap-4">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Spieleabend</p>
+      <h2 class="mt-1 text-xl font-black ui-text-strong">Spieleabend starten</h2>
+    </div>
+    <button
+      type="button"
+      class="grid h-10 w-10 shrink-0 place-items-center rounded-full border ui-border-subtle ui-surface-muted ui-text-muted transition hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent"
+      aria-label="Schließen"
+      title="Schließen"
+      (click)="close()"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <label class="grid gap-2 text-sm font-bold ui-text-strong">
+    Name
+    <input
+      class="rounded-lg border ui-border-subtle ui-surface-muted px-3 py-3 text-base font-normal outline-none focus-visible:ring-2 focus-visible:ui-ring-accent"
+      maxlength="120"
+      placeholder="Optional"
+      [ngModel]="name()"
+      (ngModelChange)="name.set($event)"
+    />
+  </label>
+
+  <label class="grid gap-2 text-sm font-bold ui-text-strong">
+    Wertungssystem
+    <mat-select
+      class="nfc-select"
+      panelClass="nfc-select-panel"
+      [ngModel]="scoringSystem()"
+      (ngModelChange)="scoringSystem.set($event)"
+    >
+      @for (option of scoringOptions; track option.value) {
+        <mat-option [value]="option.value">
+          {{ option.label }} · {{ option.hint }}
+        </mat-option>
+      }
+    </mat-select>
+  </label>
+
+  <footer class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <button type="button" class="rounded-lg border ui-border-subtle px-4 py-3 text-sm font-black ui-text-muted" (click)="close()">
+      Abbrechen
+    </button>
+    <button type="button" class="rounded-lg border ui-border-warm ui-bg-warm-soft px-4 py-3 text-sm font-black ui-text-warm" (click)="start()">
+      <span class="inline-flex items-center gap-2">
+        <mat-icon>play_arrow</mat-icon>
+        Starten
+      </span>
+    </button>
+  </footer>
+</section>

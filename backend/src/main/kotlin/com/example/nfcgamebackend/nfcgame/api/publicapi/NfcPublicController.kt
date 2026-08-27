@@ -1,6 +1,7 @@
 package com.example.nfcgamebackend.nfcgame.api.publicapi
 
 import com.example.nfcgamebackend.nfcgame.application.publicapi.NfcPublicQueryService
+import com.example.nfcgamebackend.nfcgame.api.dto.GameNightStartRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.GameRatingRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.SoundRatingRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.SoundUpdateRequest
@@ -55,6 +56,32 @@ class NfcPublicController(
     @GetMapping("/leaderboard")
     fun leaderboard(@RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?) =
         publicQueryService.getLeaderboard(user?.id)
+
+    @GetMapping("/game-nights/active")
+    fun activeGameNight(@RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?) =
+        publicQueryService.getActiveGameNight(user?.id)
+
+    @GetMapping("/game-nights")
+    fun gameNights(@RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?) =
+        publicQueryService.listGameNights(user?.id)
+
+    @GetMapping("/game-nights/{gameNightId}")
+    fun gameNight(
+        @PathVariable gameNightId: UUID,
+        @RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?,
+    ) = publicQueryService.getGameNight(gameNightId, user?.id)
+
+    @PostMapping("/game-nights")
+    fun startGameNight(
+        @Valid @RequestBody request: GameNightStartRequest,
+        @RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?,
+    ) = publicQueryService.startGameNight(request, user?.id)
+
+    @PostMapping("/game-nights/{gameNightId}/finish")
+    fun finishGameNight(
+        @PathVariable gameNightId: UUID,
+        @RequestAttribute(name = "authenticatedUser", required = false) user: AuthenticatedUser?,
+    ) = publicQueryService.finishGameNight(gameNightId, user?.id)
 
     @GetMapping("/players/{playerId}/stats")
     fun playerStats(
@@ -124,6 +151,13 @@ class NfcPublicController(
         @PathVariable soundId: UUID,
         @Valid @RequestBody request: SoundUpdateRequest,
     ) = soundLibraryService.update(soundId, request)
+
+    @PostMapping("/sounds/{soundId}/audio", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun replaceSoundAudio(
+        @PathVariable soundId: UUID,
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam("name", required = false) name: String?,
+    ) = soundLibraryService.replaceAudio(soundId, file, name)
 
     @DeleteMapping("/sounds/{soundId}")
     fun deleteSound(@PathVariable soundId: UUID) = soundLibraryService.delete(soundId)

@@ -1,10 +1,66 @@
 <nfc-admin-shell title="Übersicht">
-  <section class="grid gap-4 md:grid-cols-4 xl:grid-cols-5">
-    @for (item of cards(); track item.label) {
-      <a [routerLink]="item.href" class="rounded-lg border ui-border-subtle ui-surface-muted p-5 hover:ui-surface-hover">
-        <span class="text-sm ui-text-muted">{{ item.label }}</span>
-        <strong class="mt-2 block text-3xl">{{ item.value }}</strong>
+  <section class="grid gap-4">
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <a [routerLink]="'/nfc-game/admin/players'" class="admin-overview-featured rounded-lg border p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0">
+            <div class="flex items-center gap-3">
+              <div class="admin-overview-icon grid h-11 w-11 place-items-center rounded-lg">
+                <mat-icon aria-hidden="true">groups</mat-icon>
+              </div>
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.16em] ui-text-accent">Spieler</p>
+                <h3 class="text-2xl font-semibold tracking-normal">Spieler verwalten</h3>
+              </div>
+            </div>
+            <p class="mt-4 max-w-xl ui-text-soft">Profile, Status und Punkte bleiben direkt im Blick.</p>
+          </div>
+
+          <div class="text-right">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] ui-text-muted">Gesamt</p>
+            <strong class="mt-2 block text-4xl font-semibold">{{ players().length }}</strong>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <div class="admin-overview-avatar-stack">
+            @for (player of playerPreview(); track player.id) {
+              <div class="admin-overview-avatar grid h-12 w-12 place-items-center overflow-hidden rounded-full text-sm font-semibold">
+                @if (player.imageUrl) {
+                  <img class="h-full w-full object-cover" [src]="player.imageUrl" [alt]="player.name" />
+                } @else {
+                  {{ initials(player.name) }}
+                }
+              </div>
+            }
+          </div>
+
+          <div class="admin-overview-pill rounded-full px-3 py-2 text-sm">
+            <span class="ui-text-muted">Aktiv</span>
+            <strong class="ml-2 font-semibold">{{ activePlayerCount() }}</strong>
+          </div>
+        </div>
       </a>
-    }
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        @for (item of summaryCards(); track item.label) {
+          <a [routerLink]="item.href" class="admin-overview-card rounded-lg border p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex items-center gap-3">
+                  <div class="admin-overview-icon grid h-10 w-10 place-items-center rounded-lg">
+                    <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+                  </div>
+                  <span class="truncate text-sm font-semibold ui-text-muted">{{ item.label }}</span>
+                </div>
+                <strong class="mt-4 block text-3xl font-semibold">{{ item.value }}</strong>
+              </div>
+              <mat-icon class="ui-text-muted" aria-hidden="true">arrow_outward</mat-icon>
+            </div>
+            <p class="mt-4 text-sm ui-text-soft">{{ item.caption }}</p>
+          </a>
+        }
+      </div>
+    </div>
   </section>
 </nfc-admin-shell>

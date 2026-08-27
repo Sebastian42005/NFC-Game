@@ -4,8 +4,11 @@ import com.example.nfcgamebackend.nfcgame.domain.AdminRole
 import com.example.nfcgamebackend.nfcgame.domain.CardStatus
 import com.example.nfcgamebackend.nfcgame.domain.CardType
 import com.example.nfcgamebackend.nfcgame.domain.EventType
+import com.example.nfcgamebackend.nfcgame.domain.GameNightScoringSystem
+import com.example.nfcgamebackend.nfcgame.domain.GameNightStatus
 import com.example.nfcgamebackend.nfcgame.domain.GamePublicationStatus
 import com.example.nfcgamebackend.nfcgame.domain.NfcDisplayTimeout
+import com.example.nfcgamebackend.nfcgame.domain.NfcLanguage
 import com.example.nfcgamebackend.nfcgame.domain.NfcThemeMode
 import com.example.nfcgamebackend.nfcgame.domain.OwnerType
 import com.example.nfcgamebackend.nfcgame.domain.RoundLimitType
@@ -105,6 +108,10 @@ class NfcAccountSettings : NfcUuidEntity() {
     @Enumerated(EnumType.STRING)
     @Column(name = "theme_mode", nullable = false, length = 24)
     var themeMode: NfcThemeMode = NfcThemeMode.SYSTEM
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 8)
+    var language: NfcLanguage = NfcLanguage.DE
 
     @Column(name = "display_brightness", nullable = false)
     var displayBrightness: Int = 80
@@ -670,10 +677,59 @@ class NfcFlowTransition : NfcUuidEntity() {
 
 @Entity
 @Table(
+    name = "nfc_game_night",
+    indexes = [
+        Index(name = "idx_nfc_game_night_account_status", columnList = "account_id,status"),
+        Index(name = "idx_nfc_game_night_account_started", columnList = "account_id,started_at"),
+    ],
+)
+class NfcGameNight : NfcUuidEntity() {
+    @Column(name = "account_id", nullable = false)
+    var accountId: Long? = null
+
+    @Column(length = 120)
+    var name: String? = null
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scoring_system", nullable = false, length = 24)
+    var scoringSystem: GameNightScoringSystem = GameNightScoringSystem.POINTS
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 24)
+    var status: GameNightStatus = GameNightStatus.ACTIVE
+
+    @Column(nullable = false, updatable = false)
+    var startedAt: Instant = Instant.now()
+
+    var endedAt: Instant? = null
+
+    @Column(nullable = false, updatable = false)
+    var createdAt: Instant = Instant.now()
+
+    @Column(nullable = false)
+    var updatedAt: Instant = Instant.now()
+
+    @PrePersist
+    fun gameNightCreated() {
+        val now = Instant.now()
+        startedAt = now
+        createdAt = now
+        updatedAt = now
+    }
+
+    @PreUpdate
+    fun gameNightUpdated() {
+        updatedAt = Instant.now()
+    }
+}
+
+@Entity
+@Table(
     name = "nfc_game_session",
     indexes = [
         Index(name = "idx_nfc_game_session_status", columnList = "status"),
         Index(name = "idx_nfc_game_session_account_status", columnList = "account_id,status"),
+        Index(name = "idx_nfc_game_session_game_night", columnList = "game_night_id"),
     ],
 )
 class NfcGameSession : NfcUuidEntity() {
@@ -685,6 +741,9 @@ class NfcGameSession : NfcUuidEntity() {
 
     @Column(name = "account_id")
     var accountId: Long? = null
+
+    @Column(name = "game_night_id")
+    var gameNightId: UUID? = null
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

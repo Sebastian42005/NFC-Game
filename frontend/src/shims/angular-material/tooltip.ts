@@ -7,8 +7,13 @@ import { Directive, HostBinding, Input, NgModule } from '@angular/core';
 export class MatTooltip {
   @Input() matTooltip: string | null = null;
 
-  @HostBinding('attr.title')
-  get title(): string | null {
+  @HostBinding('class.nfc-tooltip-trigger')
+  get hasTooltip(): boolean {
+    return !!this.matTooltip?.trim();
+  }
+
+  @HostBinding('attr.data-tooltip')
+  get tooltipText(): string | null {
     return this.matTooltip;
   }
 }
@@ -18,4 +23,3 @@ export class MatTooltip {
   exports: [MatTooltip],
 })
 export class MatTooltipModule {}
-

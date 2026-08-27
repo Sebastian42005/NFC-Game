@@ -203,6 +203,21 @@ export class NfcAdminApiService {
     return this.http.post<SoundDto>(`${publicApiBase}/sounds/upload`, formData).pipe(map(resolveSoundUrl));
   }
 
+  replaceSoundAudio(soundId: string, blob: Blob, filename = 'sound.wav', name?: string) {
+    const formData = new FormData();
+    formData.append('file', blob, filename);
+    if (name?.trim()) formData.append('name', name.trim());
+    return this.http
+      .post<SoundDto>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}/audio`, formData)
+      .pipe(map(resolveSoundUrl));
+  }
+
+  soundAudio(soundId: string) {
+    return this.http.get(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}/audio.wav`, {
+      responseType: 'blob',
+    });
+  }
+
   updateSound(soundId: string, name: string) {
     return this.http.put<SoundDto>(`${publicApiBase}/sounds/${encodeURIComponent(soundId)}`, { name }).pipe(map(resolveSoundUrl));
   }

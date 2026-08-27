@@ -1,0 +1,102 @@
+<section class="sound-edit-dialog">
+  <header class="sound-edit-header">
+    <div>
+      <p class="sound-edit-kicker">Sound bearbeiten</p>
+      <h2>{{ sound.name }}</h2>
+    </div>
+    <button type="button" class="sound-edit-icon-button" aria-label="Dialog schließen" title="Schließen" (click)="close()">
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </header>
+
+  <label class="sound-edit-field">
+    Name
+    <input [ngModel]="name()" (ngModelChange)="name.set($event)" />
+  </label>
+
+  <div class="sound-edit-recorder">
+    <button type="button" class="sound-edit-button" [disabled]="recording() || saving()" (click)="startRecording()">
+      <mat-icon aria-hidden="true">mic</mat-icon>
+      Neu aufnehmen
+    </button>
+    <button type="button" class="sound-edit-button is-secondary" [disabled]="!recording()" (click)="stopRecording()">
+      <mat-icon aria-hidden="true">stop</mat-icon>
+      Stop
+    </button>
+    @if (recording()) {
+      <span>{{ formatTime(recordingSeconds()) }}</span>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="sound-edit-alert">{{ error() }}</p>
+  }
+
+  <div class="sound-edit-player-row">
+    <button
+      type="button"
+      class="sound-edit-icon-button is-play"
+      [class.is-playing]="playing()"
+      [disabled]="!hasValidSelection()"
+      [attr.aria-label]="playing() ? 'Wiedergabe pausieren' : 'Auswahl abspielen'"
+      [title]="playing() ? 'Pause' : 'Auswahl abspielen'"
+      (click)="togglePlayback()"
+    >
+      <mat-icon aria-hidden="true">{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
+    </button>
+
+    <div class="sound-edit-waveform-column">
+      <div class="sound-edit-waveform-wrap" [class.is-loading]="loading()">
+        <canvas
+          #waveformCanvas
+          class="sound-edit-waveform"
+          role="img"
+          aria-label="Wellenform des Sounds"
+          (pointerdown)="seekPreview($event)"
+        ></canvas>
+        <div class="sound-edit-trim-layer">
+          <div class="sound-edit-trim-dim" aria-hidden="true" [style.width.%]="trimStartPercent()"></div>
+          <div
+            class="sound-edit-trim-selection"
+            [style.left.%]="trimStartPercent()"
+            [style.width.%]="trimWidthPercent()"
+          ></div>
+          <button
+            type="button"
+            class="sound-edit-trim-handle"
+            [style.left.%]="trimStartPercent()"
+            aria-label="Schnittanfang ziehen"
+            title="Schnittanfang"
+            (pointerdown)="startTrimDrag('start', $event)"
+          ></button>
+          <button
+            type="button"
+            class="sound-edit-trim-handle"
+            [style.left.%]="trimStartPercent() + trimWidthPercent()"
+            aria-label="Schnittende ziehen"
+            title="Schnittende"
+            (pointerdown)="startTrimDrag('end', $event)"
+          ></button>
+          <div
+            class="sound-edit-trim-dim is-right"
+            aria-hidden="true"
+            [style.left.%]="trimStartPercent() + trimWidthPercent()"
+            [style.width.%]="100 - (trimStartPercent() + trimWidthPercent())"
+          ></div>
+        </div>
+      </div>
+
+      <div class="sound-edit-times">
+        <span>{{ formatTime(selectedDurationSeconds()) }}</span>
+        <span>{{ formatTime(durationSeconds()) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="sound-edit-footer">
+    <button type="button" class="sound-edit-button is-secondary" [disabled]="saving()" (click)="close()">Abbrechen</button>
+    <button type="button" class="sound-edit-button is-primary" [disabled]="!name().trim() || !hasValidSelection() || saving()" (click)="save()">
+      {{ saving() ? 'Speichert...' : 'Speichern' }}
+    </button>
+  </footer>
+</section>

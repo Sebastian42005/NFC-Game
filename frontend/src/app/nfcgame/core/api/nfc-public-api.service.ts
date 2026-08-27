@@ -3,11 +3,11 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import {
   ActiveSessionDto,
-  DeviceClaimRequest,
   DeviceEventRequest,
   DeviceEventResponse,
-  DeviceDto,
   DeviceProvisioningDto,
+  GameNightDto,
+  GameNightStartRequest,
   DeviceRequest,
   GameStatsDto,
   GameTemplateDto,
@@ -85,12 +85,24 @@ export class NfcPublicApiService {
     return this.http.get<SessionDetailDto[]>(`${apiBase}/history`).pipe(map((sessions) => sessions.map(resolveSessionImageUrls)));
   }
 
-  accountDevices() {
-    return this.http.get<DeviceDto[]>(`${apiBase}/account/devices`);
+  activeGameNight() {
+    return this.http.get<GameNightDto | null>(`${apiBase}/game-nights/active`).pipe(map((night) => night ? resolveGameNightImageUrls(night) : null));
   }
 
-  claimDevice(request: DeviceClaimRequest) {
-    return this.http.post<DeviceDto>(`${apiBase}/account/devices/claim`, request);
+  gameNights() {
+    return this.http.get<GameNightDto[]>(`${apiBase}/game-nights`).pipe(map((nights) => nights.map(resolveGameNightImageUrls)));
+  }
+
+  gameNight(gameNightId: string) {
+    return this.http.get<GameNightDto>(`${apiBase}/game-nights/${encodeURIComponent(gameNightId)}`).pipe(map(resolveGameNightImageUrls));
+  }
+
+  startGameNight(request: GameNightStartRequest) {
+    return this.http.post<GameNightDto>(`${apiBase}/game-nights`, request).pipe(map(resolveGameNightImageUrls));
+  }
+
+  finishGameNight(gameNightId: string) {
+    return this.http.post<GameNightDto>(`${apiBase}/game-nights/${encodeURIComponent(gameNightId)}/finish`, {}).pipe(map(resolveGameNightImageUrls));
   }
 
   settings() {
@@ -198,6 +210,13 @@ function resolveSessionImageUrls(session: ActiveSessionDto): ActiveSessionDto {
         imageUrl: resolveBackendAssetUrl(member.imageUrl),
       })),
     })),
+  };
+}
+
+function resolveGameNightImageUrls(night: GameNightDto): GameNightDto {
+  return {
+    ...night,
+    sessions: night.sessions.map(resolveSessionImageUrls),
   };
 }
 

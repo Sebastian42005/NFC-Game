@@ -1,9 +1,9 @@
 
-    <aside class="flex h-full min-h-0 flex-col overflow-hidden border-l ui-border-subtle ui-surface-muted p-4">
+    <aside class="nfc-properties-panel flex h-full min-h-0 flex-col overflow-hidden border-l ui-border-subtle ui-surface-muted p-4">
       <h3 class="shrink-0 text-sm font-semibold">Eigenschaften</h3>
       @if (node(); as node) {
         <div class="mt-4 grid min-h-0 flex-1 gap-4 overflow-y-auto pr-1 pb-6">
-          <section class="rounded-lg border ui-border-subtle ui-surface-muted p-3">
+          <section class="nfc-properties-section rounded-lg border ui-border-subtle ui-surface-muted p-3">
             <p class="mb-3 text-xs font-semibold uppercase tracking-wide ui-text-muted">Basis</p>
             <div class="grid gap-3">
               <label class="grid gap-2 text-sm">
@@ -14,7 +14,7 @@
             </div>
           </section>
 
-          <section class="rounded-lg border ui-border-subtle ui-surface-muted p-3">
+          <section class="nfc-properties-section rounded-lg border ui-border-subtle ui-surface-muted p-3">
             <p class="mb-3 text-xs font-semibold uppercase tracking-wide ui-text-muted">{{ configSectionTitle(node.type) }}</p>
             <div class="grid gap-3">
               @if (showsText(node.type)) {
@@ -95,7 +95,7 @@
                 />
                 <div class="grid gap-2">
                   @for (group of menuOptionSuggestionGroups(); track group.title) {
-                    <div class="grid gap-1.5 rounded-md border ui-border-subtle ui-surface-muted p-2">
+                    <div class="nfc-variable-group grid gap-1.5 rounded-md border ui-border-subtle ui-surface-muted p-2">
                       <p class="text-[11px] font-semibold uppercase tracking-wide ui-text-muted">{{ group.title }}</p>
                       <div class="flex flex-wrap gap-1.5">
                         @for (option of group.items; track option.token) {
@@ -127,7 +127,7 @@
                   {{ storeAsLabel(node.type) }}
                   <input [ngModel]="configString('storeAs')" (ngModelChange)="patchConfig('storeAs', $event)" [placeholder]="storeAsPlaceholder(node.type)" />
                 </label>
-                <p class="text-xs ui-text-muted">Dieser Name kann spaeter in anderen Nodes verwendet werden.</p>
+                <p class="text-xs ui-text-muted">Dieser Name kann später in anderen Nodes verwendet werden.</p>
               }
               @if (showsRandomizer(node.type)) {
                 <label class="grid gap-2 text-sm">

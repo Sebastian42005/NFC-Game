@@ -14,7 +14,6 @@ import {
 } from '../../../shared/models/nfc-game.models';
 import { NfcAdminShellComponent } from '../../../shared/ui/admin-shell.component';
 import { BuilderToolbarComponent } from './components/builder-toolbar.component';
-import { EditorTutorialComponent } from './components/editor-tutorial.component';
 import { FlowCanvasComponent } from './components/flow-canvas.component';
 import { GamePreviewPanelComponent } from './components/game-preview-panel.component';
 import { NodePaletteComponent } from './components/node-palette.component';
@@ -32,7 +31,6 @@ import { builderNodeTypes } from './components/node-types';
   imports: [
     NfcAdminShellComponent,
     BuilderToolbarComponent,
-    EditorTutorialComponent,
     NodePaletteComponent,
     FlowCanvasComponent,
     NodePropertiesPanelComponent,
@@ -61,7 +59,6 @@ export class NfcFlowEditorComponent {
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly zoom = signal(1);
-  protected readonly editorMode = signal<'VISUAL' | 'TUTORIAL'>('VISUAL');
   protected readonly propertiesSidebarWidth = signal(380);
   private sidebarResizeStart: { pointerId: number; x: number; width: number } | null = null;
   protected readonly gameName = computed(() => this.game()?.name || 'Game');
@@ -94,6 +91,9 @@ export class NfcFlowEditorComponent {
 
   protected addNode(type: BuilderNodeType, position = this.flowCanvas?.centerInsertionPosition()) {
     const index = this.nodes().length;
+    const fallbackPosition = { x: 140 + index * 34, y: 120 + index * 34 };
+    const nodePosition =
+      this.flowCanvas?.availableNodePosition(position ?? fallbackPosition) ?? position ?? fallbackPosition;
     const config = structuredClone(type.defaultConfig);
     if (['CHANGE_VALUE', 'AWARD_POINTS'].includes(type.type) && config['valueKey'] == null) {
       config['valueKey'] = this.dashboardValueKey();
@@ -106,8 +106,8 @@ export class NfcFlowEditorComponent {
       id: crypto.randomUUID(),
       type: type.type,
       title: type.defaultTitle,
-      x: position?.x ?? 140 + index * 34,
-      y: position?.y ?? 120 + index * 34,
+      x: nodePosition.x,
+      y: nodePosition.y,
       config,
       uiConfig: { color: type.category },
       order: index,
@@ -176,12 +176,16 @@ export class NfcFlowEditorComponent {
     const source = this.nodes().find((node) => node.id === id);
     if (!source) return;
     if (source.type === 'START') return;
+    const position = this.flowCanvas?.availableNodePosition({ x: source.x + 40, y: source.y + 40 }) ?? {
+      x: source.x + 40,
+      y: source.y + 40,
+    };
     const copy = {
       ...source,
       id: crypto.randomUUID(),
       title: `${source.title} Kopie`,
-      x: source.x + 40,
-      y: source.y + 40,
+      x: position.x,
+      y: position.y,
       config: structuredClone(source.config),
       uiConfig: structuredClone(source.uiConfig),
       order: this.nodes().length,
@@ -225,9 +229,9 @@ export class NfcFlowEditorComponent {
       edge,
     ]);
     this.pendingSourceNodeId.set(null);
-    this.selectEdge(edge.id);
     this.message.set('Verbindung erstellt.');
     this.validation.set(null);
+    this.selectEdge(edge.id);
   }
 
   protected patchEdge(patch: Partial<FlowEdgeDto> & { id: string }) {
@@ -237,8 +241,8 @@ export class NfcFlowEditorComponent {
   protected async save() {
     this.error.set(null);
     try {
-      await this.persistCurrentFlow();
-      this.message.set('Spiel und Flow als Entwurf gespeichert.');
+      await this.persistCurrentFlow(false);
+      await this.router.navigateByUrl('/nfc-game/admin/game-templates');
     } catch (error) {
       this.error.set(String((error as { error?: { message?: string } })?.error?.message ?? 'Flow konnte nicht gespeichert werden.'));
     }
@@ -320,14 +324,6 @@ export class NfcFlowEditorComponent {
 
   protected visualGridColumns() {
     return `260px minmax(0, 1fr) ${this.propertiesSidebarWidth()}px`;
-  }
-
-  protected setVisualMode() {
-    this.editorMode.set('VISUAL');
-  }
-
-  protected setTutorialMode() {
-    this.editorMode.set('TUTORIAL');
   }
 
   private async load() {
