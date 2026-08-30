@@ -1,6 +1,6 @@
 <nfc-admin-shell title="NFC Karten">
-  <section class="grid gap-5 xl:grid-cols-[1fr_420px]">
-    <div class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+  <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+    <div class="min-w-0 rounded-lg border ui-border-subtle ui-surface-muted p-5">
       <label class="mb-4 flex items-center gap-3 text-sm">
         <input type="checkbox" [ngModel]="showUnassignedOnly()" (ngModelChange)="showUnassignedOnly.set($event)" />
         Nur unassigned
@@ -13,7 +13,11 @@
           <tbody>
             @for (card of visibleCards(); track card.id) {
               <tr class="border-t ui-border-subtle">
-                <td class="px-4 py-3 font-mono">{{ card.cardUid }}</td>
+                <td class="px-4 py-3">
+                  <span class="block max-w-[13rem] truncate font-mono" [title]="card.cardUid">
+                    {{ shortCardUid(card.cardUid) }}
+                  </span>
+                </td>
                 <td class="px-4 py-3">{{ card.cardType }}</td>
                 <td class="px-4 py-3">{{ card.status }}</td>
                 <td class="px-4 py-3">
@@ -56,14 +60,14 @@
       </div>
     </div>
 
-    <form class="grid content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="assign()">
+    <form class="grid min-w-0 content-start gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5" (ngSubmit)="assign()">
       <h2 class="text-xl font-semibold">Karte zuweisen</h2>
       <label class="grid gap-2 text-sm">
         NFC Karte
         <mat-select class="nfc-select" panelClass="nfc-select-panel" name="cardUid" [ngModel]="form().cardUid" (ngModelChange)="patch({ cardUid: $event })" required>
           <mat-option value="">Bitte wählen</mat-option>
           @for (card of cards(); track card.id) {
-            <mat-option [value]="card.cardUid">{{ card.cardUid }} · {{ card.cardType }} · {{ card.status }}</mat-option>
+            <mat-option [value]="card.cardUid">{{ cardSelectLabel(card) }}</mat-option>
           }
         </mat-select>
       </label>

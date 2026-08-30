@@ -19,22 +19,11 @@ export class NfcPodiumComponent {
   }
 
   protected headline() {
-    const entries = this.entries();
-    if (!entries.length) return 'Top 3 der Arena';
-    const topRank = entries[0].rank;
-    const tiedTop = entries.filter((entry) => entry.rank === topRank);
-    return tiedTop.length > 1 ? 'Geteilte Spitze der Arena' : 'Top 3 der Arena';
-  }
-
-  protected subline() {
-    const entries = this.entries();
-    if (entries.length === 2) return 'Zwei Spieler, direktes Duell';
-    const tied = entries.find((entry) => entry.isTied);
-    return tied ? 'Gleichstände werden als geteilter Platz gezeigt' : 'Rang und Punkte klar getrennt';
+    return 'Top 3 der Arena';
   }
 
   protected rankLabel(entry: LeaderboardEntryDto) {
-    return entry.rankLabel ?? `#${entry.rank}`;
+    return `#${entry.rank}`;
   }
 
   protected initials(name: string) {

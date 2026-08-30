@@ -23,7 +23,11 @@
         <mat-icon class="!h-4 !w-4 !text-base" aria-hidden="true">{{ sidebarCollapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
       </button>
     </div>
-    <nav class="mt-8 grid gap-5 overflow-y-auto pb-4 text-sm">
+    <nav
+      class="mt-8 grid gap-5 pb-4 text-sm"
+      [class.overflow-y-auto]="!sidebarCollapsed()"
+      [class.overflow-visible]="sidebarCollapsed()"
+    >
       @for (group of visibleLinkGroups(); track group.label) {
         <div class="grid gap-1">
           <p

@@ -1,6 +1,6 @@
-<nfc-public-shell title="NFC Geräte Simulation" eyebrow="ESP32 Touch Testgerät">
+<nfc-admin-shell title="NFC Geräte Simulator">
   <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-    <div class="grid gap-5">
+    <div class="grid min-w-0 gap-5">
       <article class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -12,25 +12,14 @@
           </button>
         </div>
 
-        <div class="mt-5 grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm">
-            Device ID
-            <input [ngModel]="deviceId()" (ngModelChange)="deviceId.set($event)" />
-          </label>
-          <label class="grid gap-2 text-sm">
-            Device Key
-            <input [ngModel]="deviceKey()" (ngModelChange)="deviceKey.set($event)" />
-          </label>
-        </div>
-
         <div class="mt-4 rounded-lg border ui-border-accent ui-surface-muted p-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p class="text-xs font-bold uppercase tracking-[0.18em] ui-text-accent">Account verbinden</p>
-              <p class="mt-1 text-sm ui-text-soft">Diesen Code im Admin-Tab Geräte eintragen.</p>
+              <p class="text-xs font-bold uppercase tracking-[0.18em] ui-text-accent">Firmware-Modus</p>
+              <p class="mt-1 text-sm ui-text-soft">Der Admin-Simulator nutzt ein automatisch verbundenes virtuelles Gerät.</p>
             </div>
             <a class="rounded-md border ui-border-subtle px-3 py-2 text-sm transition hover:ui-surface-hover" href="/nfc-game/admin/devices">
-              Geräte öffnen
+              Devices öffnen
             </a>
           </div>
         </div>
@@ -118,12 +107,12 @@
       </article>
     </div>
 
-    <aside class="grid content-start gap-5">
-      <article class="grid gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5">
+    <aside class="grid min-w-0 content-start gap-5">
+      <article class="grid min-w-0 gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5">
         <h2 class="text-xl font-semibold">NFC Reader</h2>
         <label class="grid gap-2 text-sm">
           Karte
-          <mat-select class="nfc-select" panelClass="nfc-select-panel" [ngModel]="selectedCardUid()" (ngModelChange)="selectedCardUid.set($event)">
+          <mat-select class="nfc-select nfc-card-select" panelClass="nfc-select-panel" [ngModel]="selectedCardUid()" (ngModelChange)="selectedCardUid.set($event)">
             <mat-option value="">Karte auswählen</mat-option>
             @for (option of cardOptions(); track option.card.id) {
               <mat-option [value]="option.card.cardUid">{{ option.label }}</mat-option>
@@ -131,18 +120,43 @@
           </mat-select>
         </label>
         @if (selectedCard(); as option) {
-          <div class="rounded-md border ui-border-subtle ui-surface-muted p-3 text-sm">
+          <div class="min-w-0 rounded-md border ui-border-subtle ui-surface-muted p-3 text-sm">
             <p class="font-semibold">{{ option.targetName }}</p>
-            <p class="mt-1 font-mono text-xs ui-text-muted">{{ option.card.cardUid }}</p>
+            <p class="mt-1 font-mono text-xs ui-text-muted" [title]="option.card.cardUid">UID {{ option.uidLabel }}</p>
             <p class="mt-1 text-xs ui-text-muted">{{ option.card.cardType }} · {{ option.card.status }}</p>
           </div>
         }
         <button class="rounded-md ui-bg-accent px-4 py-3 font-semibold ui-text-on-accent transition hover:cursor-pointer hover:ui-bg-accent-soft active:scale-[0.99]" type="button" (click)="scanSelectedCard()" [disabled]="!selectedCardUid()">
           Karte scannen
         </button>
+        <div class="grid gap-3 border-t ui-border-subtle pt-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-base font-semibold">Neue Karte</h3>
+            <button class="rounded-md border ui-border-subtle px-3 py-2 text-sm transition hover:cursor-pointer hover:ui-surface-hover active:scale-[0.98]" type="button" (click)="generateNewCardUid()">
+              UID erzeugen
+            </button>
+          </div>
+          <label class="grid gap-2 text-sm">
+            Karten-UID
+            <input
+              class="font-mono text-xs"
+              [ngModel]="newCardUid()"
+              (ngModelChange)="newCardUid.set($event)"
+              placeholder="neue Karten-UID"
+            />
+          </label>
+          <button
+            class="rounded-md border ui-border-accent px-4 py-3 font-semibold ui-text-accent transition hover:cursor-pointer hover:ui-bg-accent-soft active:scale-[0.99]"
+            type="button"
+            (click)="scanNewCard()"
+            [disabled]="!newCardUid().trim()"
+          >
+            Neue Karte scannen
+          </button>
+        </div>
       </article>
 
-      <article class="grid gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5">
+      <article class="grid min-w-0 gap-4 rounded-lg border ui-border-subtle ui-surface-muted p-5">
         <h2 class="text-xl font-semibold">Session</h2>
         <label class="grid gap-2 text-sm">
           Session ID
@@ -162,7 +176,7 @@
         </button>
       </article>
 
-      <article class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
+      <article class="min-w-0 rounded-lg border ui-border-subtle ui-surface-muted p-5">
         <h2 class="text-xl font-semibold">Letztes Event</h2>
         @if (lastEvent()) {
           <pre class="mt-3 max-h-80 overflow-auto rounded-md ui-surface-muted p-3 text-xs ui-text-soft">{{ lastEvent() }}</pre>
@@ -172,4 +186,4 @@
       </article>
     </aside>
   </section>
-</nfc-public-shell>
+</nfc-admin-shell>

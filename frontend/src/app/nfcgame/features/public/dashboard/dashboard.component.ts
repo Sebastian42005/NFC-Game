@@ -299,6 +299,14 @@ export class NfcDashboardComponent {
     return member.imageUrl || null;
   }
 
+  protected compactMembers(team: { members: { playerId: string; playerName?: string | null; imageUrl?: string | null }[] }) {
+    return team.members.slice(0, 3);
+  }
+
+  protected hiddenMemberCount(team: { members: unknown[] }) {
+    return Math.max(0, team.members.length - 3);
+  }
+
   protected displayTeamName(team: { name: string; members?: { playerName?: string | null }[] }) {
     const singleMemberName = team.members?.length === 1 ? team.members[0]?.playerName?.trim() : '';
     return singleMemberName || team.name;

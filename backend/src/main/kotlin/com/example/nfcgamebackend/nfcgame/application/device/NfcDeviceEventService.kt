@@ -1,5 +1,6 @@
 package com.example.nfcgamebackend.nfcgame.application.device
 
+import com.example.nfcgamebackend.nfcgame.api.dto.AdminDeviceSimulationEventRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceEventRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceEventResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.DeviceProvisioningResponse
@@ -75,6 +76,26 @@ class NfcDeviceEventService(
     @Transactional
     fun handleEvent(request: DeviceEventRequest): DeviceEventResponse {
         val device = deviceAuthenticator.authenticate(request.deviceId, request.deviceKey)
+        return handleAuthenticatedEvent(device, request)
+    }
+
+    @Transactional
+    fun handleSimulatorEvent(device: NfcDevice, request: AdminDeviceSimulationEventRequest): DeviceEventResponse =
+        handleAuthenticatedEvent(
+            device,
+            DeviceEventRequest(
+                deviceId = device.name,
+                deviceKey = device.deviceKey,
+                sessionId = request.sessionId,
+                currentStateKey = request.currentStateKey,
+                eventType = request.eventType,
+                cardUid = request.cardUid,
+                payload = request.payload,
+                occurredAt = request.occurredAt,
+            ),
+        )
+
+    private fun handleAuthenticatedEvent(device: NfcDevice, request: DeviceEventRequest): DeviceEventResponse {
         val requestSessionId = parseUuid(request.sessionId)
         val result = when (request.eventType) {
             EventType.CARD_SCANNED,
@@ -159,6 +180,10 @@ class NfcDeviceEventService(
 
     fun currentScreen(deviceId: String, deviceKey: String, sessionId: java.util.UUID): DeviceEventResponse {
         val device = deviceAuthenticator.authenticate(deviceId, deviceKey)
+        return currentScreen(device, sessionId)
+    }
+
+    fun currentScreen(device: NfcDevice, sessionId: java.util.UUID): DeviceEventResponse {
         val session = sessionRepository.findById(sessionId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found")
         }

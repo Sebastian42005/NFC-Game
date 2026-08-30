@@ -446,6 +446,15 @@ data class DeviceEventRequest(
     val occurredAt: Instant? = null,
 )
 
+data class AdminDeviceSimulationEventRequest(
+    val sessionId: String? = null,
+    val currentStateKey: String? = null,
+    val eventType: EventType,
+    val cardUid: String? = null,
+    val payload: Map<String, Any?> = emptyMap(),
+    val occurredAt: Instant? = null,
+)
+
 data class DeviceEventResponse(
     val sessionId: UUID?,
     val status: SessionStatus?,

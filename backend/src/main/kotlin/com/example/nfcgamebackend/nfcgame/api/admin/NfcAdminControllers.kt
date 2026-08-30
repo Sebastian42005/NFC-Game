@@ -3,6 +3,7 @@ package com.example.nfcgamebackend.nfcgame.api.admin
 import com.example.nfcgamebackend.dto.AuthMeResponse
 import com.example.nfcgamebackend.dto.LoginRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.AdminAccountSummaryResponse
+import com.example.nfcgamebackend.nfcgame.api.dto.AdminDeviceSimulationEventRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.BlockGameRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.CardAssignRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.CardResponse
@@ -25,6 +26,7 @@ import com.example.nfcgamebackend.nfcgame.api.dto.PlayerResponse
 import com.example.nfcgamebackend.nfcgame.api.dto.SoundRatingRequest
 import com.example.nfcgamebackend.nfcgame.api.dto.SoundUpdateRequest
 import com.example.nfcgamebackend.nfcgame.application.admin.NfcAccountManagementService
+import com.example.nfcgamebackend.nfcgame.application.admin.NfcAdminDeviceSimulatorService
 import com.example.nfcgamebackend.nfcgame.application.admin.NfcGameBuilderService
 import com.example.nfcgamebackend.nfcgame.application.admin.NfcAdminService
 import com.example.nfcgamebackend.nfcgame.application.sound.NfcSoundLibraryService
@@ -91,6 +93,7 @@ class NfcAdminController(
     private val adminService: NfcAdminService,
     private val gameBuilderService: NfcGameBuilderService,
     private val accountManagementService: NfcAccountManagementService,
+    private val deviceSimulatorService: NfcAdminDeviceSimulatorService,
     private val soundLibraryService: NfcSoundLibraryService,
 ) {
     @GetMapping("/accounts")
@@ -168,6 +171,14 @@ class NfcAdminController(
 
     @DeleteMapping("/devices/{id}")
     fun deleteDevice(@PathVariable id: UUID) = adminService.deleteDevice(id)
+
+    @PostMapping("/device-simulator/events")
+    fun simulateDeviceEvent(
+        @Valid @RequestBody request: AdminDeviceSimulationEventRequest,
+    ) = deviceSimulatorService.simulateDeviceEvent(request)
+
+    @GetMapping("/device-simulator/sessions/{sessionId}/screen")
+    fun simulatorScreen(@PathVariable sessionId: UUID) = deviceSimulatorService.simulatorScreen(sessionId)
 
     @GetMapping("/game-templates")
     fun listGameTemplates(): List<GameTemplateResponse> = adminService.listGameTemplates()

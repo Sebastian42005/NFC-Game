@@ -13,7 +13,7 @@
             <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Bereit</p>
             <h2 class="text-2xl font-black ui-text-strong">Kein Spieleabend läuft</h2>
             <p class="max-w-2xl text-sm leading-6 ui-text-muted">
-              Starte einen Abend und alle danach gestarteten Game-Sessions werden automatisch zugeordnet.
+              Starte einen Abend und beginne danach Spiele.
             </p>
           </div>
           <div>
@@ -109,11 +109,65 @@
           </div>
         </section>
 
-        <section class="grid gap-3 md:grid-cols-4">
-          <nfc-kpi-card label="Spiele" [value]="night.sessionCount" subLabel="zugeordnet" accent="teal" />
-          <nfc-kpi-card label="Spieler" [value]="night.playerCount" subLabel="automatisch aufgenommen" accent="sky" />
-          <nfc-kpi-card label="Dauer" [value]="durationLabel(night.durationMinutes)" subLabel="seit Start" accent="cyan" />
-          <nfc-kpi-card [label]="scoreUnit(night.scoringSystem)" [value]="night.scoringSystem === 'WINS' ? totalWins() : totalPoints()" subLabel="Abendwertung" accent="amber" />
+        <section class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_18rem]">
+          <article class="game-night-summary-card">
+            <div class="min-w-0">
+              <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-muted">Spiele</p>
+              <strong class="mt-3 block text-4xl font-black tracking-normal ui-text-strong">{{ night.sessionCount }}</strong>
+            </div>
+            <div class="game-night-preview-strip justify-end">
+              @for (game of gamePreviewRows(); track game.id) {
+                <a
+                  [routerLink]="['/nfc-game/games', game.id]"
+                  class="game-night-game-preview"
+                  [attr.aria-label]="game.title"
+                  [attr.title]="game.title"
+                >
+                  @if (game.imageUrl) {
+                    <img class="h-full w-full object-cover" [src]="game.imageUrl" [alt]="game.title" />
+                  } @else {
+                    <mat-icon>sports_esports</mat-icon>
+                  }
+                  @if (game.count > 1) {
+                    <span>{{ game.count }}</span>
+                  }
+                </a>
+              } @empty {
+                <span class="game-night-game-preview">
+                  <mat-icon>sports_esports</mat-icon>
+                </span>
+              }
+            </div>
+          </article>
+
+          <article class="game-night-summary-card">
+            <div class="min-w-0">
+              <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-muted">Spieler</p>
+              <strong class="mt-3 block text-4xl font-black tracking-normal ui-text-strong">{{ night.playerCount }}</strong>
+            </div>
+            <div class="game-night-preview-strip justify-end">
+              @for (player of playerPreviewRows(); track player.id) {
+                <a
+                  [routerLink]="['/nfc-game/players', player.id]"
+                  class="game-night-player-preview"
+                  [attr.aria-label]="player.name"
+                  [attr.title]="player.name"
+                >
+                  @if (player.imageUrl) {
+                    <img class="h-full w-full object-cover" [src]="player.imageUrl" [alt]="player.name" />
+                  } @else {
+                    {{ initials(player.name) }}
+                  }
+                </a>
+              } @empty {
+                <span class="game-night-player-preview">
+                  <mat-icon>person</mat-icon>
+                </span>
+              }
+            </div>
+          </article>
+
+          <nfc-kpi-card label="Dauer" [value]="durationLabel(night.durationMinutes)" accent="cyan" />
         </section>
 
         @if (night.status === 'FINISHED') {
@@ -150,7 +204,7 @@
           </section>
         </section>
 
-        <nfc-bar-chart [title]="chartTitle()" eyebrow="Abendwertung" [data]="pointsChart()" />
+        <nfc-bar-chart [title]="chartTitle()" [data]="pointsChart()" />
 
         <section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
           <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">Spiele</p>
@@ -159,11 +213,20 @@
             @for (session of sessionRows(); track session.id) {
               <a
                 [routerLink]="['/nfc-game/sessions', session.id]"
-                class="grid gap-3 rounded-lg border ui-border-subtle ui-surface-muted p-4 transition hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                class="grid gap-3 rounded-lg border ui-border-subtle ui-surface-muted p-3 transition hover:ui-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ui-ring-accent sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
               >
-                <div class="min-w-0">
-                  <h3 class="truncate font-black ui-text-strong">{{ session.title }}</h3>
-                  <p class="mt-1 text-sm ui-text-muted">{{ session.meta }}</p>
+                <div class="flex min-w-0 items-center gap-3">
+                  <span class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border ui-border-subtle ui-surface text-xs font-black ui-text-strong">
+                    @if (session.imageUrl) {
+                      <img class="h-full w-full object-cover" [src]="session.imageUrl" [alt]="session.title" />
+                    } @else {
+                      <mat-icon>sports_esports</mat-icon>
+                    }
+                  </span>
+                  <div class="min-w-0">
+                    <h3 class="truncate font-black ui-text-strong">{{ session.title }}</h3>
+                    <p class="mt-1 text-sm ui-text-muted">{{ session.meta }}</p>
+                  </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:justify-end">
                   <span class="rounded-md border ui-border-subtle ui-surface-muted px-3 py-2 text-sm font-bold ui-text-strong">
@@ -212,12 +275,12 @@
                   >
                     <td class="px-4 py-3">
                       <span class="inline-flex min-w-20 justify-center rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em]">
-                        {{ entry.rankLabel || ('#' + entry.rank) }}
+                        #{{ entry.rank }}
                       </span>
                     </td>
                     <td class="px-4 py-3">
                       <div class="flex min-w-0 items-center gap-3">
-                        <span class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface text-xs font-black ui-text-strong">
+                        <span class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border ui-border-subtle ui-surface text-xs font-black ui-text-strong">
                           @if (entry.imageUrl) {
                             <img class="h-full w-full object-cover" [src]="entry.imageUrl" [alt]="entry.playerName || 'Spieler'" />
                           } @else {
@@ -226,9 +289,6 @@
                         </span>
                         <div class="min-w-0">
                           <p class="truncate font-bold ui-text-strong">{{ entry.playerName || entry.playerId }}</p>
-                          @if (entry.isTied) {
-                            <p class="mt-0.5 text-xs ui-text-warm">Gleichstand · {{ entry.tieReason }}</p>
-                          }
                         </div>
                       </div>
                     </td>

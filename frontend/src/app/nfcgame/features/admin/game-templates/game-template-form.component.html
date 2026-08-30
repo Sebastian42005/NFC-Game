@@ -365,9 +365,21 @@
             @for (team of previewTeams(); track team.name) {
               <div class="grid gap-2">
                 <div class="flex items-end justify-between gap-3">
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-xs font-black uppercase ui-text-muted">#{{ team.rank }}</p>
-                    <h4 class="text-2xl font-black ui-text-strong">{{ team.name }}</h4>
+                    <div class="mt-2 flex items-center gap-3">
+                      <div class="flex items-center">
+                        @for (member of previewCompactMembers(team); track member) {
+                          <div class="-ml-2 first:ml-0 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 ui-border-subtle ui-bg-accent-soft text-xs font-black ui-text-accent">{{ previewInitials(member) }}</div>
+                        }
+                        @if (previewHiddenMemberCount(team)) {
+                          <div class="-ml-2 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 ui-border-subtle ui-bg-warm-soft text-[10px] font-black ui-text-warm">+{{ previewHiddenMemberCount(team) }}</div>
+                        }
+                      </div>
+                      <div class="min-w-0">
+                        <h4 class="truncate text-2xl font-black ui-text-strong">{{ previewDisplayTeamName(team) }}</h4>
+                      </div>
+                    </div>
                   </div>
                   <strong class="text-xl font-black ui-text-warm">{{ team.displayValue }}</strong>
                 </div>
@@ -382,7 +394,22 @@
             @for (team of previewTeams(); track team.name) {
               <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border ui-border-subtle ui-surface-muted px-3 py-2">
                 <span class="text-xs font-black ui-text-muted">#{{ team.rank }}</span>
-                <span class="truncate font-black ui-text-strong">{{ team.name }}</span>
+                <div class="flex min-w-0 items-center gap-3">
+                  <div class="flex items-center">
+                    @for (member of previewCompactMembers(team); track member) {
+                      <div class="-ml-2 first:ml-0 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 ui-border-subtle ui-bg-accent-soft text-xs font-black ui-text-accent">{{ previewInitials(member) }}</div>
+                    }
+                    @if (previewHiddenMemberCount(team)) {
+                      <div class="-ml-2 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 ui-border-subtle ui-bg-warm-soft text-[10px] font-black ui-text-warm">+{{ previewHiddenMemberCount(team) }}</div>
+                    }
+                  </div>
+                  <div class="min-w-0">
+                    <span class="block truncate font-black ui-text-strong">{{ previewDisplayTeamName(team) }}</span>
+                    @if (team.members.length > 1) {
+                      <span class="block truncate text-xs font-bold ui-text-accent">{{ previewTeamMemberNames(team) }}</span>
+                    }
+                  </div>
+                </div>
                 <strong class="ui-text-warm">{{ team.displayValue }}</strong>
               </div>
             }
@@ -397,7 +424,15 @@
                 [class.pt-4]="team.rank === 3"
               >
                 <span class="text-xs font-black ui-text-muted">#{{ team.rank }}</span>
-                <strong class="mt-1 truncate ui-text-strong">{{ team.name }}</strong>
+                <div class="mt-2 flex items-center">
+                  @for (member of previewCompactMembers(team); track member) {
+                    <div class="-ml-2 first:ml-0 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 ui-border-subtle ui-bg-accent-soft text-xs font-black ui-text-accent">{{ previewInitials(member) }}</div>
+                  }
+                </div>
+                <strong class="mt-2 truncate ui-text-strong">{{ previewDisplayTeamName(team) }}</strong>
+                @if (team.members.length > 1) {
+                  <span class="truncate text-[10px] font-bold ui-text-accent">{{ previewTeamMemberNames(team) }}</span>
+                }
                 <span class="text-sm font-black ui-text-warm">{{ team.displayValue }}</span>
               </div>
             }
@@ -417,7 +452,19 @@
                   <span class="rounded-full border ui-border-subtle ui-surface-muted px-2 py-1 text-[10px] font-black ui-text-soft">#{{ team.rank }}</span>
                   <strong class="text-lg font-black leading-none ui-text-warm">{{ team.displayValue }}</strong>
                 </div>
-                <h4 class="mt-4 truncate text-lg font-black ui-text-strong">{{ team.name }}</h4>
+                <div class="mt-4 flex items-center gap-3">
+                  <div class="flex items-center">
+                    @for (member of previewCompactMembers(team); track member) {
+                      <div class="-ml-2 first:ml-0 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 ui-border-subtle ui-bg-accent-soft text-xs font-black ui-text-accent">{{ previewInitials(member) }}</div>
+                    }
+                  </div>
+                  <div class="min-w-0">
+                    <h4 class="truncate text-lg font-black ui-text-strong">{{ previewDisplayTeamName(team) }}</h4>
+                    @if (team.members.length > 1) {
+                      <p class="truncate text-[10px] font-bold ui-text-accent">{{ previewTeamMemberNames(team) }}</p>
+                    }
+                  </div>
+                </div>
               </div>
             }
           </div>

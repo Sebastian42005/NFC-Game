@@ -1,0 +1,18 @@
+@if (autoNavigation.prompt(); as prompt) {
+  <aside class="nfc-auto-navigation-panel" role="status" aria-live="polite">
+    <div class="nfc-auto-navigation-icon" aria-hidden="true">
+      <mat-icon>timer</mat-icon>
+    </div>
+    <div class="min-w-0 flex-1">
+      <p>{{ prompt.title }}</p>
+      <strong>{{ autoNavigation.countdownText(prompt) }}</strong>
+      <div class="nfc-auto-navigation-track" aria-hidden="true">
+        <span [style.width.%]="autoNavigation.progressPercent(prompt)"></span>
+      </div>
+    </div>
+    <button type="button" class="nfc-auto-navigation-cancel" (click)="autoNavigation.cancel()">
+      <mat-icon>close</mat-icon>
+      <span>{{ autoNavigation.cancelLabel() }}</span>
+    </button>
+  </aside>
+}

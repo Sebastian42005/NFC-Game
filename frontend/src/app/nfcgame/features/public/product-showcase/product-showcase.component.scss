@@ -3,46 +3,147 @@
 }
 
 .nfc-reader-experience {
-  --nfc-reader-bg: #050606;
-  --nfc-reader-line: rgba(255, 255, 255, 0.055);
-  --nfc-reader-text: rgba(248, 250, 252, 0.96);
-  --nfc-reader-muted: rgba(226, 232, 240, 0.64);
-  --nfc-reader-accent: var(--nfc-accent-strong);
-  min-height: 1000svh;
+  --product-bg: #050606;
+  --product-bg-soft: #0d1110;
+  --product-panel: rgba(255, 255, 255, 0.055);
+  --product-panel-strong: rgba(255, 255, 255, 0.085);
+  --product-line: rgba(255, 255, 255, 0.11);
+  --product-line-soft: rgba(255, 255, 255, 0.065);
+  --product-text: rgba(248, 250, 252, 0.96);
+  --product-muted: rgba(226, 232, 240, 0.66);
+  --product-soft: rgba(226, 232, 240, 0.48);
+  --product-accent: var(--nfc-accent-strong);
+  --product-warm: var(--nfc-warm);
+  min-height: 100svh;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(120deg, #050606 0%, #10110f 42%, #050606 100%);
-  background-size: 72px 72px, 72px 72px, auto;
-  color: var(--nfc-reader-text);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(120deg, var(--product-bg) 0%, #0b0d0c 42%, var(--product-bg) 100%);
+  background-size: 80px 80px, 80px 80px, auto;
+  color: var(--product-text);
   color-scheme: dark;
 }
 
-.nfc-reader-experience::before,
-.nfc-reader-experience::after {
+.nfc-reader-experience::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-}
-
-.nfc-reader-experience::before {
   background:
-    linear-gradient(90deg, rgba(0, 184, 255, 0.13), transparent 34%, transparent 64%, rgba(251, 191, 36, 0.1)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 24%, transparent 72%, rgba(0, 0, 0, 0.52));
+    linear-gradient(90deg, rgba(0, 184, 255, 0.11), transparent 32%, transparent 66%, rgba(251, 191, 36, 0.075)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%, transparent 72%, rgba(0, 0, 0, 0.5));
 }
 
-.nfc-reader-experience::after {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.48), transparent 22%, transparent 78%, rgba(0, 0, 0, 0.42));
+.nfc-product-nav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 3rem);
+  padding: 1rem clamp(1rem, 3vw, 3rem);
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  color: var(--product-text);
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    backdrop-filter 220ms ease,
+    padding 220ms ease;
+}
+
+.nfc-product-nav.is-scrolled {
+  border-bottom-color: var(--product-line-soft);
+  background: rgba(5, 6, 6, 0.72);
+  backdrop-filter: blur(22px);
+}
+
+.nfc-product-brand,
+.nfc-product-nav-links,
+.nfc-product-buy {
+  min-width: 0;
+}
+
+.nfc-product-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.nfc-product-brand span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--product-accent) 42%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--product-accent) 15%, transparent);
+  color: var(--product-accent);
+  font-weight: 950;
+}
+
+.nfc-product-brand strong,
+.nfc-product-nav-links a,
+.nfc-product-buy {
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.nfc-product-nav-links {
+  display: flex;
+  justify-content: center;
+  gap: clamp(1rem, 2.2vw, 2.25rem);
+}
+
+.nfc-product-nav-links a {
+  color: var(--product-muted);
+  text-decoration: none;
+}
+
+.nfc-product-nav-links a:hover,
+.nfc-product-nav-links a:focus-visible {
+  color: var(--product-text);
+}
+
+.nfc-product-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--product-accent) 38%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--product-accent), var(--nfc-accent-2));
+  box-shadow: 0 18px 52px color-mix(in srgb, var(--product-accent) 24%, transparent);
+  color: #061018;
+  padding: 0.78rem 1.08rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nfc-product-buy.is-large {
+  width: fit-content;
+  margin-top: 2rem;
+  padding: 0.95rem 1.35rem;
+  font-size: 0.84rem;
+}
+
+.nfc-hardware-story {
+  isolation: isolate;
 }
 
 .nfc-reader-step {
   position: relative;
 }
 
-.nfc-reader-step:not(.is-first) {
-  align-items: flex-end;
+.nfc-reader-step.is-first {
+  min-height: 100svh;
 }
 
 .nfc-reader-step.is-right-step {
@@ -50,33 +151,48 @@
 }
 
 .nfc-reader-copy {
-  max-width: min(32rem, calc(100vw - 2.5rem));
+  max-width: min(36rem, calc(100vw - 2.5rem));
   text-shadow: 0 16px 42px rgba(0, 0, 0, 0.52);
 }
 
-.nfc-reader-step-label {
+.nfc-reader-step-label,
+.nfc-section-copy p,
+.nfc-builder-copy p,
+.nfc-possibility-copy p,
+.nfc-audio-copy p,
+.nfc-purchase-copy p,
+.nfc-final-hero p {
   margin: 0 0 1rem;
-  color: var(--nfc-reader-accent);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.22em;
+  color: var(--product-accent);
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
-.nfc-reader-copy h2 {
+.nfc-reader-copy h2,
+.nfc-section-copy h2,
+.nfc-builder-copy h2,
+.nfc-possibility-copy h2,
+.nfc-audio-copy h2,
+.nfc-purchase-copy h2,
+.nfc-final-hero h2 {
   margin: 0;
-  color: var(--nfc-reader-text);
-  font-size: clamp(2.45rem, 5.4vw, 6.3rem);
+  color: var(--product-text);
   font-weight: 950;
-  line-height: 0.9;
-  letter-spacing: -0.035em;
+  line-height: 0.92;
+  letter-spacing: 0;
+}
+
+.nfc-reader-copy h2 {
+  font-size: clamp(3.1rem, 6.6vw, 7.8rem);
 }
 
 .nfc-reader-copy p:last-child {
-  max-width: 22rem;
-  margin: 1rem 0 0;
-  color: var(--nfc-reader-muted);
-  font-size: clamp(1rem, 1.1rem, 1.2rem);
+  max-width: 28rem;
+  margin: 1.1rem 0 0;
+  color: var(--product-muted);
+  font-size: clamp(1.08rem, 1.5vw, 1.42rem);
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: 0;
@@ -90,32 +206,626 @@
   margin-left: auto;
 }
 
-@media (max-width: 760px) {
-  .nfc-reader-experience {
-    min-height: 980svh;
-    background-size: 48px 48px, 48px 48px, auto;
+.nfc-platform-flow,
+.nfc-builder-feature,
+.nfc-card-possibilities,
+.nfc-mechanics,
+.nfc-audio-flow,
+.nfc-system-overview,
+.nfc-purchase,
+.nfc-final-hero {
+  position: relative;
+  z-index: 2;
+}
+
+.nfc-platform-flow {
+  padding: clamp(5rem, 10vw, 10rem) clamp(1rem, 4vw, 4rem) 0;
+  background:
+    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.42) 8rem),
+    linear-gradient(180deg, var(--product-bg), var(--product-bg-soft) 46%, var(--product-bg));
+}
+
+.nfc-platform-section,
+.nfc-builder-feature,
+.nfc-card-possibilities,
+.nfc-mechanics,
+.nfc-audio-flow,
+.nfc-system-overview,
+.nfc-purchase,
+.nfc-final-hero {
+  width: min(1180px, calc(100vw - 2rem));
+  margin-inline: auto;
+}
+
+.nfc-platform-section {
+  display: grid;
+  min-height: 92svh;
+  grid-template-columns: minmax(18rem, 0.48fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5.5rem);
+  padding-block: clamp(4rem, 8vw, 8rem);
+}
+
+.nfc-platform-section.is-wide {
+  grid-template-columns: 1fr;
+  min-height: 104svh;
+}
+
+.nfc-platform-section.is-wide .nfc-section-copy {
+  max-width: 54rem;
+}
+
+.nfc-platform-section.is-wide .nfc-browser-frame {
+  justify-self: center;
+  width: min(100%, 70rem);
+  margin-top: clamp(1rem, 2.6vw, 2.5rem);
+  transform: perspective(1400px) rotateX(5deg) rotateY(-5deg);
+}
+
+.nfc-platform-section.is-compact {
+  min-height: 70svh;
+}
+
+.nfc-section-copy,
+.nfc-builder-copy,
+.nfc-possibility-copy,
+.nfc-audio-copy,
+.nfc-purchase-copy,
+.nfc-final-hero > div:last-child {
+  position: relative;
+  z-index: 2;
+  max-width: 38rem;
+  min-width: 0;
+}
+
+.nfc-platform-section:not(.is-wide) .nfc-section-copy {
+  max-width: 27rem;
+}
+
+.nfc-section-copy h2,
+.nfc-builder-copy h2,
+.nfc-possibility-copy h2,
+.nfc-audio-copy h2,
+.nfc-purchase-copy h2,
+.nfc-final-hero h2 {
+  font-size: clamp(2.55rem, 5.4vw, 5.9rem);
+}
+
+.nfc-platform-section:not(.is-wide) .nfc-section-copy h2 {
+  font-size: clamp(2.35rem, 3.7vw, 4.35rem);
+}
+
+.nfc-section-copy span,
+.nfc-builder-copy span,
+.nfc-builder-copy small,
+.nfc-possibility-copy > span,
+.nfc-audio-copy > span,
+.nfc-purchase-copy > span,
+.nfc-final-hero span {
+  display: block;
+  margin-top: 1.15rem;
+  color: var(--product-muted);
+  font-size: clamp(1.03rem, 1.45vw, 1.28rem);
+  font-weight: 700;
+  line-height: 1.56;
+  letter-spacing: 0;
+}
+
+.nfc-builder-copy small {
+  color: var(--product-soft);
+}
+
+.nfc-browser-frame {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--product-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.56),
+    0 0 70px color-mix(in srgb, var(--product-accent) 10%, transparent);
+  transform: perspective(1200px) rotateX(3deg) rotateY(4deg);
+  transform-origin: center;
+}
+
+.nfc-platform-section:not(.is-wide) .nfc-browser-frame {
+  justify-self: end;
+  width: min(100%, 44rem);
+  transform: perspective(1200px) rotateX(2deg) rotateY(3deg);
+}
+
+.nfc-browser-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.nfc-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  height: 2.25rem;
+  border-bottom: 1px solid var(--product-line-soft);
+  background: rgba(255, 255, 255, 0.045);
+  padding-inline: 0.8rem;
+}
+
+.nfc-browser-bar span {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.nfc-browser-bar span:first-child {
+  background: var(--product-warm);
+}
+
+.nfc-browser-bar span:nth-child(2) {
+  background: var(--product-accent);
+}
+
+.nfc-browser-bar span:nth-child(3) {
+  background: var(--nfc-accent-2);
+}
+
+.nfc-floating-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  max-width: 46rem;
+  margin-top: 1rem;
+}
+
+.nfc-floating-labels span,
+.nfc-possibility-list span,
+.nfc-mechanics-strip span,
+.nfc-system-map span {
+  border: 1px solid var(--product-line-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--product-muted);
+  backdrop-filter: blur(18px);
+  font-weight: 850;
+}
+
+.nfc-floating-labels span {
+  padding: 0.62rem 0.82rem;
+}
+
+.nfc-builder-feature {
+  display: grid;
+  min-height: 112svh;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding-block: clamp(5rem, 10vw, 9rem);
+}
+
+.nfc-builder-copy {
+  max-width: 56rem;
+}
+
+.nfc-browser-frame-large {
+  transform: perspective(1500px) rotateX(4deg);
+}
+
+.nfc-card-possibilities {
+  display: grid;
+  min-height: 92svh;
+  grid-template-columns: minmax(14rem, 0.7fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 7vw, 7rem);
+  padding-block: clamp(5rem, 9vw, 8rem);
+}
+
+.nfc-card-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.nfc-card-visual img {
+  width: min(24rem, 72vw);
+  border-radius: 8px;
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.62),
+    0 0 70px color-mix(in srgb, var(--product-accent) 18%, transparent);
+  transform: perspective(900px) rotateY(-20deg) rotateX(8deg);
+}
+
+.nfc-card-orbit {
+  position: absolute;
+  width: min(28rem, 84vw);
+  aspect-ratio: 1.45;
+  border: 1px solid color-mix(in srgb, var(--product-accent) 32%, transparent);
+  border-radius: 50%;
+  transform: rotate(-14deg);
+}
+
+.nfc-possibility-list,
+.nfc-mechanics-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 2rem;
+}
+
+.nfc-possibility-list span,
+.nfc-mechanics-strip span,
+.nfc-system-map span {
+  padding: 0.68rem 0.92rem;
+}
+
+.nfc-mechanics {
+  display: grid;
+  min-height: 62svh;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  padding-block: clamp(4rem, 8vw, 7rem);
+}
+
+.nfc-audio-flow {
+  display: grid;
+  min-height: 92svh;
+  grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.75fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5.5rem);
+  padding-block: clamp(5rem, 9vw, 8rem);
+}
+
+.nfc-signal-stack {
+  display: grid;
+  gap: 1.2rem;
+  width: min(18rem, 100%);
+  margin-top: 2rem;
+}
+
+.nfc-signal-stack strong {
+  position: relative;
+  display: block;
+  border: 1px solid var(--product-line-soft);
+  border-radius: 8px;
+  background: var(--product-panel);
+  padding: 0.85rem 1rem;
+  color: var(--product-text);
+  text-align: center;
+}
+
+.nfc-signal-stack strong:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: -1.05rem;
+  left: 50%;
+  width: 1px;
+  height: 0.9rem;
+  background: linear-gradient(180deg, var(--product-accent), transparent);
+}
+
+.nfc-system-overview {
+  display: grid;
+  min-height: 90svh;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 6rem);
+  padding-block: clamp(5rem, 9vw, 8rem);
+}
+
+.nfc-system-map {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.nfc-system-map strong {
+  position: relative;
+  width: min(24rem, 100%);
+  border: 1px solid color-mix(in srgb, var(--product-accent) 26%, var(--product-line));
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--product-panel-strong), rgba(255, 255, 255, 0.035));
+  padding: 1.05rem;
+  color: var(--product-text);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.nfc-system-map strong:not(:last-of-type)::after {
+  content: '';
+  position: absolute;
+  bottom: -1rem;
+  left: 50%;
+  width: 1px;
+  height: 1rem;
+  background: var(--product-accent);
+}
+
+.nfc-system-map div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  max-width: 32rem;
+  margin-top: 0.8rem;
+}
+
+.nfc-purchase {
+  display: grid;
+  min-height: 78svh;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.55fr);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 6rem);
+  padding-block: clamp(5rem, 9vw, 8rem);
+}
+
+.nfc-bundle-panel {
+  border: 1px solid var(--product-line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--product-accent) 8%, transparent), transparent),
+    rgba(255, 255, 255, 0.045);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.44);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  backdrop-filter: blur(18px);
+}
+
+.nfc-bundle-panel h3 {
+  margin: 0 0 1rem;
+  color: var(--product-accent);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.nfc-bundle-panel h3:not(:first-child) {
+  margin-top: 2rem;
+}
+
+.nfc-bundle-panel p {
+  margin: 0.72rem 0;
+  color: var(--product-text);
+  font-size: 1.12rem;
+  font-weight: 850;
+}
+
+.nfc-final-hero {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 6rem);
+  padding-block: clamp(6rem, 11vw, 10rem);
+}
+
+.nfc-final-product {
+  position: relative;
+  min-height: clamp(28rem, 46vw, 38rem);
+}
+
+.nfc-final-card {
+  position: absolute;
+  top: 25%;
+  left: 0;
+  z-index: 2;
+  width: min(19rem, 42vw);
+  border-radius: 8px;
+  box-shadow: 0 28px 86px rgba(0, 0, 0, 0.58);
+  transform: perspective(900px) rotateY(22deg) rotateX(7deg) rotateZ(-8deg);
+}
+
+.nfc-final-reader {
+  position: absolute;
+  right: 0;
+  top: 6%;
+  z-index: 1;
+  display: grid;
+  width: min(23rem, 52vw);
+  aspect-ratio: 0.72;
+  place-items: start center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.76)),
+    linear-gradient(135deg, rgba(0, 184, 255, 0.16), rgba(52, 211, 153, 0.08));
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.58),
+    inset -32px 0 70px rgba(0, 0, 0, 0.13);
+  padding-top: 18%;
+  transform: perspective(1000px) rotateY(-18deg) rotateX(4deg);
+}
+
+.nfc-final-reader img {
+  width: 52%;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 2px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+}
+
+.nfc-final-reader span {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  width: 42%;
+  aspect-ratio: 1.75;
+  border: 4px solid rgba(5, 6, 6, 0.85);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.nfc-final-reader span::before,
+.nfc-final-reader span::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  border: 3px solid rgba(5, 6, 6, 0.8);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.nfc-final-reader span::before {
+  left: 20%;
+  width: 25%;
+  height: 42%;
+}
+
+.nfc-final-reader span::after {
+  left: 29%;
+  width: 42%;
+  height: 62%;
+}
+
+@media (max-width: 920px) {
+  .nfc-product-nav {
+    grid-template-columns: auto auto;
+  }
+
+  .nfc-product-nav-links {
+    display: none;
+  }
+
+  .nfc-product-brand strong {
+    font-size: 0.68rem;
   }
 
   .nfc-reader-step {
-    min-height: 140svh;
-    padding: 1rem 1rem 5.5rem;
+    min-height: 124svh;
+    padding: 5.5rem 1rem 5rem;
   }
 
-  .nfc-reader-step:not(.is-first) {
-    align-items: flex-end;
+  .nfc-reader-step.is-first {
+    min-height: 100svh;
+    padding-bottom: 2.5rem;
   }
 
   .nfc-reader-copy h2 {
-    font-size: clamp(2.15rem, 2.8rem, 3.25rem);
+    font-size: clamp(2.5rem, 16vw, 4.3rem);
   }
 
-  .nfc-reader-copy p:last-child {
-    font-size: 1rem;
+  .nfc-reader-copy,
+  .nfc-reader-copy.is-right {
+    text-align: left;
+  }
+
+  .nfc-reader-copy.is-right p:last-child {
+    margin-left: 0;
+  }
+
+  .nfc-platform-section,
+  .nfc-platform-section.is-wide,
+  .nfc-builder-feature,
+  .nfc-card-possibilities,
+  .nfc-mechanics,
+  .nfc-audio-flow,
+  .nfc-system-overview,
+  .nfc-purchase,
+  .nfc-final-hero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-block: 4.5rem;
+  }
+
+  .nfc-platform-flow {
+    padding-inline: 1rem;
+  }
+
+  .nfc-browser-frame,
+  .nfc-platform-section.is-wide .nfc-browser-frame,
+  .nfc-browser-frame-large {
+    transform: none;
+  }
+
+  .nfc-floating-labels {
+    margin-top: 0;
+  }
+
+  .nfc-card-visual {
+    min-height: 18rem;
+  }
+
+  .nfc-section-copy h2,
+  .nfc-builder-copy h2,
+  .nfc-possibility-copy h2,
+  .nfc-audio-copy h2,
+  .nfc-purchase-copy h2,
+  .nfc-final-hero h2 {
+    font-size: clamp(2.35rem, 13vw, 4rem);
+  }
+}
+
+@media (max-width: 560px) {
+  .nfc-reader-experience {
+    background-size: 52px 52px, 52px 52px, auto;
+  }
+
+  .nfc-product-nav {
+    padding: 0.75rem;
+  }
+
+  .nfc-product-brand span {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .nfc-product-brand strong {
+    max-width: 8.6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nfc-product-buy {
+    padding: 0.68rem 0.86rem;
+    font-size: 0.68rem;
+  }
+
+  .nfc-hardware-story {
+    min-height: 760svh;
+  }
+
+  .nfc-reader-step {
+    min-height: 126svh;
+  }
+
+  .nfc-browser-bar {
+    height: 1.8rem;
+  }
+
+  .nfc-floating-labels span,
+  .nfc-possibility-list span,
+  .nfc-mechanics-strip span,
+  .nfc-system-map span {
+    padding: 0.56rem 0.72rem;
+    font-size: 0.9rem;
+  }
+
+  .nfc-final-product {
+    min-height: 23rem;
+  }
+
+  .nfc-final-card {
+    top: 26%;
+    left: 0.35rem;
+    width: min(13rem, 50vw);
+  }
+
+  .nfc-final-reader {
+    width: min(15rem, 58vw);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nfc-reader-experience {
-    scroll-behavior: auto;
+  .nfc-product-nav,
+  .nfc-browser-frame,
+  .nfc-card-visual img,
+  .nfc-final-card,
+  .nfc-final-reader {
+    transition: none;
+    transform: none;
   }
 }

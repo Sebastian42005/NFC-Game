@@ -135,9 +135,9 @@ export class NfcStatisticsService {
         ...entry,
         isTied,
         tieSize,
-        rankLabel: `#${entry.rank}${isTied ? this.text(' geteilt', ' tied') : ''}`,
-        tieReason: isTied ? this.tieReason(sort) : undefined,
-        tieBreakerLabel: sort !== 'totalPoints' ? this.text('Tiebreaker: Punkte', 'Tiebreaker: points') : undefined,
+        rankLabel: `#${entry.rank}`,
+        tieReason: undefined,
+        tieBreakerLabel: undefined,
       };
     });
   }
@@ -305,11 +305,11 @@ export class NfcStatisticsService {
       : undefined;
     const awards: NfcAward[] = [
       mvp && {
-        label: topTie ? this.text('Geteiltes MVP', 'Shared MVP') : this.text('MVP des Abends', 'MVP of the night'),
+        label: this.text('MVP des Abends', 'MVP of the night'),
         owner: topTie ? this.joinNames(topTie.playerNames) : mvp.playerName ?? mvp.playerId,
         value: `${mvp.totalPoints} ${this.pointsWord(mvp.totalPoints)}`,
         subLabel: topTie
-          ? this.text('Kein Tiebreaker · Platz 1 geteilt', 'No tiebreaker · shared first place')
+          ? undefined
           : `${mvp.gamesWon} ${this.winWord(mvp.gamesWon)} · ${this.percent(mvp.winRate)} ${this.text('Siegquote', 'win rate')}`,
         tone: 'amber',
       },
@@ -557,26 +557,19 @@ export class NfcStatisticsService {
     return sort === 'totalPoints' || Number(a.totalPoints ?? 0) === Number(b.totalPoints ?? 0);
   }
 
-  private tieReason(sort: NfcRankingSort) {
-    if (sort === 'totalPoints') return this.text('Gleiche Punktzahl, kein zusätzlicher Tiebreaker', 'Same points, no extra tiebreaker');
-    if (sort === 'gamesWon') return this.text('Gleiche Siege und gleiche Punkte', 'Same wins and same points');
-    if (sort === 'winRate') return this.text('Gleiche Siegquote und gleiche Punkte', 'Same win rate and same points');
-    return this.text('Gleiche Sessions und gleiche Punkte', 'Same sessions and same points');
-  }
-
   private gameNightRankingNote(ranking: LeaderboardEntryDto[]) {
     const top = ranking[0];
     if (!top) return this.text('Noch keine abgeschlossene Session für die Abendwertung.', 'No finished session yet for tonight\'s ranking.');
     const tiedTop = ranking.filter((entry) => entry.rank === top.rank);
     if (tiedTop.length > 1) {
       return this.text(
-        `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} teilen Platz ${top.rank} mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)}. Es gibt keinen zusätzlichen Tiebreaker; die Anzeige bleibt ein echter Gleichstand.`,
-        `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} share place ${top.rank} with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}. There is no extra tiebreaker, so the tie stays in place.`,
+        `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} führen den Abend mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)} an.`,
+        `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} lead the night with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
       );
     }
     return this.text(
-      `${top.playerName ?? top.playerId} führt die Abendwertung mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)} an. Bei gleicher Punktzahl werden Plätze geteilt.`,
-      `${top.playerName ?? top.playerId} leads the night with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}. Equal points mean shared places.`,
+      `${top.playerName ?? top.playerId} führt die Abendwertung mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)} an.`,
+      `${top.playerName ?? top.playerId} leads the night with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
     );
   }
 
@@ -594,8 +587,8 @@ export class NfcStatisticsService {
     const tiedTop = ranking.filter((entry) => entry.rank === top.rank);
     const lead = tiedTop.length > 1
       ? this.text(
-          `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} lieferten sich einen engen Abend und teilen Platz ${top.rank} mit je ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
-          `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} battled closely and share place ${top.rank} with ${top.totalPoints} ${this.pointsWord(top.totalPoints)} each.`,
+          `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} beenden den Abend mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
+          `${this.joinNames(tiedTop.map((entry) => entry.playerName ?? entry.playerId))} finish the night with ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,
         )
       : this.text(
           `${top.playerName ?? top.playerId} gewinnt den Abend mit ${top.totalPoints} ${this.pointsWord(top.totalPoints)}.`,

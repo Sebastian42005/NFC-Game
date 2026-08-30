@@ -79,6 +79,7 @@ export class NfcGameNightComponent {
     [...this.summary().sessions]
       .sort((a, b) => this.statsService.sessionDate(b).getTime() - this.statsService.sessionDate(a).getTime())
       .map((session) => {
+        const game = this.games().find((entry) => entry.id === session.gameTemplateId);
         const playerCount = session.teams.reduce((sum, team) => sum + team.members.length, 0);
         const points = session.teams.reduce(
           (sum, team) => sum + this.statsService.globalPointsForTeam(team, session) * Math.max(1, team.members.length),
@@ -87,6 +88,7 @@ export class NfcGameNightComponent {
         return {
           id: session.id,
           title: session.gameName ?? this.text('Session', 'Session'),
+          imageUrl: session.gameImageUrl ?? game?.imageUrl ?? null,
           meta: `${this.statsService.time(session)} · ${playerCount} ${this.text('Spieler', 'players')}`,
           status: this.statusLabel(session.status),
           winner: this.statsService.winnerLabel(session),
@@ -94,8 +96,46 @@ export class NfcGameNightComponent {
         };
       }),
   );
-  protected readonly totalWins = computed(() => this.summary().ranking.reduce((sum, entry) => sum + entry.gamesWon, 0));
-  protected readonly totalPoints = computed(() => this.summary().ranking.reduce((sum, entry) => sum + entry.totalPoints, 0));
+  protected readonly gamePreviewRows = computed(() => {
+    const rows = new Map<string, { id: string; title: string; imageUrl: string | null; count: number }>();
+    for (const session of this.summary().sessions) {
+      const game = this.games().find((entry) => entry.id === session.gameTemplateId);
+      const row = rows.get(session.gameTemplateId) ?? {
+        id: session.gameTemplateId,
+        title: session.gameName ?? game?.name ?? this.text('Spiel', 'Game'),
+        imageUrl: session.gameImageUrl ?? game?.imageUrl ?? null,
+        count: 0,
+      };
+      row.count += 1;
+      if (!row.imageUrl) row.imageUrl = session.gameImageUrl ?? game?.imageUrl ?? null;
+      rows.set(session.gameTemplateId, row);
+    }
+
+    return Array.from(rows.values())
+      .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, this.i18n.locale()))
+      .slice(0, 6);
+  });
+  protected readonly playerPreviewRows = computed(() => {
+    const playersById = new Map(this.players().map((player) => [player.id, player]));
+    const rows = new Map<string, { id: string; name: string; imageUrl: string | null }>();
+    for (const session of this.summary().sessions) {
+      for (const team of session.teams) {
+        for (const member of team.members) {
+          if (rows.has(member.playerId)) continue;
+          const player = playersById.get(member.playerId);
+          rows.set(member.playerId, {
+            id: member.playerId,
+            name: member.playerName ?? player?.name ?? this.text('Spieler', 'Player'),
+            imageUrl: member.imageUrl ?? player?.imageUrl ?? null,
+          });
+        }
+      }
+    }
+
+    return Array.from(rows.values())
+      .sort((a, b) => a.name.localeCompare(b.name, this.i18n.locale()))
+      .slice(0, 8);
+  });
   protected readonly pageTitle = computed(() => this.displayedGameNight()?.name || this.text('Spielabend', 'Game night'));
   protected readonly pageEyebrow = computed(() => this.displayedGameNight()?.status === 'FINISHED' ? 'Recap' : 'Live');
   protected readonly chartTitle = computed(() => this.displayedGameNight()?.scoringSystem === 'WINS'
@@ -183,10 +223,6 @@ export class NfcGameNightComponent {
 
   protected scoreValue(entry: LeaderboardEntryDto) {
     return this.scoringSort() === 'gamesWon' ? entry.gamesWon : entry.totalPoints;
-  }
-
-  protected scoreUnit(scoringSystem: GameNightScoringSystem | undefined) {
-    return scoringSystem === 'WINS' ? this.text('Siege', 'Wins') : this.text('Punkte', 'Points');
   }
 
   protected statusLabel(status: string) {

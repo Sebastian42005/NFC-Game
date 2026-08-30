@@ -1,23 +1,250 @@
-<main #scrollRoot class="nfc-reader-experience nfc-game-font nfc-game-shell relative isolate min-h-[1000svh] overflow-x-clip">
-  <h1 class="sr-only">NFC Reader</h1>
+<main id="top" class="nfc-reader-experience nfc-game-font nfc-game-shell relative isolate overflow-x-clip">
+  <h1 class="sr-only">NFC Game System</h1>
 
-  <div class="sticky top-0 h-svh overflow-hidden">
-    <nfc-product-viewer [scrollRoot]="scrollRootElement()"></nfc-product-viewer>
-  </div>
+  <nav class="nfc-product-nav" [class.is-scrolled]="scrolled" aria-label="NFC Game System">
+    <a class="nfc-product-brand" href="#top" aria-label="NFC Game System">
+      <span>N</span>
+      <strong>NFC Game System</strong>
+    </a>
 
-  <div class="pointer-events-none absolute inset-0 z-10">
-    @for (step of steps; track step.title; let first = $first) {
+    <div class="nfc-product-nav-links">
+      @for (item of navItems; track item.href) {
+        <a [href]="item.href">{{ text(item.label) }}</a>
+      }
+    </div>
+
+    <a class="nfc-product-buy" [routerLink]="customizePath">{{ text({ de: 'Kaufen', en: 'Buy' }) }}</a>
+  </nav>
+
+  <section id="device" #scrollRoot class="nfc-hardware-story relative min-h-[820svh]">
+    <div class="sticky top-0 h-svh overflow-hidden">
+      <nfc-product-viewer [scrollRoot]="scrollRootElement()"></nfc-product-viewer>
+    </div>
+
+    <div class="pointer-events-none absolute inset-0 z-10">
+      @for (step of hardwareSteps; track step.id; let first = $first) {
+        <section
+          class="nfc-reader-step flex min-h-[136svh] items-end px-5 pb-14 pt-24 sm:px-8 lg:px-12 lg:pb-18"
+          [attr.id]="step.id === 'hero' || step.id === 'platform' ? step.id : null"
+          [class.is-first]="first"
+          [class.is-right-step]="step.align === 'right'"
+        >
+          <div class="nfc-reader-copy max-w-[36rem]" [class.is-right]="step.align === 'right'">
+            <p class="nfc-reader-step-label">{{ text(step.label) }}</p>
+            <h2>{{ text(step.title) }}</h2>
+            <p>{{ text(step.text) }}</p>
+          </div>
+        </section>
+      }
+    </div>
+  </section>
+
+  <section class="nfc-platform-flow" aria-label="NFC Game platform">
+    @for (section of platformSections; track section.id) {
       <section
-        class="nfc-reader-step flex min-h-[142svh] items-end px-5 pb-12 pt-8 sm:px-8 lg:px-12 lg:pb-16"
-        [class.is-first]="first"
-        [class.is-right-step]="step.align === 'right'"
+        class="nfc-platform-section"
+        [attr.id]="section.id"
+        [class.is-wide]="section.layout === 'wide'"
+        [class.is-compact]="section.layout === 'compact'"
       >
-        <div class="nfc-reader-copy max-w-[32rem]" [class.is-right]="step.align === 'right'">
-          <p class="nfc-reader-step-label">{{ step.label }}</p>
-          <h2>{{ step.title }}</h2>
-          <p>{{ step.text }}</p>
+        <div class="nfc-section-copy">
+          <p>{{ text(section.eyebrow) }}</p>
+          <h2>{{ text(section.title) }}</h2>
+          <span>{{ text(section.text) }}</span>
         </div>
+
+        <figure class="nfc-browser-frame">
+          <div class="nfc-browser-bar" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <img [src]="section.image" [alt]="text(section.imageAlt)" loading="lazy" />
+        </figure>
+
+        @if (section.tags?.length) {
+          <div class="nfc-floating-labels" aria-label="Game night outputs">
+            @for (tag of section.tags; track tag.de) {
+              <span>{{ text(tag) }}</span>
+            }
+          </div>
+        }
       </section>
     }
-  </div>
+  </section>
+
+  <section id="builder" class="nfc-builder-feature">
+    <div class="nfc-builder-copy">
+      <p>{{ text(builderSection.eyebrow) }}</p>
+      <h2>{{ text(builderSection.title) }}</h2>
+      <span>{{ text({ de: 'Die Hardware bleibt gleich. Du erfindest, was daraus wird.', en: 'The hardware stays the same. You decide what it becomes.' }) }}</span>
+      <small>
+        {{
+          text({
+            de: 'Baue eigene Abläufe aus Karten, Punkten, Teams, Entscheidungen und Sounds - vom kleinen Partyspiel bis zur kompletten Hausregel.',
+            en: 'Build your own flows from cards, points, teams, choices and sounds - from a small party game to a full custom rule set.',
+          })
+        }}
+      </small>
+    </div>
+
+    <figure class="nfc-browser-frame nfc-browser-frame-large">
+      <div class="nfc-browser-bar" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <img [src]="builderSection.image" [alt]="text(builderSection.imageAlt)" loading="lazy" />
+    </figure>
+  </section>
+
+  <section class="nfc-card-possibilities">
+    <div class="nfc-card-visual" aria-hidden="true">
+      <img src="/nfc_card_front.png" alt="" loading="lazy" />
+      <div class="nfc-card-orbit"></div>
+    </div>
+    <div class="nfc-possibility-copy">
+      <p>Game Builder</p>
+      <h2>{{ text({ de: 'Eine Karte. Beliebig viele Möglichkeiten.', en: 'One card. Unlimited possibilities.' }) }}</h2>
+      <div class="nfc-possibility-list">
+        @for (item of cardPossibilities; track item.de) {
+          <span>{{ text(item) }}</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="nfc-mechanics">
+    <div class="nfc-section-copy">
+      <p>{{ text({ de: 'Spielmechaniken', en: 'Game mechanics' }) }}</p>
+      <h2>{{ text({ de: 'Flexible Spielmechaniken', en: 'Flexible game mechanics' }) }}</h2>
+      <span>
+        {{
+          text({
+            de: 'Kombiniere Karten, Punkte, Runden, Menüs und Bedingungen so, dass sich jedes Spiel anders anfühlt.',
+            en: 'Combine cards, points, rounds, menus and conditions so every game feels different.',
+          })
+        }}
+      </span>
+    </div>
+    <div class="nfc-mechanics-strip">
+      @for (item of mechanics; track item.de) {
+        <span>{{ text(item) }}</span>
+      }
+    </div>
+  </section>
+
+  <section class="nfc-audio-flow">
+    <figure class="nfc-browser-frame">
+      <div class="nfc-browser-bar" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <img
+        src="/product-site/sound_page_screen.png"
+        [alt]="text({ de: 'Sound-Seite der NFC Game Plattform', en: 'Sound page of the NFC Game platform' })"
+        loading="lazy"
+      />
+    </figure>
+    <div class="nfc-audio-copy">
+      <p>Audio</p>
+      <h2>{{ text({ de: 'Deine Sounds im Spiel.', en: 'Your sounds in the game.' }) }}</h2>
+      <span>
+        {{
+          text({
+            de: 'Lade eigene Sounds hoch, verknüpfe sie mit Aktionen im Game Builder und lass sie genau dann am Reader abspielen, wenn der Moment es braucht.',
+            en: 'Upload your own sounds, connect them to actions in the Game Builder and play them from the reader exactly when the moment needs them.',
+          })
+        }}
+      </span>
+      <div class="nfc-signal-stack" aria-hidden="true">
+        <strong>Browser</strong>
+        <strong>Server</strong>
+        <strong>Reader</strong>
+        <strong>{{ text({ de: 'Lautsprecher', en: 'Speaker' }) }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="nfc-system-overview">
+    <div class="nfc-section-copy">
+      <p>{{ text({ de: 'Systemübersicht', en: 'System overview' }) }}</p>
+      <h2>{{ text({ de: 'Ein verbundenes System.', en: 'One connected system.' }) }}</h2>
+      <span>
+        {{
+          text({
+            de: 'Karten, Reader und Plattform greifen ineinander, damit der Abend am Tisch bleibt und trotzdem digital weiterlebt.',
+            en: 'Cards, reader and platform work together so the night stays at the table while living on digitally.',
+          })
+        }}
+      </span>
+    </div>
+
+    <div class="nfc-system-map" aria-hidden="true">
+      <strong>{{ text({ de: 'Persönliche Karten', en: 'Personal cards' }) }}</strong>
+      <strong>Reader</strong>
+      <strong>Server</strong>
+      <strong>{{ text({ de: 'Plattform', en: 'Platform' }) }}</strong>
+      <div>
+        @for (item of systemItems; track item.de) {
+          <span>{{ text(item) }}</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="nfc-purchase">
+    <div class="nfc-purchase-copy">
+      <p>{{ text({ de: 'Starter Bundle', en: 'Starter bundle' }) }}</p>
+      <h2>NFC Game System - Starter Bundle</h2>
+      <span>
+        {{
+          text({
+            de: 'Der Einstieg in dein eigenes NFC Game Setup: Reader auf den Tisch, Karten verteilen, Spiele starten. Preise und finale Optionen folgen später.',
+            en: 'The starting point for your own NFC Game setup: place the reader, hand out cards, start playing. Pricing and final options will follow later.',
+          })
+        }}
+      </span>
+      <a class="nfc-product-buy is-large" [routerLink]="customizePath">
+        {{ text({ de: 'System konfigurieren', en: 'Configure your system' }) }}
+      </a>
+    </div>
+
+    <div class="nfc-bundle-panel">
+      <h3>{{ text({ de: 'Enthalten', en: 'Included' }) }}</h3>
+      @for (item of bundleItems; track item.de) {
+        <p>{{ text(item) }}</p>
+      }
+      <h3>{{ text({ de: 'Optional / künftig', en: 'Optional / future' }) }}</h3>
+      @for (item of futureOptions; track item.de) {
+        <p>{{ text(item) }}</p>
+      }
+    </div>
+  </section>
+
+  <section class="nfc-final-hero">
+    <div class="nfc-final-product" aria-hidden="true">
+      <div class="nfc-final-reader">
+        <img src="/nfc_display_number.png" alt="" loading="lazy" />
+        <span></span>
+      </div>
+      <img class="nfc-final-card" src="/nfc_card_back.png" alt="" loading="lazy" />
+    </div>
+    <div>
+      <p>NFC Game System</p>
+      <h2>{{ text({ de: 'Digital gebaut. Am Tisch erlebt.', en: 'Built digitally. Played at the table.' }) }}</h2>
+      <span>
+        {{
+          text({
+            de: 'Persönliche Karten, eigene Spiele, gemeinsame Sounds und Statistiken wachsen zu einer Plattform für echte Spielabende zusammen.',
+            en: 'Personal cards, custom games, shared sounds and statistics come together in one platform for real game nights.',
+          })
+        }}
+      </span>
+      <a class="nfc-product-buy is-large" [routerLink]="customizePath">
+        {{ text({ de: 'System konfigurieren', en: 'Configure your system' }) }}
+      </a>
+    </div>
+  </section>
 </main>

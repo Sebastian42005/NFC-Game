@@ -315,6 +315,21 @@ export interface DeviceEventRequest {
   occurredAt?: string | null;
 }
 
+export interface AdminDeviceSimulationEventRequest {
+  sessionId?: string | null;
+  currentStateKey?: string | null;
+  eventType: DeviceEventType;
+  cardUid?: string | null;
+  payload: Record<string, unknown>;
+  occurredAt?: string | null;
+}
+
+export interface DeviceUiHintsDto {
+  predictions: unknown[];
+  allowedPlayerCardUids: string[];
+  allowedGameCardUids: string[];
+}
+
 export interface DeviceEventResponse {
   sessionId?: string | null;
   status?: SessionStatus | null;
@@ -324,6 +339,7 @@ export interface DeviceEventResponse {
   errors: string[];
   scannedCardType?: CardType | null;
   scannedPlayerName?: string | null;
+  uiHints?: DeviceUiHintsDto;
 }
 
 export interface TeamMemberDto {

@@ -2,12 +2,13 @@ import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIcon } from '../../../../shims/angular-material/icon';
 import { LegalConsentService } from '../legal/legal-consent.service';
+import { NfcAutoNavigationPromptComponent } from './nfc-auto-navigation-prompt.component';
 import { NfcThemeService } from './nfc-theme.service';
 import { NfcToastHostComponent } from './nfc-toast-host.component';
 
 @Component({
   selector: 'nfc-public-shell',
-  imports: [RouterLink, RouterLinkActive, MatIcon, NfcToastHostComponent],
+  imports: [RouterLink, RouterLinkActive, MatIcon, NfcToastHostComponent, NfcAutoNavigationPromptComponent],
   templateUrl: './public-shell.component.html',
   styleUrl: './public-shell.component.scss',
 })

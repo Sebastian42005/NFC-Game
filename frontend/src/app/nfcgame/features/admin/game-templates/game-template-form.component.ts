@@ -101,9 +101,9 @@ export class NfcGameTemplateFormComponent {
     const suffix = this.previewMetricSuffix();
     const direction = (this.form().dashboardMetricSortDirection ?? 'DESC').toString().toUpperCase();
     const values = [
-      { name: 'Team Nord', value: 12 },
-      { name: 'Team West', value: 8 },
-      { name: 'Team Süd', value: 5 },
+      { name: 'Team Nord', members: ['Sebi'], value: 12 },
+      { name: 'Team West', members: ['Louis', 'Patrick'], value: 8 },
+      { name: 'Team Süd', members: ['Teddy'], value: 5 },
     ].sort((a, b) => direction === 'ASC' ? a.value - b.value : b.value - a.value);
     const max = Math.max(...values.map((team) => team.value));
     const min = Math.min(...values.map((team) => team.value));
@@ -224,6 +224,31 @@ export class NfcGameTemplateFormComponent {
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
+  }
+
+  protected previewInitials(name: string | null | undefined) {
+    return (name || '?')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || '?';
+  }
+
+  protected previewDisplayTeamName(team: { name: string; members: string[] }) {
+    return team.members.length === 1 ? team.members[0] : team.name;
+  }
+
+  protected previewTeamMemberNames(team: { members: string[] }) {
+    return team.members.join(' · ');
+  }
+
+  protected previewCompactMembers(team: { members: string[] }) {
+    return team.members.slice(0, 3);
+  }
+
+  protected previewHiddenMemberCount(team: { members: unknown[] }) {
+    return Math.max(0, team.members.length - 3);
   }
 }
 

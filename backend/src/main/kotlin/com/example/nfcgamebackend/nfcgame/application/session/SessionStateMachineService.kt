@@ -843,12 +843,10 @@ class SessionStateMachineService(
                 ?: numericValueForExpression(session, key, context)?.stripTrailingZeros()?.toPlainString()
         }
         val owner = parts[0]
-        return when (normalizeValueKey(parts[1])) {
-            "name" -> playerIdForBuilderReference(owner, context)?.let { playerName(it.toString()) }
-                ?: accountForBuilderReference(session, owner, context)
-                ?.let { accountLabel(session, requireNotNull(it.id).toString()) }
-                ?: teamIdForBuilderReference(session, owner, context)?.let { teamLabel(it) }
-            "team", "teamname" -> teamIdForBuilderReference(session, owner, context)?.let { teamLabel(it) }
+        return when (normalizeBuilderToken(parts[1]).lowercase()) {
+            "name", "playername" -> playerNameForBuilderReference(session, owner, context)
+            "team", "teamname" -> teamNameForBuilderReference(session, owner, context)
+            "displayname" -> displayNameForBuilderReference(session, owner, context)
             "points", "rounds", "wins", "money", "placement" -> numericValueForExpression(session, key, context)
                 ?.stripTrailingZeros()
                 ?.toPlainString()
@@ -2284,12 +2282,51 @@ class SessionStateMachineService(
         runCatching { UUID.fromString(playerId) }.getOrNull()
             ?.let { playerRepository.findById(it).orElse(null)?.name }
 
+    private fun playerNameForBuilderReference(session: NfcGameSession, reference: String, context: Map<String, String>): String? =
+        playerIdForBuilderReference(reference, context)?.let { playerName(it.toString()) }
+            ?: teamIdForBuilderReference(session, reference, context)?.let { singleMemberPlayerName(it) ?: teamLabel(it) }
+            ?: accountForBuilderReference(session, reference, context)?.let { account ->
+                when (account.ownerType) {
+                    OwnerType.BANK -> requireNotNull(account.id).toString().let { accountLabel(session, it) }
+                    OwnerType.TEAM -> requireNotNull(account.teamId).let { singleMemberPlayerName(it) ?: teamLabel(it) }
+                }
+            }
+
+    private fun teamNameForBuilderReference(session: NfcGameSession, reference: String, context: Map<String, String>): String? =
+        teamIdForBuilderReference(session, reference, context)?.let { teamLabel(it) }
+            ?: accountForBuilderReference(session, reference, context)?.let { account ->
+                when (account.ownerType) {
+                    OwnerType.BANK -> requireNotNull(account.id).toString().let { accountLabel(session, it) }
+                    OwnerType.TEAM -> requireNotNull(account.teamId).let(::teamLabel)
+                }
+            }
+
+    private fun displayNameForBuilderReference(session: NfcGameSession, reference: String, context: Map<String, String>): String? =
+        teamIdForBuilderReference(session, reference, context)?.let(::teamDisplayName)
+            ?: accountForBuilderReference(session, reference, context)?.let { account ->
+                when (account.ownerType) {
+                    OwnerType.BANK -> requireNotNull(account.id).toString().let { accountLabel(session, it) }
+                    OwnerType.TEAM -> requireNotNull(account.teamId).let(::teamDisplayName)
+                }
+            }
+            ?: playerIdForBuilderReference(reference, context)?.let { playerName(it.toString()) }
+
+    private fun singleMemberPlayerName(teamId: UUID): String? {
+        val members = memberRepository.findAllBySessionTeamId(teamId)
+        if (members.size != 1) return null
+        val playerId = members.firstOrNull()?.playerId ?: return null
+        return playerRepository.findById(playerId).orElse(null)?.name
+    }
+
     private fun accountLabel(session: NfcGameSession, accountId: String): String? =
         runCatching { UUID.fromString(accountId) }.getOrNull()
             ?.let { id -> bankTargets(session).firstOrNull { it.accountId == id }?.label }
 
     private fun teamLabel(teamId: UUID): String =
         teamRepository.findById(teamId).orElse(null)?.name ?: "Team"
+
+    private fun teamDisplayName(teamId: UUID): String =
+        singleMemberPlayerName(teamId) ?: teamLabel(teamId)
 
     private fun bankAccount(session: NfcGameSession): NfcSessionAccount? =
         accountRepository.findAllBySessionId(requireNotNull(session.id)).firstOrNull { it.ownerType == OwnerType.BANK }

@@ -119,13 +119,72 @@
   margin-top: clamp(0.65rem, 1.35vh, 1.5rem) !important;
 }
 
-.nfc-compact-race-list,
-.nfc-bar-race-list {
+.nfc-compact-race-list {
   align-content: space-evenly;
+}
+
+.nfc-bar-race-list {
+  align-content: start;
+  gap: clamp(1rem, 2vh, 1.6rem) !important;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .nfc-team-row {
   padding-block: clamp(0.42rem, 1vh, 0.75rem) !important;
+}
+
+.nfc-compact-team-row {
+  gap: clamp(0.65rem, 1.2vw, 1rem) !important;
+}
+
+.nfc-compact-team-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: clamp(0.75rem, 1.2vw, 1rem);
+}
+
+.nfc-compact-avatar-stack {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding-right: 0.35rem;
+}
+
+.nfc-compact-avatar-stack.is-solo {
+  padding-right: 0;
+}
+
+.nfc-compact-avatar-stack > * + * {
+  margin-left: -0.7rem;
+}
+
+.nfc-compact-avatar {
+  display: grid;
+  width: clamp(2.7rem, 5.2vh, 3.45rem);
+  height: clamp(2.7rem, 5.2vh, 3.45rem);
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid var(--nfc-border-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nfc-accent) 18%, var(--nfc-surface-strong));
+  color: var(--nfc-text);
+  font-size: clamp(0.8rem, 1.55vh, 1rem);
+  font-weight: 900;
+  box-shadow: 0 10px 24px var(--nfc-shadow);
+}
+
+.nfc-compact-avatar.is-empty {
+  border-style: dashed;
+  color: var(--nfc-muted);
+  background: color-mix(in srgb, var(--nfc-surface) 88%, transparent);
+}
+
+.nfc-compact-avatar.is-more {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--nfc-warm) 24%, transparent), color-mix(in srgb, var(--nfc-accent) 18%, transparent));
+  color: var(--nfc-warm);
+  font-size: clamp(0.7rem, 1.3vh, 0.88rem);
 }
 
 .nfc-team-card {
@@ -140,6 +199,15 @@
 .nfc-race-entry > .grid {
   min-height: 0;
   gap: clamp(0.45rem, 1vh, 1rem) !important;
+}
+
+.nfc-bar-race-list .nfc-race-entry {
+  grid-template-rows: max-content max-content;
+  min-height: max-content;
+}
+
+.nfc-bar-race-list .nfc-race-entry > .grid {
+  min-height: calc(clamp(3rem, 8vh, 6rem) + 1.85rem);
 }
 
 .nfc-player-avatar {
@@ -270,6 +338,10 @@
   height: 1.15rem;
   border: 1px solid var(--nfc-border);
   background: color-mix(in srgb, var(--nfc-bg) 38%, var(--nfc-surface)) !important;
+}
+
+.nfc-bar-race-list .nfc-race-track {
+  margin-top: clamp(0.45rem, 1vh, 0.85rem);
 }
 
 .nfc-race-track::after {

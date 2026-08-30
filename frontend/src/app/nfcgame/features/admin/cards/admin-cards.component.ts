@@ -118,6 +118,15 @@ export class NfcAdminCardsComponent {
     return cardUid ? { cardUid } : {};
   }
 
+  protected shortCardUid(cardUid: string) {
+    const normalized = cardUid.trim().toUpperCase();
+    return normalized.length <= 12 ? normalized : `${normalized.slice(0, 8)}...`;
+  }
+
+  protected cardSelectLabel(card: NfcCardDto) {
+    return `${this.shortCardUid(card.cardUid)} · ${card.cardType} · ${card.status}`;
+  }
+
   private async load() {
     const [cards, players, games] = await Promise.all([
       firstValueFrom(this.api.cards()),

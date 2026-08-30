@@ -2,18 +2,6 @@
   <div class="nfc-product-stage-wash absolute inset-0"></div>
   <div #canvasHost class="absolute inset-0"></div>
 
-  <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-5 sm:p-7">
-    <div class="nfc-product-kicker">
-      <span></span>
-      <strong>NFC Reader</strong>
-    </div>
-    <div class="nfc-product-progress" aria-hidden="true">
-      @for (segment of progressSegments; track segment) {
-        <span [class.is-active]="activeSection() >= segment"></span>
-      }
-    </div>
-  </div>
-
   <div class="nfc-scroll-cue pointer-events-none absolute bottom-6 right-5 z-10 sm:bottom-8 sm:right-7" aria-hidden="true">
     <span></span>
   </div>

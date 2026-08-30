@@ -1,0 +1,175 @@
+<main class="nfc-customize-page nfc-game-font nfc-game-shell">
+  <nav class="nfc-customize-nav" aria-label="NFC Game System">
+    <a class="nfc-back-link" routerLink="/nfc-reader">
+      {{ text({ de: 'Zurück', en: 'Back' }) }}
+    </a>
+    <strong>NFC Game System</strong>
+  </nav>
+
+  <section class="nfc-customize-hero">
+    <div class="nfc-customize-copy">
+      <p>{{ text({ de: 'Kaufen', en: 'Buy' }) }}</p>
+      <h1>{{ text({ de: 'Dein Starter Bundle.', en: 'Your starter bundle.' }) }}</h1>
+      <span>
+        {{
+          text({
+            de: 'Alles, was du für den ersten NFC-Spielabend brauchst: Reader auf den Tisch, Karten verteilen, Spiel starten.',
+            en: 'Everything you need for the first NFC game night: place the reader, hand out cards, start playing.',
+          })
+        }}
+      </span>
+    </div>
+
+    <div class="nfc-product-preview" aria-hidden="true">
+      <div class="nfc-device-preview" [class]="selectedColorTone()">
+        <img src="/nfc_display_number.png" alt="" loading="eager" />
+        <span></span>
+      </div>
+      <img class="nfc-preview-card is-front" src="/nfc_card_front.png" alt="" loading="eager" />
+      <img class="nfc-preview-card is-back" src="/nfc_card_back.png" alt="" loading="eager" />
+    </div>
+  </section>
+
+  <section class="nfc-customize-layout">
+    <div class="nfc-configurator">
+      <section class="nfc-config-section">
+        <div>
+          <p>{{ text({ de: 'Bundle', en: 'Bundle' }) }}</p>
+          <h2>NFC Game System - Starter Bundle</h2>
+        </div>
+
+        <div class="nfc-included-list">
+          @for (item of bundleItems; track item.de) {
+            <span>{{ text(item) }}</span>
+          }
+        </div>
+      </section>
+
+      <section class="nfc-config-section">
+        <div>
+          <p>{{ text({ de: 'Reader-Farbe', en: 'Reader color' }) }}</p>
+          <h2>{{ text({ de: 'Wähle den Look für den Tisch.', en: 'Choose the look for the table.' }) }}</h2>
+        </div>
+
+        <div class="nfc-color-options" role="radiogroup" [attr.aria-label]="text({ de: 'Reader-Farbe', en: 'Reader color' })">
+          @for (color of readerColors; track color.id) {
+            <button
+              type="button"
+              role="radio"
+              class="nfc-color-option"
+              [class.is-selected]="selectedColor() === color.id"
+              [attr.aria-checked]="selectedColor() === color.id"
+              (click)="selectColor(color.id)"
+            >
+              <span [class]="color.tone"></span>
+              {{ text(color.label) }}
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="nfc-config-section">
+        <div>
+          <p>{{ text({ de: 'Karten', en: 'Cards' }) }}</p>
+          <h2>{{ text({ de: '20 Karten sind dabei. Mehr gehen auch.', en: '20 cards are included. Add more if needed.' }) }}</h2>
+        </div>
+
+        <div class="nfc-stepper">
+          <button type="button" (click)="setAdditionalCards(additionalCards() - 10)" [disabled]="additionalCards() === 0">
+            -
+          </button>
+          <strong>{{ totalCards() }}</strong>
+          <button type="button" (click)="setAdditionalCards(additionalCards() + 10)">+</button>
+        </div>
+        <small>
+          {{
+            additionalCards() === 0
+              ? text({ de: 'Standard: 20 Karten im Bundle.', en: 'Default: 20 cards in the bundle.' })
+              : text({ de: 'Zusätzliche Karten werden zur Anfrage hinzugefügt.', en: 'Additional cards will be added to the request.' })
+          }}
+        </small>
+      </section>
+
+      <section class="nfc-config-section">
+        <div>
+          <p>{{ text({ de: 'Optionen', en: 'Options' }) }}</p>
+          <h2>{{ text({ de: 'Für spätere Spielabende vorbereiten.', en: 'Prepare for future game nights.' }) }}</h2>
+        </div>
+
+        <div class="nfc-addon-list">
+          @for (option of options; track option.id) {
+            <button
+              type="button"
+              class="nfc-addon"
+              [class.is-selected]="selectedOptions().has(option.id)"
+              (click)="toggleOption(option.id)"
+            >
+              <span></span>
+              <strong>{{ text(option.title) }}</strong>
+              <small>{{ text(option.text) }}</small>
+            </button>
+          }
+        </div>
+      </section>
+    </div>
+
+    <aside class="nfc-order-summary" [attr.aria-label]="text({ de: 'Bestellübersicht', en: 'Order summary' })">
+      <p>{{ text({ de: 'Bestellübersicht', en: 'Order summary' }) }}</p>
+      <h2>NFC Game System</h2>
+
+      <div class="nfc-summary-list">
+        <span>
+          <strong>NFC Game System - Starter Bundle</strong>
+          <small>{{ text({ de: 'Reader, 20 Karten, Netzteil', en: 'Reader, 20 cards, power supply' }) }}</small>
+        </span>
+        <span>
+          <strong>{{ text({ de: 'Reader-Farbe', en: 'Reader color' }) }}</strong>
+          <small>{{ text(selectedColorLabel()) }}</small>
+        </span>
+        <span>
+          <strong>{{ text({ de: 'Karten gesamt', en: 'Total cards' }) }}</strong>
+          <small>{{ totalCards() }}</small>
+        </span>
+        @for (option of selectedOptionList(); track option.id) {
+          <span>
+            <strong>{{ text(option.title) }}</strong>
+            <small>{{ text({ de: 'Zur Anfrage hinzugefügt', en: 'Added to request' }) }}</small>
+          </span>
+        }
+      </div>
+
+      <div class="nfc-price-note">
+        <strong>{{ text({ de: 'Preis auf Anfrage', en: 'Price on request' }) }}</strong>
+        <span>
+          {{
+            text({
+              de: 'Der finale Preis wird noch nicht angezeigt, damit keine falschen Angaben entstehen.',
+              en: 'The final price is not shown yet to avoid incorrect information.',
+            })
+          }}
+        </span>
+      </div>
+
+      <button type="button" class="nfc-buy-action" (click)="submitOrder()">
+        {{ text({ de: 'Kaufanfrage senden', en: 'Send purchase request' }) }}
+      </button>
+
+      @if (orderSent()) {
+        <div class="nfc-order-success" role="status">
+          {{
+            text({
+              de: 'Deine Auswahl ist vorbereitet. Als nächstes kann hier die echte Zahlungs- oder Anfrage-Anbindung angeschlossen werden.',
+              en: 'Your selection is prepared. Next, the real payment or inquiry flow can be connected here.',
+            })
+          }}
+        </div>
+      }
+
+      @if (!hasCustomSelection()) {
+        <small class="nfc-default-note">
+          {{ text({ de: 'Du kaufst aktuell das Standard-Bundle.', en: 'You are currently buying the default bundle.' }) }}
+        </small>
+      }
+    </aside>
+  </section>
+</main>

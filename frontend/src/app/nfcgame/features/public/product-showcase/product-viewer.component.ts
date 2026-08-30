@@ -406,9 +406,11 @@ export class NfcProductViewerComponent {
   private mediaQuery: MediaQueryList | null = null;
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private visibilityObserver: IntersectionObserver | null = null;
   private animationFrameId: number | null = null;
   private scrollTimeline: gsap.core.Timeline | null = null;
   private compactViewport = false;
+  private stageVisible = true;
   private readonly pose: StoryPose = {
     cameraX: 0.22,
     cameraY: 0.42,
@@ -450,6 +452,7 @@ export class NfcProductViewerComponent {
     this.initializeScene();
     await this.loadModel();
     this.observeResize();
+    this.observeVisibility();
     this.configureScrollTimelineIfReady();
     this.renderLoop();
   }
@@ -458,6 +461,7 @@ export class NfcProductViewerComponent {
     this.destroyed = true;
     this.scrollTimeline?.kill();
     this.resizeObserver?.disconnect();
+    this.visibilityObserver?.disconnect();
     if (this.mediaQuery && this.mediaQueryListener) {
       this.mediaQuery.removeEventListener('change', this.mediaQueryListener);
     }
@@ -818,6 +822,20 @@ export class NfcProductViewerComponent {
     this.refreshViewport();
   }
 
+  private observeVisibility() {
+    if (!('IntersectionObserver' in window)) {
+      return;
+    }
+    const host = this.canvasHost().nativeElement;
+    this.visibilityObserver = new IntersectionObserver(([entry]) => {
+      this.stageVisible = entry?.isIntersecting ?? true;
+      if (this.stageVisible && this.animationFrameId === null) {
+        this.renderLoop();
+      }
+    });
+    this.visibilityObserver.observe(host);
+  }
+
   private refreshViewport() {
     if (!this.renderer || !this.camera) {
       return;
@@ -921,6 +939,10 @@ export class NfcProductViewerComponent {
 
   private renderLoop = () => {
     if (!this.renderer || !this.scene || !this.camera) {
+      return;
+    }
+    if (!this.stageVisible) {
+      this.animationFrameId = null;
       return;
     }
 

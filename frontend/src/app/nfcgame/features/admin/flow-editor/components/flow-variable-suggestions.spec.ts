@@ -19,11 +19,12 @@ describe('flow variable suggestions', () => {
 
     expect(tokens(groups, 'Spieler/Teams')).toEqual(['$lastScannedPlayer', '$loser']);
     expect(propertyTokens(groups, '$lastScannedPlayer')).toEqual([
+      '$lastScannedPlayer.displayName',
       '$lastScannedPlayer.money',
-      '$lastScannedPlayer.name',
       '$lastScannedPlayer.placement',
+      '$lastScannedPlayer.playerName',
       '$lastScannedPlayer.points',
-      '$lastScannedPlayer.team',
+      '$lastScannedPlayer.teamName',
     ]);
     expect(allTokens(groups)).not.toContain('$lastScannedTeam');
     expect(allTokens(groups)).not.toContain('$bank');
@@ -41,10 +42,11 @@ describe('flow variable suggestions', () => {
 
     expect(tokens(groups, 'Spieler/Teams')).toEqual(['$receiver']);
     expect(propertyTokens(groups, '$receiver')).toEqual([
-      '$receiver.name',
+      '$receiver.displayName',
       '$receiver.placement',
+      '$receiver.playerName',
       '$receiver.points',
-      '$receiver.team',
+      '$receiver.teamName',
     ]);
     expect(tokens(groups, 'Variablen')).toEqual([
       '$amount',
@@ -97,10 +99,11 @@ describe('flow variable suggestions', () => {
       'money',
     );
     expect(propertyTokens(groups, '$lastScannedPlayer')).toEqual([
+      '$lastScannedPlayer.displayName',
       '$lastScannedPlayer.money',
-      '$lastScannedPlayer.name',
       '$lastScannedPlayer.placement',
-      '$lastScannedPlayer.team',
+      '$lastScannedPlayer.playerName',
+      '$lastScannedPlayer.teamName',
     ]);
   });
 
@@ -151,7 +154,7 @@ describe('flow variable suggestions', () => {
 
     expect(tokens(groups, 'Variablen')).toContain('$diceRoll');
     expect(tokens(groups, 'Spieler/Teams')).toContain('$pickedTeam');
-    expect(propertyTokens(groups, '$pickedTeam')).toContain('$pickedTeam.name');
+    expect(propertyTokens(groups, '$pickedTeam')).toContain('$pickedTeam.displayName');
     expect(buildTargetVariableOptions(current, [current, randomNumber, randomTeam], edges)).toContain('pickedTeam');
     expect(buildTargetValuePathOptions(current, [current, randomNumber, randomTeam], edges).map((option) => option.value)).toContain('$pickedTeam.points');
     expect(buildFlowValueVariableOptions(current, [current, randomNumber, randomTeam], edges)).toContain('diceRoll');

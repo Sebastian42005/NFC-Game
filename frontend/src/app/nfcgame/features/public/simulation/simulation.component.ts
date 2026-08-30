@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { NfcAdminApiService } from '../../../core/api/nfc-admin-api.service';
 import { NfcPublicApiService } from '../../../core/api/nfc-public-api.service';
 import {
+  AdminDeviceSimulationEventRequest,
   ActiveSessionDto,
   DeviceEventResponse,
   DeviceEventType,
@@ -14,12 +15,13 @@ import {
   PlayerDto,
   ScreenDto,
 } from '../../../shared/models/nfc-game.models';
-import { NfcPublicShellComponent } from '../../../shared/ui/public-shell.component';
+import { NfcAdminShellComponent } from '../../../shared/ui/admin-shell.component';
 
 type CardOption = {
   card: NfcCardDto;
   label: string;
   targetName: string;
+  uidLabel: string;
 };
 
 const initialScreen: ScreenDto = {
@@ -35,7 +37,7 @@ const initialScreen: ScreenDto = {
 
 @Component({
   selector: 'nfc-simulation',
-  imports: [FormsModule, MatSelectModule, NfcPublicShellComponent],
+  imports: [FormsModule, MatSelectModule, NfcAdminShellComponent],
   styleUrl: './simulation.component.scss',
   templateUrl: './simulation.component.html',
 })
@@ -43,11 +45,10 @@ export class NfcSimulationComponent {
   private readonly adminApi = inject(NfcAdminApiService);
   private readonly publicApi = inject(NfcPublicApiService);
 
-  protected readonly deviceId = signal('esp32-1');
-  protected readonly deviceKey = signal('secret-key');
   protected readonly sessionId = signal('');
   protected readonly currentStateKey = signal('');
   protected readonly selectedCardUid = signal('');
+  protected readonly newCardUid = signal(this.createCardUuid());
   protected readonly response = signal<DeviceEventResponse | null>(null);
   protected readonly lastEvent = signal('');
   protected readonly localNumberText = signal<string | null>(null);
@@ -86,7 +87,8 @@ export class NfcSimulationComponent {
       return {
         card,
         targetName,
-        label: `${targetName} · UID ${card.cardUid} · ID ${card.id}`,
+        uidLabel: this.shortCardUid(card.cardUid),
+        label: `${targetName} · ${this.shortCardUid(card.cardUid)}`,
       };
     });
   });
@@ -113,7 +115,32 @@ export class NfcSimulationComponent {
   protected scanSelectedCard() {
     const cardUid = this.selectedCardUid();
     if (!cardUid) return;
-    void this.sendEvent('CARD_SCANNED', cardUid);
+    void this.scanCardUid(cardUid);
+  }
+
+  protected generateNewCardUid() {
+    this.newCardUid.set(this.createCardUuid());
+  }
+
+  protected async scanNewCard() {
+    const cardUid = this.normalizeCardUid(this.newCardUid());
+    if (!cardUid) return;
+    await this.scanCardUid(cardUid);
+    await this.reload();
+    this.selectedCardUid.set(cardUid);
+    this.newCardUid.set(this.createCardUuid());
+  }
+
+  private async scanCardUid(cardUid: string) {
+    if (this.shouldRejectCardLocally(cardUid)) {
+      this.lastEvent.set('LOCAL_REJECT\nKarte nicht in diesem Spiel');
+      return;
+    }
+    if (this.shouldConfirmEndGameScan(cardUid) && !window.confirm('Spiel beenden?')) {
+      this.lastEvent.set('SCAN_CANCELLED\nSpiel läuft weiter');
+      return;
+    }
+    await this.sendEvent('CARD_SCANNED', cardUid, this.cardScanPayload());
   }
 
   protected async sendTouchMenuSelection(index: number, item: MenuItemDto) {
@@ -178,14 +205,12 @@ export class NfcSimulationComponent {
   }
 
   protected async loadScreen() {
-    const result = await firstValueFrom(this.publicApi.deviceScreen(this.deviceId(), this.deviceKey(), this.sessionId()));
+    const result = await firstValueFrom(this.adminApi.simulatorDeviceScreen(this.sessionId()));
     this.applyResponse(result, 'GET SCREEN');
   }
 
   private async sendEvent(eventType: DeviceEventType, cardUid: string | null = null, payload: Record<string, unknown> = {}) {
-    const request = {
-      deviceId: this.deviceId(),
-      deviceKey: this.deviceKey(),
+    const request: AdminDeviceSimulationEventRequest = {
       sessionId: this.sessionId() || null,
       currentStateKey: this.currentStateKey() || null,
       eventType,
@@ -194,7 +219,7 @@ export class NfcSimulationComponent {
       occurredAt: new Date().toISOString(),
     };
     try {
-      const result = await firstValueFrom(this.publicApi.sendDeviceEvent(request));
+      const result = await firstValueFrom(this.adminApi.simulateDeviceEvent(request));
       this.applyResponse(result, eventType);
     } catch (error) {
       const message = String((error as { error?: { message?: string } })?.error?.message ?? 'Device Event fehlgeschlagen.');
@@ -239,6 +264,78 @@ export class NfcSimulationComponent {
 
   private clampNumber(value: number) {
     return Math.min(this.numberMax(), Math.max(this.numberMin(), Math.trunc(value)));
+  }
+
+  private createCardUuid() {
+    return crypto.randomUUID();
+  }
+
+  private normalizeCardUid(value: string) {
+    return value.trim().toUpperCase();
+  }
+
+  protected shortCardUid(value: string) {
+    const normalized = this.normalizeCardUid(value);
+    return normalized.length <= 12 ? normalized : `${normalized.slice(0, 8)}...`;
+  }
+
+  private cardScanPayload(): Record<string, unknown> {
+    if (!this.isTeamSetupScreen()) {
+      return {};
+    }
+    const teamSize = this.screen().numberValue ?? 1;
+    return { teamSize, value: teamSize };
+  }
+
+  private shouldRejectCardLocally(uid: string) {
+    const screen = this.screen();
+    const nodeType = String(screen.context?.['nodeType'] ?? '');
+    if (screen.screenType !== 'WAITING_FOR_SCAN' && nodeType.length === 0) {
+      return false;
+    }
+
+    const allowedPlayerCardUids = this.response()?.uiHints?.allowedPlayerCardUids ?? [];
+    const allowedGameCardUids = this.response()?.uiHints?.allowedGameCardUids ?? [];
+    const hasPlayerAllowlist = allowedPlayerCardUids.length > 0;
+    const hasGameAllowlist = allowedGameCardUids.length > 0;
+
+    if (!hasPlayerAllowlist && !hasGameAllowlist) {
+      return false;
+    }
+
+    const isAllowedPlayer = allowedPlayerCardUids.includes(uid);
+    const isAllowedGame = allowedGameCardUids.includes(uid);
+
+    if (nodeType === 'WAIT_PLAYER_CARD') {
+      return hasPlayerAllowlist && !isAllowedPlayer && !isAllowedGame;
+    }
+
+    if (nodeType === 'WAIT_GAME_CARD') {
+      return hasGameAllowlist && !isAllowedGame;
+    }
+
+    if (nodeType === 'WAIT_ANY_CARD') {
+      return (hasPlayerAllowlist || hasGameAllowlist) && !isAllowedPlayer && !isAllowedGame;
+    }
+
+    if (screen.context?.['sessionStatus'] === 'BUILDING_TEAMS' || screen.title.includes('Spieler')) {
+      return hasPlayerAllowlist && !isAllowedPlayer && !isAllowedGame;
+    }
+
+    return false;
+  }
+
+  private shouldConfirmEndGameScan(uid: string) {
+    const screen = this.screen();
+    const nodeType = String(screen.context?.['nodeType'] ?? '');
+    const allowedGameCardUids = this.response()?.uiHints?.allowedGameCardUids ?? [];
+    return (
+      screen.context?.['sessionStatus'] === 'RUNNING' &&
+      allowedGameCardUids.length > 0 &&
+      allowedGameCardUids.includes(uid) &&
+      nodeType !== 'WAIT_GAME_CARD' &&
+      nodeType !== 'WAIT_ANY_CARD'
+    );
   }
 
   private keypadCommitValue() {

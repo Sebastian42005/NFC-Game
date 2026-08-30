@@ -248,11 +248,31 @@
               @if (metricDisplayType() === 'COMPACT_LIST') {
                 <div class="nfc-race-list nfc-compact-race-list mt-6 grid gap-3">
                   @for (team of teamRace(); track team.id) {
-                    <div class="nfc-team-row grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-lg border ui-border-subtle ui-surface-muted px-4 py-3">
+                    <div class="nfc-team-row nfc-compact-team-row grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-lg border ui-border-subtle ui-surface-muted px-4 py-3">
                       <span class="text-sm font-black uppercase tracking-[0.12em] ui-text-muted">#{{ team.rank }}</span>
-                      <div class="min-w-0">
-                        <h4 class="truncate text-2xl font-black ui-text-strong">{{ displayTeamName(team) }}</h4>
-                        <p class="truncate text-sm font-bold ui-text-accent">{{ teamMemberNames(team) }}</p>
+                      <div class="nfc-compact-team-main min-w-0">
+                        <div class="nfc-compact-avatar-stack" [class.is-solo]="team.members.length <= 1">
+                          @for (member of compactMembers(team); track member.playerId) {
+                            <div class="nfc-compact-avatar">
+                              @if (memberImage(member); as imageUrl) {
+                                <img class="h-full w-full object-cover" [src]="imageUrl" [alt]="member.playerName || 'Spieler'" />
+                              } @else {
+                                {{ initials(member.playerName) }}
+                              }
+                            </div>
+                          } @empty {
+                            <div class="nfc-compact-avatar is-empty">?</div>
+                          }
+                          @if (hiddenMemberCount(team)) {
+                            <div class="nfc-compact-avatar is-more">+{{ hiddenMemberCount(team) }}</div>
+                          }
+                        </div>
+                        <div class="min-w-0">
+                          <h4 class="truncate text-2xl font-black ui-text-strong">{{ displayTeamName(team) }}</h4>
+                          @if (team.members.length > 1) {
+                            <p class="truncate text-sm font-bold ui-text-accent">{{ teamMemberNames(team) }}</p>
+                          }
+                        </div>
                       </div>
                       <strong class="text-2xl font-black ui-text-warm">{{ displayMetric(team) }}</strong>
                     </div>
@@ -452,11 +472,6 @@
 
                             <div class="min-w-0">
                               <h4 class="nfc-race-team-name truncate text-4xl font-black tracking-normal ui-text-strong md:text-5xl">{{ displayTeamName(team) }}</h4>
-                              @if (team.members.length > 1) {
-                                <p class="mt-1 max-w-3xl truncate text-lg font-bold ui-text-accent">{{ teamMemberNames(team) }}</p>
-                              } @else if (team.members[0]; as member) {
-                                <p class="mt-1 max-w-3xl truncate text-lg font-bold ui-text-accent">{{ member.playerName || 'Spieler' }}</p>
-                              }
                             </div>
                           </div>
                         </div>

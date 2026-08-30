@@ -5,7 +5,6 @@
       <p class="text-xs font-bold uppercase tracking-[0.18em] ui-text-warm">Podium</p>
       <h2 class="mt-1 text-xl font-black ui-text-strong">{{ headline() }}</h2>
     </div>
-    <p class="text-sm font-medium ui-text-muted">{{ subline() }}</p>
   </div>
 
   <div
@@ -88,11 +87,6 @@
         >
           {{ rankLabel(entry) }}
         </span>
-        @if (entry.isTied) {
-          <span class="absolute right-4 top-4 rounded-full border ui-border-subtle ui-surface-muted px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ui-text-strong">
-            Gleichstand
-          </span>
-        }
         <span
           class="pointer-events-none absolute bottom-0 right-3 font-black leading-none ui-text-watermark"
           [class.text-9xl]="entry.rank === 1"
@@ -113,9 +107,6 @@
           {{ entry.totalPoints }}
         </strong>
         <span class="relative z-10 text-xs font-black uppercase tracking-[0.16em] ui-text-soft">Punkte</span>
-        @if (entry.tieReason) {
-          <span class="relative z-10 max-w-44 text-xs leading-5 ui-text-soft">{{ entry.tieReason }}</span>
-        }
       </div>
     </a>
   } @empty {

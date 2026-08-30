@@ -4,7 +4,7 @@ export const builderNodeDragDataType = 'application/x-nfc-builder-node';
 
 export const builderNodeTypes: BuilderNodeType[] = [
   { category: 'UI', type: 'SHOW_MESSAGE', label: 'Text anzeigen', defaultTitle: 'Text anzeigen', defaultConfig: { text: 'Willkommen', continueMode: 'BUTTON' }, description: 'Zeigt Text am Gerät und geht danach per Weiter weiter.' },
-  { category: 'UI', type: 'SHOW_POPUP', label: 'TV-Popup zeigen', defaultTitle: 'TV-Popup', defaultConfig: { title: 'Hinweis', text: '$lastScannedPlayer.name ist dran.' }, description: 'Zeigt am TV kurz einen Hinweis mit Text und Variablen.' },
+  { category: 'UI', type: 'SHOW_POPUP', label: 'TV-Popup zeigen', defaultTitle: 'TV-Popup', defaultConfig: { title: 'Hinweis', text: '$lastScannedPlayer.displayName ist dran.' }, description: 'Zeigt am TV kurz einen Hinweis mit Text und Variablen.' },
   { category: 'UI', type: 'PLAY_SOUND', label: 'Sound abspielen', defaultTitle: 'Sound abspielen', defaultConfig: { soundId: '', soundName: '', playTarget: 'DEVICE' }, description: 'Spielt einen Sound aus deiner Bibliothek auf dem Gerät, auf der Website oder auf beiden ab.' },
   { category: 'UI', type: 'MENU', label: 'Auswahl anbieten', defaultTitle: 'Auswahl', defaultConfig: { text: 'Option wählen', options: ['Weiter'] }, description: 'Zeigt Optionen zum Antippen, z. B. Teams, Bank oder Weiter.' },
   { category: 'UI', type: 'NUMBER_PICKER', label: 'Zahl eingeben', defaultTitle: 'Zahl eingeben', defaultConfig: { min: 1, max: 10, storeAs: 'value' }, description: 'Fragt eine Zahl ab und speichert sie unter einem Variablennamen.' },

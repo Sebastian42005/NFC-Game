@@ -56,6 +56,7 @@ export class NfcAdminShellComponent {
       label: 'Admin',
       links: [
         { href: '/nfc-game/admin/accounts', label: 'Accounts', icon: 'manage_accounts', adminOnly: true },
+        { href: '/nfc-game/admin/simulation', label: 'Simulator', icon: 'developer_board' },
       ],
     },
   ];

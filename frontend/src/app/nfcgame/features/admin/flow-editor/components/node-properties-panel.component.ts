@@ -11,6 +11,7 @@ import {
   buildTargetVariableOptions,
   buildVariableSuggestionGroups,
   hasPlayerReferenceBefore,
+  normalizeBuilderVariableAliases,
   normalizeValueKey,
   TargetValuePathOption,
   valueKeyForNode,
@@ -384,7 +385,9 @@ export class NodePropertiesPanelComponent {
   }
 
   protected toDollarSyntax(value: string) {
-    return value.replace(/\{([A-Za-z][A-Za-z0-9_.]*)\}/g, (_, token: string) => `$${token}`);
+    return normalizeBuilderVariableAliases(
+      value.replace(/\{([A-Za-z][A-Za-z0-9_.]*)\}/g, (_, token: string) => `$${token}`),
+    );
   }
 
   private optionFromPath(path: string): TargetValuePathOption {

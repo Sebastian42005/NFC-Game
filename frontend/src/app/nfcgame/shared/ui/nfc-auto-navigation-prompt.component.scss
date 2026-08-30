@@ -1,0 +1,86 @@
+:host {
+  display: contents;
+}
+
+.nfc-auto-navigation-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 70;
+  display: flex;
+  width: min(100% - 2rem, 30rem);
+  align-items: center;
+  gap: 0.9rem;
+  border: 1px solid var(--nfc-accent-border);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--nfc-surface-strong) 94%, transparent);
+  padding: 0.9rem;
+  color: var(--nfc-text);
+  box-shadow: var(--nfc-shadow-xl);
+  backdrop-filter: blur(16px);
+}
+
+.nfc-auto-navigation-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--nfc-accent-border);
+  border-radius: 0.65rem;
+  background: var(--nfc-accent-soft);
+  color: var(--nfc-accent-strong);
+}
+
+.nfc-auto-navigation-panel p {
+  margin: 0;
+  color: var(--nfc-accent-strong);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.nfc-auto-navigation-panel strong {
+  display: block;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+
+.nfc-auto-navigation-track {
+  height: 0.35rem;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--nfc-surface);
+}
+
+.nfc-auto-navigation-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-image: linear-gradient(90deg, var(--nfc-accent), var(--color-info), var(--nfc-warm-soft));
+  transition: width 0.35s ease;
+}
+
+.nfc-auto-navigation-cancel {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--nfc-border);
+  border-radius: 0.6rem;
+  background: var(--nfc-surface);
+  padding: 0.62rem 0.75rem;
+  color: var(--nfc-text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.nfc-auto-navigation-cancel:hover {
+  border-color: var(--nfc-border-strong);
+  background: var(--nfc-surface-hover);
+}

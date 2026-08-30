@@ -4,6 +4,13 @@ import { nfcAdminGuard } from './nfcgame/core/auth/nfc-admin.guard';
 export const routes: Routes = [
   { path: '', redirectTo: 'nfc-game', pathMatch: 'full' },
   {
+    path: 'nfc-reader/customize',
+    loadComponent: () =>
+      import('./nfcgame/features/public/product-showcase/product-customize.component').then(
+        (m) => m.NfcProductCustomizeComponent,
+      ),
+  },
+  {
     path: 'nfc-reader',
     loadComponent: () =>
       import('./nfcgame/features/public/product-showcase/product-showcase.component').then(
@@ -77,8 +84,8 @@ export const routes: Routes = [
   },
   {
     path: 'nfc-game/simulation',
-    loadComponent: () =>
-      import('./nfcgame/features/public/simulation/simulation.component').then((m) => m.NfcSimulationComponent),
+    redirectTo: 'nfc-game/admin/simulation',
+    pathMatch: 'full',
   },
   {
     path: 'nfc-game/history',
@@ -164,6 +171,12 @@ export const routes: Routes = [
     canActivate: [nfcAdminGuard],
     loadComponent: () =>
       import('./nfcgame/features/admin/devices/admin-devices.component').then((m) => m.NfcAdminDevicesComponent),
+  },
+  {
+    path: 'nfc-game/admin/simulation',
+    canActivate: [nfcAdminGuard],
+    loadComponent: () =>
+      import('./nfcgame/features/public/simulation/simulation.component').then((m) => m.NfcSimulationComponent),
   },
   {
     path: 'nfc-game/admin/settings',

@@ -97,10 +97,10 @@ function createRoundBasedFlow(gameTemplateId: string): GameFlowDto {
   });
   const popup = node('SHOW_POPUP', 'TV-Popup', 520, 860, {
     title: 'Runde gewonnen',
-    text: '$lastScannedPlayer.name bekommt 1 Punkt',
+    text: '$lastScannedPlayer.displayName bekommt 1 Punkt',
   });
   const log = node('LOG_EVENT', 'Timeline schreiben', 520, 1010, {
-    template: '$lastScannedPlayer.name hat $amount Punkt bekommen und steht jetzt bei $lastScannedPlayer.points Punkten.',
+    template: '$lastScannedPlayer.displayName hat $amount Punkt bekommen und steht jetzt bei $lastScannedPlayer.points Punkten.',
   });
   const check = node('IF_ELSE', 'Rundenlimit prüfen', 520, 1160, {
     expression: '$roundLimit == null || $currentRound < $roundLimit',
@@ -145,7 +145,7 @@ function createSingleRoundFlow(gameTemplateId: string): GameFlowDto {
   });
   const popup = node('SHOW_POPUP', 'TV-Popup', 520, 680, {
     title: 'Runde gewonnen',
-    text: '$lastScannedPlayer.name gewinnt die Runde',
+    text: '$lastScannedPlayer.displayName gewinnt die Runde',
   });
   const end = node('END_GAME', 'Runde beendet', 520, 830, { text: 'Runde beendet' });
   return {
@@ -264,10 +264,10 @@ function createCaboFlow(gameTemplateId: string): GameFlowDto {
   });
   const popup = node('SHOW_POPUP', 'TV-Popup', 520, 870, {
     title: 'Strafpunkte',
-    text: '$loser.name bekommt $amount Punkte',
+    text: '$loser.displayName bekommt $amount Punkte',
   });
   const log = node('LOG_EVENT', 'Timeline schreiben', 520, 1030, {
-    template: '$loser.name bekommt $amount Punkte und steht jetzt bei $loser.points Punkten.',
+    template: '$loser.displayName bekommt $amount Punkte und steht jetzt bei $loser.points Punkten.',
   });
   const check = node('IF_ELSE', 'Punktelimit prüfen', 520, 1190, {
     expression: '$loser.points >= $pointLimit',

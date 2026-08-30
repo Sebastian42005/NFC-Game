@@ -32,7 +32,11 @@ const SESSION_VALUE_NODE_TYPES = new Set(['CHANGE_VALUE', 'AWARD_POINTS']);
 const GLOBAL_POINTS_NODE_TYPES = new Set(['ADD_GLOBAL_POINTS', 'AWARD_ROUND_WIN']);
 const SYSTEM_REFERENCE_NAMES = new Set(['lastScannedPlayer', 'scannedPlayer', 'player']);
 const PROPERTY_NUMBER_NAMES = new Set(['placement', 'points', 'money', 'rounds', 'wins']);
-const PROPERTY_STRING_NAMES = new Set(['name', 'team', 'teamName']);
+const PROPERTY_STRING_NAMES = new Set(['displayName', 'playerName', 'teamName']);
+const LEGACY_PROPERTY_ALIASES = new Map([
+  ['name', 'playerName'],
+  ['team', 'teamName'],
+]);
 const VARIABLE_TOKEN_PATTERN = /\$([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)?)/g;
 
 export function buildVariableSuggestionGroups(
@@ -48,7 +52,7 @@ export function buildVariableSuggestionGroups(
   const references = new Map<string, VariableSuggestion>();
   const flowValues = new Map<string, VariableSuggestion>();
   const dashboardValueKey = normalizeValueKey(defaultValueKey) || 'points';
-  const propertyKeys = new Set(['name', 'placement', 'team', dashboardValueKey]);
+  const propertyKeys = new Set(['displayName', 'playerName', 'placement', 'teamName', dashboardValueKey]);
 
   for (const key of extraValueKeys.map(normalizeValueKey).filter(Boolean)) {
     if (!['currentround', 'round', 'currentroundnumber', 'roundlimit'].includes(key)) {
@@ -242,6 +246,14 @@ export function isDynamicAccountMenu(node: FlowNodeDto): boolean {
 export function flattenVariableSuggestions(groups: VariableSuggestionGroup[]): VariableSuggestion[] {
   return groups.flatMap((group) =>
     group.items.flatMap((item) => [item, ...(item.properties ?? [])]),
+  );
+}
+
+export function normalizeBuilderVariableAliases(value: string): string {
+  return value.replace(
+    /\$([A-Za-z][A-Za-z0-9_]*)\.(name|team)\b/gi,
+    (_match, reference: string, property: string) =>
+      `$${reference}.${LEGACY_PROPERTY_ALIASES.get(property.toLowerCase()) ?? property}`,
   );
 }
 

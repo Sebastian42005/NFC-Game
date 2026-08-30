@@ -12,8 +12,14 @@ import {
 } from './flow-variable-suggestions';
 
 type AutocompletePanel = 'main' | 'property';
+type HighlightSegment = {
+  text: string;
+  kind?: VariableSuggestion['kind'] | 'unknown';
+  title?: string;
+};
 
 let autocompleteInstanceId = 0;
+const HIGHLIGHT_TOKEN_PATTERN = /\$[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)?/g;
 
 @Component({
   selector: 'nfc-builder-variable-input',
@@ -33,6 +39,7 @@ export class BuilderVariableInputComponent {
   @Output() valueChange = new EventEmitter<string>();
   @Output() fieldBlur = new EventEmitter<void>();
   @ViewChild('field') private field?: ElementRef<HTMLInputElement | HTMLTextAreaElement>;
+  @ViewChild('highlightLayer') private highlightLayer?: ElementRef<HTMLElement>;
 
   protected menuOpen = false;
   protected filteredGroups: VariableSuggestionGroup[] = [];
@@ -79,6 +86,32 @@ export class BuilderVariableInputComponent {
     return token.split('.').pop() ?? this.displayToken(token);
   }
 
+  protected highlightedSegments(): HighlightSegment[] {
+    const value = this.value();
+    if (!value) return [];
+
+    const suggestions = this.variableLookup();
+    const segments: HighlightSegment[] = [];
+    let lastIndex = 0;
+
+    for (const match of value.matchAll(HIGHLIGHT_TOKEN_PATTERN)) {
+      const token = match[0];
+      const index = match.index ?? 0;
+      if (index > lastIndex) {
+        segments.push({ text: value.slice(lastIndex, index) });
+      }
+
+      this.pushHighlightedTokenSegments(segments, token, suggestions);
+      lastIndex = index + token.length;
+    }
+
+    if (lastIndex < value.length) {
+      segments.push({ text: value.slice(lastIndex) });
+    }
+
+    return segments;
+  }
+
   protected hasSubmenu(item: VariableSuggestion): boolean {
     return Boolean(item.properties?.length);
   }
@@ -88,8 +121,18 @@ export class BuilderVariableInputComponent {
     this.valueChange.emit(value);
     queueMicrotask(() => {
       const field = this.field?.nativeElement;
-      if (field) this.syncMenu(field);
+      if (field) {
+        this.syncMenu(field);
+        this.syncHighlightScroll(field);
+      }
     });
+  }
+
+  protected syncHighlightScroll(field: HTMLInputElement | HTMLTextAreaElement): void {
+    const layer = this.highlightLayer?.nativeElement;
+    if (!layer) return;
+    layer.scrollLeft = field.scrollLeft;
+    layer.scrollTop = field.scrollTop;
   }
 
   protected onKeydown(event: KeyboardEvent): void {
@@ -408,5 +451,47 @@ export class BuilderVariableInputComponent {
 
   private propertyName(item: VariableSuggestion): string {
     return item.token.split('.').pop() ?? item.token;
+  }
+
+  private pushHighlightedTokenSegments(
+    segments: HighlightSegment[],
+    token: string,
+    suggestions: Map<string, VariableSuggestion>,
+  ): void {
+    const dotIndex = token.indexOf('.');
+    if (dotIndex < 0) {
+      this.pushHighlightedTokenSegment(segments, token, suggestions.get(token));
+      return;
+    }
+
+    const rootToken = token.slice(0, dotIndex);
+    const propertyToken = token.slice(dotIndex);
+    this.pushHighlightedTokenSegment(segments, rootToken, suggestions.get(rootToken));
+    this.pushHighlightedTokenSegment(segments, propertyToken, suggestions.get(token), token);
+  }
+
+  private pushHighlightedTokenSegment(
+    segments: HighlightSegment[],
+    text: string,
+    suggestion: VariableSuggestion | undefined,
+    titleToken = text,
+  ): void {
+    segments.push({
+      text,
+      kind: suggestion?.kind ?? 'unknown',
+      title: suggestion
+        ? `${titleToken} · ${this.variableKindLabel(suggestion.kind)}`
+        : `${titleToken} · Unbekannte Variable`,
+    });
+  }
+
+  private variableLookup(): Map<string, VariableSuggestion> {
+    return new Map(
+      this.suggestions().flatMap((group) =>
+        group.items
+          .flatMap((item) => [item, ...(item.properties ?? [])])
+          .map((item) => [item.token, item] as const),
+      ),
+    );
   }
 }

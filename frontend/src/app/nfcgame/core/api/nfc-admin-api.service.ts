@@ -3,12 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import {
   AdminAccountSummaryDto,
+  AdminDeviceSimulationEventRequest,
   AdminLoginRequest,
   AdminLoginResponse,
   AudioTestStatusDto,
   CardAssignRequest,
   DeviceClaimRequest,
   DeviceDto,
+  DeviceEventResponse,
   DeviceNameRequest,
   DeviceRequest,
   FlowValidationDto,
@@ -114,6 +116,16 @@ export class NfcAdminApiService {
 
   deleteDevice(id: string) {
     return this.http.delete<void>(`${apiBase}/devices/${encodeURIComponent(id)}`);
+  }
+
+  simulateDeviceEvent(request: AdminDeviceSimulationEventRequest) {
+    return this.http.post<DeviceEventResponse>(`${apiBase}/device-simulator/events`, request);
+  }
+
+  simulatorDeviceScreen(sessionId: string) {
+    return this.http.get<DeviceEventResponse>(
+      `${apiBase}/device-simulator/sessions/${encodeURIComponent(sessionId)}/screen`,
+    );
   }
 
   uploadSettingsTestTone(blob: Blob, filename = 'settings-test-tone.webm') {

@@ -1,3 +1,88 @@
+.builder-variable-input-shell {
+  isolation: isolate;
+}
+
+.builder-variable-input-shell::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-glass);
+  content: '';
+  pointer-events: none;
+}
+
+.builder-variable-control {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  caret-color: var(--nfc-text);
+  color: transparent !important;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.builder-variable-control::placeholder {
+  color: var(--color-white-45) !important;
+}
+
+.builder-variable-highlight {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid transparent;
+  color: var(--nfc-text);
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: 1.5;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.builder-variable-highlight.single-line {
+  white-space: pre;
+}
+
+.builder-variable-highlight.multiline {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.builder-variable-token {
+  --variable-token-color: var(--nfc-accent-strong);
+  color: color-mix(in srgb, var(--variable-token-color) 82%, var(--nfc-text));
+  font-weight: inherit;
+  text-shadow: none;
+}
+
+.builder-variable-token.kind-object {
+  --variable-token-color: var(--nfc-kind-object);
+}
+
+.builder-variable-token.kind-string {
+  --variable-token-color: var(--nfc-kind-string);
+}
+
+.builder-variable-token.kind-integer {
+  --variable-token-color: var(--nfc-kind-integer);
+}
+
+.builder-variable-token.kind-boolean {
+  --variable-token-color: var(--nfc-kind-boolean);
+}
+
+.builder-variable-token.kind-unknown {
+  --variable-token-color: var(--nfc-danger-soft);
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 .nfc-autocomplete-panel {
   border-color: var(--nfc-border);
   background: var(--nfc-panel-solid);
@@ -29,4 +114,16 @@
 
 .validation-message.invalid {
   color: var(--nfc-danger-soft);
+}
+
+:host-context(.nfc-theme-light) .builder-variable-control::placeholder {
+  color: var(--nfc-muted-soft) !important;
+}
+
+:host-context(.nfc-theme-light) .builder-variable-input-shell::before {
+  background: color-mix(in srgb, var(--color-canvas-white) 88%, var(--nfc-light-bg-alt));
+}
+
+:host-context(.nfc-theme-light) .builder-variable-token {
+  color: color-mix(in srgb, var(--variable-token-color) 68%, var(--nfc-text));
 }

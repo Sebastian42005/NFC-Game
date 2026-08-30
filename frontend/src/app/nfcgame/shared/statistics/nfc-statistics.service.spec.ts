@@ -60,8 +60,8 @@ describe('NfcStatisticsService', () => {
       ['pauli', 1, true],
       ['sebi', 1, true],
     ]);
-    expect(ranking[0].rankLabel).toBe('#1 geteilt');
-    expect(ranking[1].tieReason).toContain('kein zusätzlicher Tiebreaker');
+    expect(ranking[0].rankLabel).toBe('#1');
+    expect(ranking[1].tieReason).toBeUndefined();
   });
 
   it('ignores open sessions for profile and ranking aggregates', () => {

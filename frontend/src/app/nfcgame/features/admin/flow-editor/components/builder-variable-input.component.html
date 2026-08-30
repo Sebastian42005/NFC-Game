@@ -1,24 +1,43 @@
 <label class="builder-variable-field grid gap-2 text-sm">
   <span>{{ label() }}</span>
-  <div class="relative" cdkOverlayOrigin #autocompleteOrigin="cdkOverlayOrigin">
+  <div class="builder-variable-input-shell relative" cdkOverlayOrigin #autocompleteOrigin="cdkOverlayOrigin">
+    <div
+      #highlightLayer
+      class="builder-variable-highlight"
+      [class.multiline]="multiline()"
+      [class.single-line]="!multiline()"
+      aria-hidden="true"
+    >
+      @for (segment of highlightedSegments(); track $index) {
+        @if (segment.kind) {
+          <span class="builder-variable-token" [ngClass]="'kind-' + segment.kind" [title]="segment.title">{{ segment.text }}</span>
+        } @else {
+          <span>{{ segment.text }}</span>
+        }
+      }
+    </div>
     @if (multiline()) {
       <textarea
         #field
+        class="builder-variable-control"
         [rows]="rows()"
         [ngModel]="value()"
         (ngModelChange)="onValueChange($event)"
         (keydown)="onKeydown($event)"
         (keyup)="onKeyup($event, field)"
+        (scroll)="syncHighlightScroll(field)"
         (blur)="onBlur()"
         [placeholder]="placeholder()"
       ></textarea>
     } @else {
       <input
         #field
+        class="builder-variable-control"
         [ngModel]="value()"
         (ngModelChange)="onValueChange($event)"
         (keydown)="onKeydown($event)"
         (keyup)="onKeyup($event, field)"
+        (scroll)="syncHighlightScroll(field)"
         (blur)="onBlur()"
         [placeholder]="placeholder()"
       />
@@ -60,7 +79,9 @@
                 {{ displayToken(item.token) }}
               </span>
               @if (hasSubmenu(item)) {
-                <span class="nfc-autocomplete-chevron text-lg leading-none">{{ submenuSide === 'left' ? '‹' : '›' }}</span>
+                <span class="nfc-autocomplete-chevron text-lg leading-none">
+                  {{ submenuSide === 'left' ? '‹' : '›' }}
+                </span>
               }
             </button>
           }
@@ -72,7 +93,9 @@
           class="nfc-autocomplete-panel absolute top-0 z-[2147483647] max-h-[280px] w-60 min-w-[220px] overflow-auto rounded-[14px] border p-2 shadow-2xl"
           [ngClass]="submenuSide === 'left' ? 'right-[calc(100%+8px)] left-auto' : 'left-[calc(100%+8px)]'"
         >
-          <div class="nfc-autocomplete-submenu-title px-2.5 pb-[5px] pt-[7px] text-xs font-bold">{{ displayToken(submenu.token) }}</div>
+          <div class="nfc-autocomplete-submenu-title px-2.5 pb-[5px] pt-[7px] text-xs font-bold">
+            {{ displayToken(submenu.token) }}
+          </div>
           @for (property of submenu.properties ?? []; track property.token) {
             <button
               type="button"

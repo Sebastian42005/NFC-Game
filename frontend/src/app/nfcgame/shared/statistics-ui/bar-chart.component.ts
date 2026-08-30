@@ -9,7 +9,7 @@ import { NfcChartDatum } from '../statistics/nfc-statistics.models';
 })
 export class NfcBarChartComponent {
   readonly title = input.required<string>();
-  readonly eyebrow = input('Chart');
+  readonly eyebrow = input('');
   readonly data = input<NfcChartDatum[]>([]);
   readonly emptyText = input('Noch zu wenig Daten für dieses Diagramm.');
 

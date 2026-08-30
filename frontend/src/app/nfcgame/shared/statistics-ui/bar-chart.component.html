@@ -1,7 +1,9 @@
 <section class="rounded-lg border ui-border-subtle ui-surface-muted p-5">
   <div class="flex items-end justify-between gap-4">
     <div>
-      <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">{{ eyebrow() }}</p>
+      @if (eyebrow()) {
+        <p class="text-xs font-bold uppercase tracking-[0.16em] ui-text-accent">{{ eyebrow() }}</p>
+      }
       <h2 class="mt-1 text-xl font-black ui-text-strong">{{ title() }}</h2>
     </div>
   </div>
